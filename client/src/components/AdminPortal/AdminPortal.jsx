@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { inwardAPI } from '../../services/api';
-import { Inbox, XCirlce, Plus, ClipboardList, Check, X } from 'lucide-react';
+import { Inbox, XCircle, Plus, ClipboardList, Check, X } from 'lucide-react';
 import './AdminPortal.css';
 
 function AdminPortal() {
@@ -196,6 +196,7 @@ function AdminPortal() {
                                     <th>Subject</th>
                                     <th>From</th>
                                     <th>Assigned Team</th>
+                                    <th>Linked Outward</th>
                                     <th>Status</th>
                                     <th>Due Date</th>
                                 </tr>
@@ -209,6 +210,17 @@ function AdminPortal() {
                                         <td>
                                             {entry.assignedTeam && (
                                                 <span className="badge badge-team">{entry.assignedTeam}</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {entry.outward && entry.outward.length > 0 ? (
+                                                entry.outward.map(out => (
+                                                    <div key={out.id} className="text-sm text-primary">
+                                                        <strong>{out.outward_no}</strong>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span className="text-muted">-</span>
                                             )}
                                         </td>
                                         <td>

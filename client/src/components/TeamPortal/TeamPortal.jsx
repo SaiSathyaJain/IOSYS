@@ -322,7 +322,7 @@ function TeamPortal() {
                                         <td>{entry.subject}</td>
                                         <td>{entry.toWhom}</td>
                                         <td><span className="badge badge-team">{entry.createdByTeam}</span></td>
-                                        <td>{entry.linkedInwardId || '-'}</td>
+                                        <td>{entry.inward ? entry.inward.inward_no : '-'}</td>
                                         <td>{entry.createdAt ? new Date(entry.createdAt._seconds ? entry.createdAt._seconds * 1000 : entry.createdAt).toLocaleDateString() : '-'}</td>
                                     </tr>
                                 ))}
