@@ -228,7 +228,7 @@ function AdminPortal() {
                                                 {entry.assignmentStatus || 'Unassigned'}
                                             </span>
                                         </td>
-                                        <td>{entry.dueDate ? new Date(entry.dueDate._seconds * 1000).toLocaleDateString() : '-'}</td>
+                                        <td>{entry.dueDate ? new Date(entry.dueDate).toLocaleDateString() : '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>
