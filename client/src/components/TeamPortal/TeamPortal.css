@@ -1,0 +1,240 @@
+/* Space Theme Integration for Team Portal */
+@import '../LandingPage/LandingPage.css';
+/* Reuse variables and basic glass classes */
+
+.team-portal {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    margin: 0 auto;
+    color: var(--text-primary);
+}
+
+/* Override Cards to be Glass Cards */
+.card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    position: relative;
+    /* Context for absolute glow */
+    transition: all 0.3s ease;
+}
+
+/* Hover Glow (Team Green Theme) */
+.team-glass:hover {
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.5), 0 0 30px rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.5);
+    transform: translateY(-5px);
+}
+
+[data-theme="light"] .team-glass:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(-5px);
+    border-color: #10b981;
+}
+
+/* Animated Top Glow Line */
+.glow-effect {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0%;
+    /* Start invisible */
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.8), transparent);
+    opacity: 0;
+    transition: all 0.5s ease;
+    z-index: 10;
+}
+
+.team-glass:hover .glow-effect {
+    width: 80%;
+    opacity: 1;
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.5);
+}
+
+[data-theme="light"] .glow-effect {
+    display: none;
+}
+
+[data-theme="light"] .card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    color: #1e293b;
+}
+
+.card-header {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+}
+
+[data-theme="light"] .card-header {
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Form Styles Override for Glass */
+.form-input,
+.form-select,
+.form-textarea {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 12px;
+}
+
+[data-theme="light"] .form-input,
+[data-theme="light"] .form-select,
+[data-theme="light"] .form-textarea {
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    outline: none;
+}
+
+/* Team Portal Header Actions */
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.header-actions .form-select {
+    width: 250px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .header-actions .form-select {
+    background-color: white;
+}
+
+/* Table Glass Styles */
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table th {
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .table th {
+    background: #f8fafc;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table td {
+    padding: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+}
+
+[data-theme="light"] .table td {
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+}
+
+.table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="light"] .table tr:hover td {
+    background: #f8fafc;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 4rem 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Badges & Buttons */
+.badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.badge-team {
+    background: rgba(79, 70, 229, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+[data-theme="light"] .badge-team {
+    background: #eef2ff;
+    color: #4f46e5;
+    border-color: #c7d2fe;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4f46e5, #818cf8);
+    border: none;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+    transition: transform 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
+
+.checkbox-group {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.75rem 0;
+}
+
+.checkbox-group label {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Status Select Specifics */
+.status-select {
+    padding: 0.4rem 2rem 0.4rem 0.75rem;
+    /* Smaller padding for table */
+    font-size: 0.85rem;
+    min-width: 130px;
+    background-position: right 0.5rem center;
+    /* Adjust arrow position */
+}
