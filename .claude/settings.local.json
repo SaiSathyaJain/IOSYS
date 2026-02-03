@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(node scripts/migrate-from-supabase.js:*)",
+      "Bash(dir:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx wrangler pages deploy:*)",
+      "Bash(git push)",
+      "Bash(git fetch:*)",
+      "Bash(git remote:*)",
+      "Bash(powershell -Command \"Invoke-WebRequest -Uri ''https://cdn.brandfetch.io/idMhiVV12f/w/400/h/400/theme/dark/icon.jpeg'' -OutFile ''favicon.ico'' -Headers @{''User-Agent''=''Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36''; ''Referer''=''https://brandfetch.com/''}\")"
+    ]
+  }
+}

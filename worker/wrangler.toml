@@ -1,0 +1,15 @@
+name = "inward-outward-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "inward-outward-db"
+database_id = "65cdca58-f391-42fd-b314-2bdf52aa6a19"
+
+# Environment variables (set via wrangler secret or dashboard)
+# EMAIL_API_KEY - for email service (Resend recommended)
+
+[vars]
+ENVIRONMENT = "production"

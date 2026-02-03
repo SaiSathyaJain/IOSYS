@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from "jwt-decode";
+import { useGoogleLogin } from '@react-oauth/google';
 import { LayoutDashboard, FileText, Send, Moon, Sun, Menu, X, Home, Lock } from 'lucide-react';
 import Particles from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
@@ -22,93 +21,64 @@ function NavLink({ to, icon: Icon, children }) {
   );
 }
 
-// Enhanced Google Admin Login Component
+// Google Admin Login Component
 function AdminLogin({ onLogin }) {
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSuccess = (credentialResponse) => {
-    setIsLoading(true);
-    try {
-      const decoded = jwtDecode(credentialResponse.credential);
-      console.log('Login Success:', decoded);
+  const login = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        // Fetch user info using the access token
+        const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+          },
+        });
+        const userInfo = await response.json();
+        console.log('Login Success:', userInfo);
 
-      // Basic Whitelist Check (Optional)
-      const allowedEmails = ['sathyajain9@gmail.com', 'saisathyajain@sssihl.edu.in', 'results@sssihl.edu.in'];
+        // Basic Whitelist Check (Optional)
+        const allowedEmails = ['sathyajain9@gmail.com', 'saisathyajain@sssihl.edu.in', 'results@sssihl.edu.in'];
 
-      // Allow specific emails OR any email from your organization domain if needed
-      if (allowedEmails.includes(decoded.email) || decoded.email.endsWith('@sssihl.edu.in')) {
-        setTimeout(() => {
-          onLogin(decoded);
-          setIsLoading(false);
-        }, 800);
-      } else {
-        setError('Access Denied: Unauthorized Email');
-        setIsLoading(false);
+        // Allow specific emails OR any email from your organization domain if needed
+        if (allowedEmails.includes(userInfo.email) || userInfo.email.endsWith('@sssihl.edu.in')) {
+          onLogin(userInfo);
+        } else {
+          setError('Access Denied: Unrestricted Email');
+        }
+      } catch (err) {
+        console.error('Login verify error:', err);
+        setError('Login verification failed');
       }
-    } catch (err) {
-      console.error('Login verify error:', err);
-      setError('Login verification failed');
-      setIsLoading(false);
-    }
-  };
+    },
+    onError: () => setError('Login Failed'),
+  });
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        {/* Animated Background Gradient */}
-        <div className="login-gradient-bg"></div>
-
-        {/* Lock Icon with Animation */}
-        <div className="login-icon-wrapper">
-          <div className="login-icon-circle">
-            <Lock size={40} strokeWidth={2.5} />
-          </div>
+    <div className="admin-login-container">
+      <div className="card admin-login-card">
+        <div className="admin-login-icon">
+          <Lock size={48} />
         </div>
+        <h2 className="admin-login-title">Admin Access</h2>
+        <p className="admin-login-subtitle">Sign in to manage entries</p>
 
-        {/* Header Section */}
-        <div className="login-header">
-          <h2 className="login-title">Admin Access</h2>
-          <p className="login-subtitle">Sign in with your authorized account to manage entries</p>
-        </div>
-
-        {/* Login Button Container */}
-        <div className="login-button-wrapper">
-          <div className="google-login-container">
-            <GoogleLogin
-              onSuccess={handleSuccess}
-              onError={() => setError('Login Failed')}
-              theme="filled_blue"
-              shape="pill"
-              size="large"
-            />
-          </div>
-
-          {isLoading && (
-            <div className="login-loading">
-              <div className="login-spinner"></div>
-              <span>Verifying credentials...</span>
+        <div className="admin-login-button-wrapper">
+          <button className="btn-google" onClick={() => login()} aria-label="Sign in with Google">
+            <div className="btn-google__icon-wrapper">
+              <svg className="btn-google__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                <path fill="none" d="M0 0h48v48H0z" />
+              </svg>
             </div>
-          )}
+            <span className="btn-google__text">Sign in with Google</span>
+          </button>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="login-error">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Security Notice */}
-        <div className="login-footer">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ opacity: 0.5 }}>
-            <path fillRule="evenodd" d="M8 1a3.5 3.5 0 00-3.5 3.5V7A1.5 1.5 0 003 8.5v5A1.5 1.5 0 004.5 15h7a1.5 1.5 0 001.5-1.5v-5A1.5 1.5 0 0011.5 7V4.5A3.5 3.5 0 008 1zm2 6V4.5a2 2 0 10-4 0V7h4z" clipRule="evenodd" />
-          </svg>
-          <span>Secured with Google OAuth 2.0</span>
-        </div>
+        {error && <p className="admin-login-error">{error}</p>}
       </div>
     </div>
   );

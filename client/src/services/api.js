@@ -19,15 +19,7 @@ export const inwardAPI = {
 
 // Outward API
 export const outwardAPI = {
-    getAll: (params = '') => {
-        let config = {};
-        if (typeof params === 'string') {
-            if (params) config.params = { team: params };
-        } else {
-            config.params = params;
-        }
-        return api.get('/outward', config);
-    },
+    getAll: (team = '') => api.get(`/outward${team ? `?team=${team}` : ''}`),
     create: (data) => api.post('/outward', data),
     update: (id, data) => api.put(`/outward/${id}`, data)
 };
