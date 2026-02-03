@@ -110,7 +110,7 @@ function LandingPage() {
 
             <div className="space-content animate-fade">
                 <div className="space-header">
-                    <h1>Inward/Outward <span className="text-gradient">System</span></h1>
+                    <img src="/IO_SYS_LOGO.png" alt="Inward/Outward System" className="landing-logo" />
                     <p>Please select your portal to continue.</p>
                 </div>
 
