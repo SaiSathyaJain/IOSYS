@@ -1,0 +1,15 @@
+name = "inward-outward-server"
+main = "src/worker.js"
+compatibility_date = "2024-02-03"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "io-sys-db"
+database_id = "8ad96fad-2a1d-4452-973b-2dbed7417b62"
+
+[vars]
+# Environment Variables (Secrets should be set via 'npx wrangler secret put ...')
+# OPENROUTER_API_KEY = ""
+# EMAIL_USER = ""
+# EMAIL_PASS = ""

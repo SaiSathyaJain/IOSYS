@@ -1,45 +1,8 @@
 import OpenAI from "openai";
-import initSqlJs from 'sql.js';
-import { readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Initialize OpenAI Client for OpenRouter inside the function to use env vars
+// const openai = new OpenAI({ ... }); // Removed top-level init
 
-// Database Path - Reusing the logic from mcp-server.js
-const dbPath = join(__dirname, '..', '..', 'database.sqlite');
-let db = null;
-
-// Initialize Database connection for read-only access
-async function initDb() {
-    if (db) return db;
-    if (!existsSync(dbPath)) {
-        console.error('❌ Database file not found at:', dbPath);
-        return null;
-    }
-    const SQL = await initSqlJs();
-    const buffer = readFileSync(dbPath);
-    db = new SQL.Database(buffer);
-    return db;
-}
-
-// Convert SQL.js result to array of objects
-function rowsToObjects(result) {
-    if (!result || result.length === 0) return [];
-    const { columns, values } = result[0];
-    return values.map(row => {
-        const obj = {};
-        columns.forEach((col, i) => obj[col] = row[i]);
-        return obj;
-    });
-}
-
-// Initialize OpenAI Client for OpenRouter
-const openai = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-});
 
 // Define Tools
 const tools = [
@@ -70,17 +33,23 @@ const tools = [
     }
 ];
 
-export async function chatWithAi(messages) {
+export async function chatWithAi(messages, db, apiKey) {
     try {
-        await initDb();
         if (!db) throw new Error("Database not initialized");
+        if (!apiKey) throw new Error("OpenRouter API Key not provided");
+
+        const openai = new OpenAI({
+            baseURL: "https://openrouter.ai/api/v1",
+            apiKey: apiKey,
+        });
 
         const response = await openai.chat.completions.create({
-            model: "google/gemini-2.0-flash-lite-preview-02-05:free", // Using free model
+            model: "google/gemini-2.0-flash-lite-preview-02-05:free",
             messages: messages,
             tools: tools,
             tool_choice: "auto",
         });
+
 
         const responseMessage = response.choices[0].message;
 
@@ -102,15 +71,14 @@ export async function chatWithAi(messages) {
                         if (!sql.trim().toLowerCase().startsWith("select")) {
                             toolResult = "Error: Only SELECT queries are allowed for safety.";
                         } else {
-                            const result = db.exec(sql);
-                            const rows = rowsToObjects(result);
-                            toolResult = JSON.stringify(rows);
+                            // D1 query execution
+                            const { results } = await db.prepare(sql).all();
+                            toolResult = JSON.stringify(results);
                         }
                     } else if (functionName === "get_table_schema") {
-                        // Hardcoded schema helper for better answers
                         toolResult = JSON.stringify({
-                            inward: "id, inward_no, subject, particulars_from_whom, means, received_date, assigned_team, assignment_status, due_date",
-                            outward: "id, outward_no, subject, to_whom, sent_by, created_by_team, linked_inward_id"
+                            inward: "id, inward_no, subject, particulars_from_whom, means, sign_receipt_datetime, file_reference, assigned_team, assigned_to_email, assignment_instructions, assignment_date, assignment_status, due_date, completion_date",
+                            outward: "id, outward_no, subject, to_whom, sent_by, sign_receipt_datetime, case_closed, created_by_team, team_member_email, linked_inward_id"
                         });
                     }
                 } catch (e) {

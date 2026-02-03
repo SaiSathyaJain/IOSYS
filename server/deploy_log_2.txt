@@ -1,0 +1,13 @@
+
+ Ôøà´©Å wrangler 4.62.0
+ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+Total Upload: 332.83 KiB / gzip: 68.07 KiB
+Worker Startup Time: 2 ms
+Your Worker has access to the following bindings:
+Binding                 Resource         
+env.DB (io-sys-db)      D1 Database      
+
+Uploaded inward-outward-server (7.48 sec)
+Deployed inward-outward-server triggers (5.01 sec)
+  https://inward-outward-server.sathyajain9.workers.dev
+Current Version ID: fa661711-9ff0-4dab-bb2f-cdc9e317268a

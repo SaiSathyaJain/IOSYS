@@ -1,0 +1,21 @@
+
+ Ôøà´©Å wrangler 4.62.0
+ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+Total Upload: 332.74 KiB / gzip: 68.05 KiB
+Your Worker has access to the following bindings:
+Binding                 Resource         
+env.DB (io-sys-db)      D1 Database      
+
+
+X [ERROR] A request to the Cloudflare API (/accounts/ffa4661b29a77f4318b1bb9fe9e95bc0/workers/scripts/inward-outward-server) failed.
+
+  Uncaught ReferenceError: process is not defined
+    at null.<anonymous> (file:///C:/Users/sathy/OneDrive/Desktop/IO-SYS/server/src/services/ai-service.js:6:13)
+   [code: 10021]
+  To learn more about this error, visit: https://developers.cloudflare.com/workers/observability/errors/#validation-errors-10021
+
+  
+  If you think this is a bug, please open an issue at: https://github.com/cloudflare/workers-sdk/issues/new/choose
+
+
+­ƒ¬Á  Logs were written to "C:\Users\sathy\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-02-03_17-59-17_129.log"
