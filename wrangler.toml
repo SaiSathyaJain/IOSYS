@@ -1,4 +1,4 @@
-name = "inward-outward-client"
+name = "iosys"
 compatibility_date = "2024-02-03"
 # main = "worker/src/index.js" # Removed to prevent worker build
 
@@ -8,4 +8,4 @@ compatibility_date = "2024-02-03"
 
 [assets]
 directory = "./dist"
-binding = "ASSETS"
+
