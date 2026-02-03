@@ -219,6 +219,7 @@
 }
 
 .landing-logo {
+    width: 600px;
     max-width: 90%;
     height: auto;
     margin-bottom: 1rem;
