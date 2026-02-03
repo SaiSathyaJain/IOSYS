@@ -1,0 +1,207 @@
+On branch main
+Your branch is behind 'origin/main' by 17 commits, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   server/.env
+	modified:   server/package-lock.json
+	modified:   server/package.json
+	modified:   server/src/index.js
+	modified:   server/src/services/ai-service.js
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	../../../.RapidMiner/
+	../../../.VirtualBox/
+	../../../.anaconda/
+	../../../.antigravity/
+	../../../.atom/
+	../../../.aws/
+	../../../.bash_history
+	../../../.cache/
+	../../../.clasp.json
+	../../../.clasprc.json
+	../../../.claude.json
+	../../../.claude.json.backup
+	../../../.claude/
+	../../../.conda/
+	../../../.condarc
+	../../../.config/
+	../../../.continuum/
+	../../../.cvlib/
+	../../../.docker/
+	../../../.gemini/
+	../../../.gitconfig
+	../../../.ipynb_checkpoints/
+	../../../.ipython/
+	../../../.julia/
+	../../../.jupyter/
+	../../../.keras/
+	../../../.langflow/
+	../../../.lesshst
+	../../../.m2/
+	../../../.matplotlib/
+	../../../.mysqlsh-gui/
+	../../../.n8n/
+	../../../.node_repl_history
+	../../../.ollama/
+	../../../.python_history
+	../../../.scala_history
+	../../../.spyder-py3/
+	../../../.ssh/
+	../../../.streamlit/
+	../../../.viminfo
+	../../../.vscode/
+	../../../AML/
+	../../../AgeVsClaimAmtReimbursed.png
+	../../../AndroidStudioProjects/
+	../../../AppData/
+	../../../Code.js
+	../../../Contacts/
+	../../../Creative Cloud Files Personal Account sathyajain9@gmail.com 5A653E1959FBD99D0A495ED5@AdobeID/
+	../../../Creative Cloud Files sathyajain99@outlook.com db54c39723874563197dbf7e6608c5432b754b9f3fc7b1cc500d9365714bb95e/
+	../../../CrossDevice/
+	../../../Customer-Activity-Sequence-Classification-for-Debt-Prevention-in-Social-Security/
+	../../../DeductibleAmtPaidandInsClaimAmtReimbursed.png
+	../../../Desktop/
+	../../../Documents/
+	../../../Downloads/
+	../../../ESE - GRACE - Msc. FNS - 01-Sem - ATP - Word.docx
+	../../../FULL-STACK-PROJECT/
+	../../../Favorites/
+	../../../IBA_IOAPDATA/
+	../../../IPAnnualDeductibleAmtandIPAnnualReimbursementAmtinbothfraudandnonFraud.png
+	../../../Index.html
+	../../../IntelGraphicsProfiles/
+	../../../Iris.csv
+	../../../Jedi/
+	../../../Links/
+	../../../MJKJRegInfo_ER2BF232W6LEV5F45GHF2VP7PYSGLLJQ
+	../../../Microsoft/
+	../../../Muse Hub/
+	../../../Music/
+	../../../NTUSER.DAT
+	../../../NTUSER.DAT{e3fc4a3b-c0ab-11f0-8b48-00155d86df5c}.TM.blf
+	../../../NTUSER.DAT{e3fc4a3b-c0ab-11f0-8b48-00155d86df5c}.TMContainer00000000000000000001.regtrans-ms
+	../../../NTUSER.DAT{e3fc4a3b-c0ab-11f0-8b48-00155d86df5c}.TMContainer00000000000000000002.regtrans-ms
+	../../../Numerical_analysis.ipynb
+	../../.849C9593-D756-4E56-8D6E-42412F2A707B
+	../../Desktop - Shortcut.lnk
+	../ARGM & TAP-TAI.xlsx
+	../ARGM/
+	../ARTICE_Terms_and_Conditions.pdf
+	../Antigravity.exe
+	../Antigravity.lnk
+	../AnyDesk.exe
+	../CMF-November 2025 ESE.xltm
+	../Common/
+	../Data Analyst_Fresher Template.docx
+	../Data_monitoring/
+	../Docker Desktop Installer.exe
+	../Docker Desktop.lnk
+	../Donation_receipts/
+	../ERP/
+	../FUN/
+	../Gesture controller/
+	server/src/scripts/test-ai-key.js
+	server/src/scripts/test-gemini-key.js
+	status.txt
+	../IO/
+	../MongoDBCompass.lnk
+	../Notion Calendar Setup 1.122.0 - x64.exe
+	../Notion Setup 3.9.3.exe
+	../Obsidian.1.6.3.exe
+	../Obsidian.lnk
+	../OllamaSetup.exe
+	../Paper_code-generators.xltm
+	../Performance_analysis_dashboard/
+	../Postman.lnk
+	../Pratnik Infotech/
+	../Project Tracker.xlsm
+	../Result_sheet_generator/
+	../SMF-November 2025 ESE.xlsx
+	../SSSIHL-Employment-Application-Form-Administrative-Vacancies-May-2025-v2.pdf
+	../Sai_Sathya_Jain.pdf
+	../Sai_Sathya_Jain_Resume.pdf
+	../Shreya_Jain_Resume_Updated (1).pdf
+	../Shreya_jain_resume.pdf
+	../TAP-TAI.xlsx
+	../TEST/
+	../Test dash/
+	../Visual Studio Code.lnk
+	../chainparams.txt
+	../code.js
+	../code.txt
+	../desktop.ini
+	../faculty_portal.txt
+	../hod_portal.txt
+	../metadata.json
+	../mmm.jpg
+	../mongodb-compass-1.44.4-win32-x64.exe
+	../mongodb-windows-x86_64-8.0.0-signed.msi
+	../ngrok_recovery_codes.txt
+	../node-v20.15.1-x64.msi
+	../pan card.jpg
+	../passport photo_page-0001.jpg
+	../postgresql-16.3-2-windows-x64.exe
+	../requirements.txt
+	../ss.jpg
+	../stipend claims/
+	../student_service_applications/
+	../time_table/
+	../validation.txt
+	../vidyasindhu.txt
+	../../Document 1.docx
+	../../Document.docx
+	../../Documents/
+	../../Kevin Cookie Company Orders Power BI 10 minutes.xlsx
+	../../Personal Vault.lnk
+	../../Pictures/
+	../../desktop.ini
+	../../test2/
+	../../test_file/
+	../../../PotentialFraudDistributionImbalance.png
+	../../../PotentialFraudDistributionInMergedData.png
+	../../../PycharmProjects/
+	../../../README.md
+	../../../RacewiseBeneficiaryDistribution.png
+	../../../Saved Games/
+	../../../Searches/
+	../../../TopAttendingphysiciansinvlovedinHealthcareFraud.png
+	../../../TopDiagnosisInnvlovedinHealthcareFraud.png
+	../../../TopProceduresinvlovedinHealthcareFraud.png
+	../../../Videos/
+	../../../VirtualBox VMs/
+	../../../appsscript.json
+	../../../boston.csv
+	../../../cancer/
+	../../../catboost_info/
+	../../../codecrafters-redis-python/
+	../../../day1.cpp
+	../../../decryption_log.txt
+	../../../extracted_data.xlsx
+	../../../knowledge_base/
+	../../../medical_fraud/
+	../../../myenv/
+	../../../ntuser.dat.LOG1
+	../../../ntuser.dat.LOG2
+	../../../ntuser.ini
+	../../../postgresql_12.exe
+	../../../predictive_maintenance.csv
+	../../../private_key.pem
+	../../../project-root/
+	../../../public_key.pem
+	../../../qr_certificates/
+	../../../qr_generation.log
+	../../../random_scripts.ipynb
+	../../../report_generator_config.json
+	../../../result_generator.log
+	../../../source/
+	../../../test.csv
+	../../../uber_data.csv
+	../../../weather_forecast/
+	../../../wekafiles/
+
+no changes added to commit (use "git add" and/or "git commit -a")

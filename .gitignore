@@ -1,0 +1,5 @@
+.gradle/
+.RapidMiner/
+node_modules/
+dist/
+build/

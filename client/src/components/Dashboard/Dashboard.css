@@ -1,0 +1,84 @@
+/* Dashboard specific styles */
+/* .dashboard padding handled by main-content */
+
+.page-title {
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50vh;
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+}
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.team-card {
+    background-color: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.team-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.team-name {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+.team-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.team-stat {
+    text-align: center;
+}
+
+.team-stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.team-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.team-stat.pending .team-stat-value {
+    color: var(--warning);
+}
+
+.team-stat.completed .team-stat-value {
+    color: var(--success);
+}
+
+.team-progress {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), #34d399);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
