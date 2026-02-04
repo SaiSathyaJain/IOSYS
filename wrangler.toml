@@ -6,3 +6,12 @@ main = "worker/src/spa.js"
 directory = "./dist"
 binding = "ASSETS"
 
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "inward-outward-db"
+database_id = "65cdca58-f391-42fd-b314-2bdf52aa6a19"
+
+[vars]
+ENVIRONMENT = "production"
+
