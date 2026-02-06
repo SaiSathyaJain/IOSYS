@@ -43,7 +43,7 @@ function Messages({ userType }) {
             if (teamUser) {
                 try {
                     const user = JSON.parse(teamUser);
-                    setUserEmail(user.email);
+                    setUserEmail(user.email.trim());
                     return;
                 } catch (e) {
                     console.error('Error parsing team user:', e);
@@ -115,11 +115,11 @@ function Messages({ userType }) {
         }
     };
 
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 5 seconds (faster for testing)
     useEffect(() => {
         if (userEmail) {
             loadMessages();
-            const interval = setInterval(() => loadMessages(true), 30000);
+            const interval = setInterval(() => loadMessages(true), 5000);
             return () => clearInterval(interval);
         }
     }, [userEmail]);
@@ -141,10 +141,11 @@ function Messages({ userType }) {
     // Handle identity submit
     const handleIdentitySubmit = (e) => {
         e.preventDefault();
-        if (identityEmail && identityEmail.includes('@')) {
-            const user = { email: identityEmail, type: 'team' };
+        const email = identityEmail.trim();
+        if (email && email.includes('@')) {
+            const user = { email: email, type: 'team' };
             localStorage.setItem('teamUser', JSON.stringify(user));
-            setUserEmail(identityEmail);
+            setUserEmail(email);
             setShowIdentityModal(false);
         }
     };

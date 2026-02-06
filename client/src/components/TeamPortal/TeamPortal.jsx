@@ -126,7 +126,7 @@ function TeamPortal() {
 
             // Save user email to localStorage for Messages access
             if (formData.teamMemberEmail) {
-                const user = { email: formData.teamMemberEmail, type: 'team' };
+                const user = { email: formData.teamMemberEmail.trim(), type: 'team' };
                 localStorage.setItem('teamUser', JSON.stringify(user));
             }
 
