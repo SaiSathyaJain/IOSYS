@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Plus, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { messagesAPI } from '../../services/api';
 import MessagesList from './MessagesList';
 import MessageDetail from './MessageDetail';
 import MessageCompose from './MessageCompose';
-import ContextPanel from './ContextPanel';
 import './Messages.css';
 
 function Messages({ userType }) {
@@ -94,6 +93,14 @@ function Messages({ userType }) {
     useEffect(() => {
         const grouped = groupMessagesBySubject(messages);
         setConversations(grouped);
+
+        // Update selected conversation if it exists
+        if (selectedConversation) {
+            const updated = grouped.find(c => c.subject === selectedConversation.subject);
+            if (updated) {
+                setSelectedConversation(updated);
+            }
+        }
     }, [messages]);
 
     // Handle compose with optional pre-filled data
@@ -121,7 +128,8 @@ function Messages({ userType }) {
             const search = searchTerm.toLowerCase();
             const subjectMatch = conv.subject.toLowerCase().includes(search);
             const senderMatch = conv.lastMessage.fromEmail.toLowerCase().includes(search);
-            if (!subjectMatch && !senderMatch) return false;
+            const bodyMatch = conv.lastMessage.body?.toLowerCase().includes(search);
+            if (!subjectMatch && !senderMatch && !bodyMatch) return false;
         }
 
         // Unread filter
@@ -138,69 +146,49 @@ function Messages({ userType }) {
         return true;
     });
 
-    return (
-        <div className="messages-page animate-fade">
-            {/* Header */}
-            <div className="messages-header">
-                <h2 className="page-title">Messages</h2>
-                <div className="messages-actions">
-                    <button
-                        className="btn btn-icon-only"
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        title="Refresh messages"
-                    >
-                        <RefreshCw size={18} className={refreshing ? 'spin' : ''} />
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => handleCompose()}
-                    >
-                        <Plus size={18} /> Compose
-                    </button>
-                </div>
-            </div>
-
-            {/* Main Content */}
-            {loading ? (
+    if (loading) {
+        return (
+            <div className="messages-page">
                 <div className="loading-state">
-                    <Loader2 size={40} className="spin" />
+                    <Loader2 size={48} className="spin" />
                     <p>Loading messages...</p>
                 </div>
-            ) : (
-                <div className="messages-container">
-                    {/* Conversations List */}
-                    <MessagesList
-                        conversations={filteredConversations}
-                        selectedConversation={selectedConversation}
-                        onSelectConversation={setSelectedConversation}
-                        searchTerm={searchTerm}
-                        onSearchChange={setSearchTerm}
-                        filterUnread={filterUnread}
-                        onFilterUnreadChange={setFilterUnread}
-                        filterTeam={filterTeam}
-                        onFilterTeamChange={setFilterTeam}
-                        userType={userType}
-                        userEmail={userEmail}
-                    />
+            </div>
+        );
+    }
 
-                    {/* Message Detail */}
-                    <MessageDetail
-                        conversation={selectedConversation}
-                        userEmail={userEmail}
-                        onReply={handleCompose}
-                        onMessagesUpdate={loadMessages}
-                    />
+    return (
+        <div className="messages-page">
+            {/* Main Content - Two Panel Layout */}
+            <div className="messages-container">
+                {/* Left Panel - Conversations List */}
+                <MessagesList
+                    conversations={filteredConversations}
+                    selectedConversation={selectedConversation}
+                    onSelectConversation={setSelectedConversation}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    filterUnread={filterUnread}
+                    onFilterUnreadChange={setFilterUnread}
+                    filterTeam={filterTeam}
+                    onFilterTeamChange={setFilterTeam}
+                    userType={userType}
+                    userEmail={userEmail}
+                    onCompose={() => handleCompose()}
+                    onRefresh={handleRefresh}
+                    refreshing={refreshing}
+                />
 
-                    {/* Context Panel */}
-                    <ContextPanel
-                        relatedType={selectedConversation?.lastMessage?.relatedType}
-                        relatedId={selectedConversation?.lastMessage?.relatedId}
-                    />
-                </div>
-            )}
+                {/* Right Panel - Message Detail */}
+                <MessageDetail
+                    conversation={selectedConversation}
+                    userEmail={userEmail}
+                    onReply={handleCompose}
+                    onMessagesUpdate={loadMessages}
+                />
+            </div>
 
-            {/* Compose Modal */}
+            {/* Compose Modal - For new conversations only */}
             {showCompose && (
                 <MessageCompose
                     userType={userType}

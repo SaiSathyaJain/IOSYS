@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Send, Loader2, AlertCircle } from 'lucide-react';
-import { messagesAPI, inwardAPI, outwardAPI } from '../../services/api';
+import { X, Send, Loader2, AlertCircle, Link2 } from 'lucide-react';
+import { messagesAPI, inwardAPI } from '../../services/api';
 
 function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
     const TEAM_EMAILS = {
@@ -8,6 +8,8 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
         'PG/PRO': 'saisathyajain@sssihl.edu.in',
         'PhD': 'results@sssihl.edu.in'
     };
+
+    const ADMIN_EMAIL = 'admin@sssihl.edu.in';
 
     const [formData, setFormData] = useState({
         toEmail: '',
@@ -30,8 +32,11 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
                 relatedType: initialData.relatedType || null,
                 relatedId: initialData.relatedId || null
             });
+        } else if (userType !== 'admin') {
+            // For team members, default to admin email
+            setFormData(prev => ({ ...prev, toEmail: ADMIN_EMAIL }));
         }
-    }, [initialData]);
+    }, [initialData, userType]);
 
     // Load entries for linking
     useEffect(() => {
@@ -39,7 +44,7 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
             try {
                 const res = await inwardAPI.getAll();
                 if (res.data.success) {
-                    setEntries((res.data.entries || []).slice(0, 20)); // Limit to recent 20
+                    setEntries((res.data.entries || []).slice(0, 20));
                 }
             } catch (err) {
                 console.error('Error loading entries:', err);
@@ -97,7 +102,6 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
             setError('Please enter a message');
             return false;
         }
-        // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.toEmail)) {
             setError('Please enter a valid email address');
@@ -124,7 +128,6 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
                 relatedId: formData.relatedId
             });
 
-            // Success
             onSent();
         } catch (err) {
             console.error('Error sending message:', err);
@@ -137,7 +140,7 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal compose-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h3>Compose Message</h3>
+                    <h3>New Message</h3>
                     <button className="btn-close" onClick={onClose}>
                         <X size={20} />
                     </button>
@@ -152,8 +155,9 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
                             </div>
                         )}
 
+                        {/* Recipient */}
                         <div className="form-group">
-                            <label className="form-label">To: *</label>
+                            <label className="form-label">To</label>
                             {userType === 'admin' ? (
                                 <div className="grid-2">
                                     <select
@@ -170,7 +174,7 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
                                         type="email"
                                         name="toEmail"
                                         className="form-input"
-                                        placeholder="or enter email directly"
+                                        placeholder="or enter email"
                                         value={formData.toEmail}
                                         onChange={handleChange}
                                         required
@@ -185,13 +189,13 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
                                     onChange={handleChange}
                                     placeholder="Admin email"
                                     required
-                                    readOnly={!!initialData?.toEmail}
                                 />
                             )}
                         </div>
 
+                        {/* Subject */}
                         <div className="form-group">
-                            <label className="form-label">Subject: *</label>
+                            <label className="form-label">Subject</label>
                             <input
                                 type="text"
                                 name="subject"
@@ -203,8 +207,12 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
                             />
                         </div>
 
+                        {/* Link to Entry */}
                         <div className="form-group">
-                            <label className="form-label">Link to Entry (Optional):</label>
+                            <label className="form-label">
+                                <Link2 size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                                Link to Entry (Optional)
+                            </label>
                             <select
                                 className="form-select"
                                 onChange={handleEntryLink}
@@ -223,15 +231,16 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
                             </select>
                         </div>
 
+                        {/* Message */}
                         <div className="form-group">
-                            <label className="form-label">Message: *</label>
+                            <label className="form-label">Message</label>
                             <textarea
                                 name="body"
                                 className="form-textarea"
                                 placeholder="Type your message here..."
                                 value={formData.body}
                                 onChange={handleChange}
-                                rows="8"
+                                rows="6"
                                 required
                             />
                         </div>
@@ -259,7 +268,7 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
                             ) : (
                                 <>
                                     <Send size={18} />
-                                    Send Message
+                                    Send
                                 </>
                             )}
                         </button>
