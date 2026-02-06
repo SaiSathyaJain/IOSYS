@@ -2,8 +2,8 @@ name = "iosys"
 compatibility_date = "2026-02-04"
 pages_build_output_dir = "./dist"
 
-# Worker script
-main = "worker/src/spa.js"
+# Worker script (Managed via _worker.js in dist)
+# main = "worker/src/spa.js"
 
 # D1 Database binding
 [[d1_databases]]

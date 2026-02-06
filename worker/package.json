@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "build": "esbuild src/spa.js --bundle --format=esm --outfile=../dist/_worker.js --platform=neutral --external:cloudflare:workers",
     "db:migrate:local": "wrangler d1 execute inward-outward-db --local --file=./migrations/0001_init.sql",
     "db:migrate": "wrangler d1 execute inward-outward-db --file=./migrations/0001_init.sql",
     "db:query": "wrangler d1 execute inward-outward-db --local --command"

@@ -6,7 +6,7 @@
         "worker"
     ],
     "scripts": {
-        "build": "npm run build --workspace=client",
+        "build": "npm run build --workspace=client && npm run build --workspace=worker",
         "build:worker": "npm run deploy --workspace=worker",
         "install:all": "npm install"
     },
