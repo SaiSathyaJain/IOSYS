@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Particles from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
 import { Shield, Users, ArrowRight, Bell, Mail, ChevronDown, Moon, Sun } from 'lucide-react';
@@ -7,6 +7,7 @@ import { notificationsAPI, messagesAPI } from '../../services/api';
 import './LandingPage.css';
 
 function LandingPage() {
+    const navigate = useNavigate();
     const [userPhoto, setUserPhoto] = useState(null);
     const [userEmail, setUserEmail] = useState('');
     const [isDarkMode, setIsDarkMode] = useState(true);
@@ -94,23 +95,37 @@ function LandingPage() {
         return `${Math.floor(seconds / 86400)} days ago`;
     };
 
-    // Mark notification as read
+    // Mark notification as read and navigate to portal
     const handleNotificationClick = async (id) => {
         try {
             await notificationsAPI.markAsRead(id);
             setNotifications(prev => prev.map(n => n.id === id ? {...n, isRead: 1} : n));
             setNotificationCount(prev => Math.max(0, prev - 1));
+
+            // Navigate based on user type
+            const isAdmin = localStorage.getItem('adminAuth') === 'true';
+            navigate(isAdmin ? '/admin' : '/team');
+
+            // Close the dropdown
+            setShowNotifications(false);
         } catch (error) {
             console.error('Error marking notification as read:', error);
         }
     };
 
-    // Mark message as read
+    // Mark message as read and navigate to messages page
     const handleMessageClick = async (id) => {
         try {
             await messagesAPI.markAsRead(id);
             setMessages(prev => prev.map(m => m.id === id ? {...m, isRead: 1} : m));
             setMessageCount(prev => Math.max(0, prev - 1));
+
+            // Navigate to messages page based on user type
+            const isAdmin = localStorage.getItem('adminAuth') === 'true';
+            navigate(isAdmin ? '/admin/messages' : '/team/messages');
+
+            // Close the dropdown
+            setShowMessages(false);
         } catch (error) {
             console.error('Error marking message as read:', error);
         }
@@ -203,7 +218,12 @@ function LandingPage() {
                                     )}
                                 </div>
                                 <div className="dropdown-footer">
-                                    <Link to="/messages" className="btn-link">View all messages</Link>
+                                    <Link
+                                        to={localStorage.getItem('adminAuth') === 'true' ? '/admin/messages' : '/team/messages'}
+                                        className="btn-link"
+                                    >
+                                        View all messages
+                                    </Link>
                                 </div>
                             </div>
                         )}
@@ -243,7 +263,12 @@ function LandingPage() {
                                     )}
                                 </div>
                                 <div className="dropdown-footer">
-                                    <Link to="/notifications" className="btn-link">View all notifications</Link>
+                                    <Link
+                                        to={localStorage.getItem('adminAuth') === 'true' ? '/admin' : '/team'}
+                                        className="btn-link"
+                                    >
+                                        View all notifications
+                                    </Link>
                                 </div>
                             </div>
                         )}
