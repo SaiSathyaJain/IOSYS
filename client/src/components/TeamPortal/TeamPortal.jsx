@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { outwardAPI, inwardAPI, dashboardAPI } from '../../services/api';
 import {
     Clock, CheckCircle, ArrowRight, AlertCircle, Calendar, Plus, X,
     ClipboardList, Check, FileText, Search, RefreshCw, Eye, Send,
-    ArrowUpFromLine, Hourglass, Loader2, AlertTriangle, Link2, Lock
+    ArrowUpFromLine, Hourglass, Loader2, AlertTriangle, Link2, Lock, Mail
 } from 'lucide-react';
 import './TeamPortal.css';
 
 function TeamPortal() {
+    const navigate = useNavigate();
     const [entries, setEntries] = useState([]);
     const [filteredEntries, setFilteredEntries] = useState([]);
     const [pendingInward, setPendingInward] = useState([]);
@@ -305,6 +307,9 @@ function TeamPortal() {
                                         <option value="Pending">Pending</option>
                                         <option value="In Progress">In Progress</option>
                                     </select>
+                                    <button className="btn btn-secondary btn-sm btn-icon-text" onClick={() => navigate('/team/messages')} title="Message Admin">
+                                        <Mail size={14} />
+                                    </button>
                                     <button className="btn btn-primary btn-sm" onClick={() => handleProcess(entry)}>
                                         Process <ArrowRight size={14} />
                                     </button>

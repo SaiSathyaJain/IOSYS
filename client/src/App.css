@@ -107,6 +107,22 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  position: relative;
+}
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.35rem;
+  border-radius: 9px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 0.25rem;
 }
 
 .divider-vertical {

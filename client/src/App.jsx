@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
-import { LayoutDashboard, FileText, Send, Moon, Sun, Menu, X, Home, Lock } from 'lucide-react';
+import { LayoutDashboard, FileText, Send, Moon, Sun, Menu, X, Home, Lock, Mail } from 'lucide-react';
 import Particles from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
 import AdminPortal from './components/AdminPortal/AdminPortal';
 import TeamPortal from './components/TeamPortal/TeamPortal';
 import Dashboard from './components/Dashboard/Dashboard';
 import LandingPage from './components/LandingPage/LandingPage';
+import Messages from './components/Messages/Messages';
+import { messagesAPI } from './services/api';
 import './App.css';
 
 function NavLink({ to, icon: Icon, children }) {
@@ -88,6 +90,7 @@ function Layout({ children, type = 'main' }) {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   const particlesInit = useCallback(async engine => {
     await loadSlim(engine);
@@ -113,6 +116,29 @@ function Layout({ children, type = 'main' }) {
     document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
+
+  useEffect(() => {
+    // Fetch unread message count
+    const fetchUnreadCount = async () => {
+      try {
+        const adminUser = localStorage.getItem('adminUser');
+        if (adminUser) {
+          const user = JSON.parse(adminUser);
+          const result = await messagesAPI.getUnreadCount(user.email);
+          setUnreadMessageCount(result.count || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching unread message count:', error);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchUnreadCount();
+      // Poll every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
@@ -205,11 +231,25 @@ function Layout({ children, type = 'main' }) {
             <>
               <NavLink to="/admin" icon={LayoutDashboard}>Dashboard</NavLink>
               <NavLink to="/admin/entries" icon={FileText}>Entries</NavLink>
+              <NavLink to="/admin/messages" icon={Mail}>
+                Messages
+                {unreadMessageCount > 0 && (
+                  <span className="nav-badge">{unreadMessageCount}</span>
+                )}
+              </NavLink>
             </>
           )}
 
           {type === 'team' && (
-            <NavLink to="/team" icon={Send}>Assignments</NavLink>
+            <>
+              <NavLink to="/team" icon={Send}>Assignments</NavLink>
+              <NavLink to="/team/messages" icon={Mail}>
+                Messages
+                {unreadMessageCount > 0 && (
+                  <span className="nav-badge">{unreadMessageCount}</span>
+                )}
+              </NavLink>
+            </>
           )}
 
           {type !== 'main' && (
@@ -244,12 +284,26 @@ function Layout({ children, type = 'main' }) {
               <Link to="/admin/entries" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 <FileText size={20} /> Entries
               </Link>
+              <Link to="/admin/messages" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                <Mail size={20} /> Messages
+                {unreadMessageCount > 0 && (
+                  <span className="nav-badge">{unreadMessageCount}</span>
+                )}
+              </Link>
             </>
           )}
           {type === 'team' && (
-            <Link to="/team" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
-              <Send size={20} /> Assignments
-            </Link>
+            <>
+              <Link to="/team" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                <Send size={20} /> Assignments
+              </Link>
+              <Link to="/team/messages" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                <Mail size={20} /> Messages
+                {unreadMessageCount > 0 && (
+                  <span className="nav-badge">{unreadMessageCount}</span>
+                )}
+              </Link>
+            </>
           )}
           <Link to="/" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
             <Home size={20} /> Home
@@ -276,7 +330,9 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/admin" element={<Layout type="admin"><Dashboard /></Layout>} />
         <Route path="/admin/entries" element={<Layout type="admin"><AdminPortal /></Layout>} />
+        <Route path="/admin/messages" element={<Layout type="admin"><Messages userType="admin" /></Layout>} />
         <Route path="/team" element={<Layout type="team"><TeamPortal /></Layout>} />
+        <Route path="/team/messages" element={<Layout type="team"><Messages userType="team" /></Layout>} />
       </Routes>
     </Router>
   );
