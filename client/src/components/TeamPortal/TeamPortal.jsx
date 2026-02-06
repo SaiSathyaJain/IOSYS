@@ -53,9 +53,9 @@ function TeamPortal() {
                 outwardAPI.getAll(selectedTeam),
                 inwardAPI.getAll()
             ]);
-            setEntries(outwardRes.data.entries);
+            setEntries(outwardRes.data.entries || []);
 
-            const pending = inwardRes.data.entries.filter(e => {
+            const pending = (inwardRes.data.entries || []).filter(e => {
                 const matchesTeam = !selectedTeam || e.assignedTeam === selectedTeam;
                 const matchesStatus = e.assignmentStatus === 'Pending' || e.assignmentStatus === 'In Progress';
                 return e.assignedTeam && matchesTeam && matchesStatus;
@@ -65,11 +65,12 @@ function TeamPortal() {
             // Load team stats if team selected
             if (selectedTeam) {
                 const statsRes = await dashboardAPI.getTeamStats(selectedTeam);
-                setTeamStats(statsRes.data.stats);
+                setTeamStats(statsRes.data.stats || {});
             } else {
                 const statsRes = await dashboardAPI.getStats();
+                const stats = statsRes.data.stats || {};
                 setTeamStats({
-                    totalAssigned: statsRes.data.stats.pendingWork + statsRes.data.stats.completedWork,
+                    totalAssigned: (stats.pendingWork || 0) + (stats.completedWork || 0),
                     pending: statsRes.data.stats.pendingWork,
                     completed: statsRes.data.stats.completedWork,
                     totalOutward: statsRes.data.stats.totalOutward

@@ -35,6 +35,7 @@ function Messages({ userType }) {
 
     // Group messages by subject (conversation threading)
     const groupMessagesBySubject = (msgs) => {
+        if (!Array.isArray(msgs)) return [];
         const threads = {};
         msgs.forEach(msg => {
             // Normalize subject (remove "Re: " prefix)
@@ -72,7 +73,7 @@ function Messages({ userType }) {
 
             const res = await messagesAPI.getAll(userEmail);
             if (res.data.success) {
-                setMessages(res.data.messages);
+                setMessages(res.data.messages || []);
             }
         } catch (error) {
             console.error('Error loading messages:', error);

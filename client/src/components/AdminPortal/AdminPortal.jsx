@@ -58,8 +58,8 @@ function AdminPortal() {
                 inwardAPI.getAll(),
                 dashboardAPI.getStats()
             ]);
-            setEntries(entriesRes.data.entries);
-            setStats(statsRes.data.stats);
+            setEntries(entriesRes.data.entries || []);
+            setStats(statsRes.data.stats || {});
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {

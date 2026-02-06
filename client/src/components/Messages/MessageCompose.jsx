@@ -39,7 +39,7 @@ function MessageCompose({ userType, userEmail, initialData, onClose, onSent }) {
             try {
                 const res = await inwardAPI.getAll();
                 if (res.data.success) {
-                    setEntries(res.data.entries.slice(0, 20)); // Limit to recent 20
+                    setEntries((res.data.entries || []).slice(0, 20)); // Limit to recent 20
                 }
             } catch (err) {
                 console.error('Error loading entries:', err);
