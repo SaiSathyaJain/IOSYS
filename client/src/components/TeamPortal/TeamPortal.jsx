@@ -71,9 +71,9 @@ function TeamPortal() {
                 const stats = statsRes.data.stats || {};
                 setTeamStats({
                     totalAssigned: (stats.pendingWork || 0) + (stats.completedWork || 0),
-                    pending: statsRes.data.stats.pendingWork,
-                    completed: statsRes.data.stats.completedWork,
-                    totalOutward: statsRes.data.stats.totalOutward
+                    pending: stats.pendingWork || 0,
+                    completed: stats.completedWork || 0,
+                    totalOutward: stats.totalOutward || 0
                 });
             }
         } catch (error) {

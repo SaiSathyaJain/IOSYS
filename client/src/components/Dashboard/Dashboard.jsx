@@ -28,8 +28,8 @@ function Dashboard() {
                 dashboardAPI.getStats(),
                 dashboardAPI.getAllTeams()
             ]);
-            setStats(statsRes.data.stats);
-            setTeamStats(teamsRes.data.teamStats);
+            setStats(statsRes.data.stats || {});
+            setTeamStats(teamsRes.data.teamStats || []);
         } catch (error) {
             console.error('Error loading dashboard:', error);
         } finally {
@@ -47,12 +47,12 @@ function Dashboard() {
                 outwardAPI.getAll(teamName)
             ]);
 
-            setTeamDetail(detailRes.data.stats);
+            setTeamDetail(detailRes.data.stats || {});
 
             // Filter inward entries for this team
-            const teamInward = inwardRes.data.entries.filter(e => e.assignedTeam === teamName);
+            const teamInward = (inwardRes.data.entries || []).filter(e => e.assignedTeam === teamName);
             setTeamEntries(teamInward);
-            setTeamOutward(outwardRes.data.entries);
+            setTeamOutward(outwardRes.data.entries || []);
         } catch (error) {
             console.error('Error loading team detail:', error);
         } finally {
