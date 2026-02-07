@@ -154,7 +154,7 @@ function Layout({ children, type = 'main' }) {
         <nav className="navbar">
           <div className="nav-brand">
             <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div className="brand-logo">IO</div>
+              <img src="/sssihl-icon.jpg" alt="SSSIHL Logo" className="brand-logo-img" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
               <h1>Admin Portal</h1>
             </Link>
           </div>

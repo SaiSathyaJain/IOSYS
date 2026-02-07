@@ -145,7 +145,7 @@ function LandingPage() {
             {/* Top Navbar overlay */}
             <div className="space-navbar">
                 <div className="space-brand">
-                    <div className="brand-icon">IO</div>
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL Logo" style={{ width: '35px', height: '35px', borderRadius: '8px', objectFit: 'cover' }} />
                     <span>Inward/Outward</span>
                 </div>
                 <div className="space-actions">
@@ -212,7 +212,7 @@ function LandingPage() {
 
             <div className="space-content animate-fade">
                 <div className="space-header">
-                    <img src="/IO_SYS_LOGO.png" alt="Inward/Outward System" className="landing-logo" />
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL - Inward/Outward System" className="landing-logo" />
                     <p>Please select your portal to continue.</p>
                 </div>
 
