@@ -75,25 +75,26 @@
 
 .stat-card:hover {
     border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: var(--glow);
 }
 
 .stat-card.total:hover {
-    box-shadow: none;
+    box-shadow: var(--glow);
     border-color: rgba(var(--primary-rgb), 0.4);
 }
 
 .stat-card.pending:hover {
-    box-shadow: none;
+    box-shadow: var(--glow);
     border-color: rgba(212, 147, 10, 0.4);
 }
 
 .stat-card.completed:hover {
-    box-shadow: none;
+    box-shadow: var(--glow);
     border-color: rgba(52, 160, 119, 0.4);
 }
 
 .stat-card.outward:hover {
-    box-shadow: none;
+    box-shadow: var(--glow);
     border-color: rgba(59, 130, 246, 0.4);
 }
 
@@ -244,7 +245,7 @@
 .team-card:hover {
     border-color: rgba(var(--primary-rgb), 0.5);
     background: rgba(var(--primary-rgb), 0.04);
-    box-shadow: none;
+    box-shadow: var(--glow);
 }
 
 .team-card:active {

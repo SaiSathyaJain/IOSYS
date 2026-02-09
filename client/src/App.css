@@ -13,6 +13,10 @@
   --shadow-lg: 0 2px 6px 0 rgb(0 0 0 / 0.08);
   --transition-speed: 120ms;
   --press-scale: 0.98;
+
+  /* Glow Effects */
+  --glow-light: 0 0 20px rgba(91, 124, 255, 0.25);
+  --glow-light-hover: 0 0 24px rgba(91, 124, 255, 0.35);
 }
 
 /* Light Theme */
@@ -27,6 +31,8 @@
   --primary: #5B7CFF;
   --primary-hover: #4A6AE8;
   --primary-rgb: 91, 124, 255;
+  --glow: var(--glow-light);
+  --glow-hover: var(--glow-light-hover);
 }
 
 /* Dark Theme */
@@ -41,6 +47,8 @@
   --primary: #6B86FF;
   --primary-hover: #5A74E8;
   --primary-rgb: 107, 134, 255;
+  --glow: 0 0 20px rgba(107, 134, 255, 0.4);
+  --glow-hover: 0 0 28px rgba(107, 134, 255, 0.5);
 }
 
 * {
@@ -570,10 +578,13 @@ option {
   background-color: var(--primary);
   color: white;
   box-shadow: none;
+  transition: all var(--transition-speed) ease;
 }
 
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-primary:focus {
   background-color: var(--primary-hover);
+  box-shadow: var(--glow-hover);
 }
 
 .btn-primary:active {

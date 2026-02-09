@@ -82,6 +82,7 @@
 
 .stat-card:hover {
     border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: var(--glow);
 }
 
 .stat-card:active {
@@ -89,22 +90,22 @@
 }
 
 .stat-card.total:hover {
-    box-shadow: none;
+    box-shadow: var(--glow);
     border-color: rgba(var(--primary-rgb), 0.4);
 }
 
 .stat-card.pending:hover {
-    box-shadow: none;
+    box-shadow: var(--glow);
     border-color: rgba(245, 158, 11, 0.4);
 }
 
 .stat-card.completed:hover {
-    box-shadow: none;
+    box-shadow: var(--glow);
     border-color: rgba(16, 185, 129, 0.4);
 }
 
 .stat-card.unassigned:hover {
-    box-shadow: none;
+    box-shadow: var(--glow);
     border-color: rgba(239, 68, 68, 0.4);
 }
 
@@ -265,7 +266,7 @@
 }
 
 .card:hover {
-    box-shadow: none;
+    box-shadow: var(--glow);
     border-color: rgba(255, 255, 255, 0.15);
 }
 
