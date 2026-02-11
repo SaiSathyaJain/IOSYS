@@ -11,7 +11,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #080b14;
+    background: #F6F6F7;
     animation: intro-in 0.5s ease both;
 }
 
@@ -35,7 +35,7 @@
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse 60% 50% at 50% 50%, rgba(91, 124, 255, 0.18) 0%, transparent 70%);
+        radial-gradient(ellipse 60% 50% at 50% 50%, rgba(91, 124, 255, 0.12) 0%, transparent 70%);
     animation: intro-glow-pulse 2s ease-in-out infinite alternate;
     pointer-events: none;
 }
@@ -73,21 +73,21 @@
 .intro-ring {
     position: absolute;
     border-radius: 50%;
-    border: 1px solid rgba(91, 124, 255, 0.3);
+    border: 1.5px solid rgba(91, 124, 255, 0.25);
     animation: intro-ring-expand 2s ease-out infinite;
     pointer-events: none;
 }
 
 .intro-ring-1 {
-    width: 260px;
-    height: 260px;
+    width: 400px;
+    height: 400px;
     animation-delay: 0s;
 }
 
 .intro-ring-2 {
-    width: 340px;
-    height: 340px;
-    border-color: rgba(91, 124, 255, 0.15);
+    width: 520px;
+    height: 520px;
+    border-color: rgba(91, 124, 255, 0.12);
     animation-delay: 0.5s;
 }
 
@@ -99,17 +99,17 @@
 
 /* Logo image */
 .intro-logo {
-    width: 480px;
-    max-width: 80vw;
+    width: 720px;
+    max-width: 88vw;
     height: auto;
     object-fit: contain;
-    filter: drop-shadow(0 0 32px rgba(91, 124, 255, 0.35));
+    filter: drop-shadow(0 4px 24px rgba(91, 124, 255, 0.2));
     animation: intro-logo-glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes intro-logo-glow {
-    from { filter: drop-shadow(0 0 20px rgba(91, 124, 255, 0.3)); }
-    to   { filter: drop-shadow(0 0 40px rgba(91, 124, 255, 0.55)); }
+    from { filter: drop-shadow(0 4px 16px rgba(91, 124, 255, 0.15)); }
+    to   { filter: drop-shadow(0 4px 32px rgba(91, 124, 255, 0.35)); }
 }
 
 /* Tagline */
@@ -118,7 +118,7 @@
     font-weight: 400;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: rgba(148, 163, 184, 0.8);
+    color: rgba(71, 85, 105, 0.85);
     animation: intro-tagline-in 0.6s ease 0.5s both;
 }
 
@@ -131,7 +131,7 @@
 .intro-bar-track {
     width: 200px;
     height: 2px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(91, 124, 255, 0.15);
     border-radius: 2px;
     overflow: hidden;
 }
