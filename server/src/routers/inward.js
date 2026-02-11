@@ -76,7 +76,7 @@ inwardRouter.post('/', async (c) => {
                 sendAssignmentNotification({
                     id, inwardNo, subject, particularsFromWhom,
                     assignedTeam, assignedToEmail, assignmentInstructions, dueDate
-                }).catch(err => console.error('Notification error:', err))
+                }, c.env).catch(err => console.error('Notification error:', err))
             );
         }
 
@@ -122,7 +122,7 @@ inwardRouter.put('/:id/assign', async (c) => {
             sendAssignmentNotification({
                 ...toCamelCase(existing),
                 assignedTeam, assignedToEmail, assignmentInstructions, dueDate
-            }).catch(err => console.error('Notification error:', err))
+            }, c.env).catch(err => console.error('Notification error:', err))
         );
 
         return c.json({

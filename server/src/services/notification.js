@@ -4,15 +4,6 @@ import nodemailer from 'nodemailer';
 const EMAIL_USER = process.env.email_user || process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.email_pass || process.env.EMAIL_PASS;
 
-function createTransporter() {
-    if (!EMAIL_USER || !EMAIL_PASS) {
-        throw new Error('Email credentials not configured. Set email_user and email_pass in .env');
-    }
-    return nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user: EMAIL_USER, pass: EMAIL_PASS }
-    });
-}
 
 function formatDate(val) {
     if (!val) return '—';
@@ -108,20 +99,27 @@ function buildHtml({ inwardNo, subject, particularsFromWhom, assignedTeam, dueDa
 </html>`;
 }
 
-export async function sendAssignmentNotification(entryData) {
+export async function sendAssignmentNotification(entryData, env = {}) {
     const { assignedToEmail, subject, inwardNo } = entryData;
+
+    // Resolve credentials: CF Worker env bindings take priority, then process.env fallback
+    const emailUser = env.email_user || env.EMAIL_USER || EMAIL_USER;
+    const emailPass = env.email_pass || env.EMAIL_PASS || EMAIL_PASS;
 
     if (!assignedToEmail) return;
 
-    if (!EMAIL_USER || !EMAIL_PASS) {
+    if (!emailUser || !emailPass) {
         console.warn('⚠️  Email credentials missing — skipping notification for', inwardNo);
         return;
     }
 
     try {
-        const transporter = createTransporter();
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user: emailUser, pass: emailPass }
+        });
         await transporter.sendMail({
-            from: `"SSSIHL Inward/Outward System" <${EMAIL_USER}>`,
+            from: `"SSSIHL Inward/Outward System" <${emailUser}>`,
             to: assignedToEmail,
             subject: `[${inwardNo}] New Assignment: ${subject}`,
             html: buildHtml(entryData),
