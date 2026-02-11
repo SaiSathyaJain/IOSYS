@@ -94,22 +94,18 @@ app.post('/', async (c) => {
     });
 
     if (assignedTeam && assignedToEmail) {
-      if (c.env.EMAIL_API_KEY) {
-        try {
-          console.log('Attempting to send email to:', assignedToEmail);
-          notificationResult = await sendAssignmentNotification(c.env, {
-            id, inwardNo, subject, particularsFromWhom,
-            assignedTeam, assignedToEmail, assignmentInstructions, dueDate
-          });
-          console.log('Email result:', notificationResult);
-        } catch (notifyError) {
-          console.error('Notification error:', notifyError);
-          notificationResult = { success: false, error: notifyError.message };
-        }
-      } else {
-        console.log('EMAIL_API_KEY is missing in env');
-        notificationResult = { skipped: true, reason: 'EMAIL_API_KEY missing' };
-      }
+      // Use waitUntil to avoid blocking the response
+      c.executionCtx.waitUntil(
+        sendAssignmentNotification(c.env, {
+          id, inwardNo, subject, particularsFromWhom,
+          assignedTeam, assignedToEmail, assignmentInstructions, dueDate
+        }).then(res => {
+          console.log('Background email result:', res);
+        }).catch(err => {
+          console.error('Background email failed:', err);
+        })
+      );
+      notificationResult = { sent: 'in_background' };
     }
 
     return c.json({
@@ -159,23 +155,22 @@ app.put('/:id/assign', async (c) => {
     ).run();
 
     // Send notification
-    let notificationResult = { skipped: true, reason: 'EMAIL_API_KEY missing' };
+    let notificationResult = { skipped: true, reason: 'No email assigned' };
 
-    if (c.env.EMAIL_API_KEY) {
-      try {
-        console.log('Reassigning: Attempting to send email to:', assignedToEmail);
-        const entry = toCamelCase(existing);
-        notificationResult = await sendAssignmentNotification(c.env, {
+    if (assignedToEmail) {
+      // Use waitUntil to avoid blocking the response
+      const entry = toCamelCase(existing);
+      c.executionCtx.waitUntil(
+        sendAssignmentNotification(c.env, {
           ...entry,
           assignedTeam, assignedToEmail, assignmentInstructions, dueDate
-        });
-        console.log('Reassignment email result:', notificationResult);
-      } catch (notifyError) {
-        console.error('Notification error:', notifyError);
-        notificationResult = { success: false, error: notifyError.message };
-      }
-    } else {
-      console.log('EMAIL_API_KEY is missing in env during reassignment');
+        }).then(res => {
+          console.log('Background reassignment email result:', res);
+        }).catch(err => {
+          console.error('Background reassignment email failed:', err);
+        })
+      );
+      notificationResult = { sent: 'in_background' };
     }
 
     return c.json({
