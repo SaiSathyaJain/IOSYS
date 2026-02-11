@@ -8,6 +8,7 @@ import './LandingPage.css';
 function LandingPage() {
     const [userPhoto, setUserPhoto] = useState(null);
     const [isDarkMode, setIsDarkMode] = useState(true);
+    const [introPhase, setIntroPhase] = useState('visible'); // 'visible' | 'exiting' | 'done'
 
     const particlesInit = useCallback(async engine => {
         await loadSlim(engine);
@@ -28,6 +29,11 @@ function LandingPage() {
         if (savedTheme) {
             setIsDarkMode(savedTheme === 'dark');
         }
+
+        // Intro timing: start exit after 2.4s, remove after 3s
+        const exitTimer = setTimeout(() => setIntroPhase('exiting'), 2400);
+        const doneTimer = setTimeout(() => setIntroPhase('done'), 3000);
+        return () => { clearTimeout(exitTimer); clearTimeout(doneTimer); };
     }, []);
 
     useEffect(() => {
@@ -38,6 +44,24 @@ function LandingPage() {
 
     return (
         <div className={`space-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
+
+            {/* ── Intro Splash ── */}
+            {introPhase !== 'done' && (
+                <div className={`intro-overlay ${introPhase === 'exiting' ? 'intro-exit' : ''}`}>
+                    <div className="intro-bg-glow" />
+                    <div className="intro-content">
+                        <div className="intro-logo-wrap">
+                            <div className="intro-ring intro-ring-1" />
+                            <div className="intro-ring intro-ring-2" />
+                            <img src="/IO_SYS_LOGO.png" alt="IO System" className="intro-logo" />
+                        </div>
+                        <p className="intro-tagline">Inward / Outward Management System</p>
+                        <div className="intro-bar-track">
+                            <div className="intro-bar-fill" />
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Particles Background */}
             <Particles
                 id="tsparticles"
