@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { inwardAPI, dashboardAPI, outwardAPI } from '../../services/api';
 import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
@@ -348,8 +350,18 @@ function AdminPortal() {
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Date & Time *</label>
-                                        <input type="datetime-local" name="signReceiptDateTime" className="form-input"
-                                            value={formData.signReceiptDateTime} onChange={handleChange} required />
+                                        <DatePicker
+                                            selected={formData.signReceiptDateTime ? new Date(formData.signReceiptDateTime) : null}
+                                            onChange={(date) => setFormData(prev => ({ ...prev, signReceiptDateTime: date ? date.toISOString() : '' }))}
+                                            showTimeSelect
+                                            timeFormat="HH:mm"
+                                            timeIntervals={15}
+                                            dateFormat="dd MMM yyyy, HH:mm"
+                                            placeholderText="Select date & time"
+                                            className="form-input"
+                                            calendarClassName="ap-calendar"
+                                            required
+                                        />
                                     </div>
                                 </div>
 
