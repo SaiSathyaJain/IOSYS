@@ -1,10 +1,3 @@
-import nodemailer from 'nodemailer';
-
-// Support both lowercase (env.example) and uppercase env var names
-const EMAIL_USER = process.env.email_user || process.env.EMAIL_USER;
-const EMAIL_PASS = process.env.email_pass || process.env.EMAIL_PASS;
-
-
 function formatDate(val) {
     if (!val) return '—';
     try {
@@ -102,29 +95,36 @@ function buildHtml({ inwardNo, subject, particularsFromWhom, assignedTeam, dueDa
 export async function sendAssignmentNotification(entryData, env = {}) {
     const { assignedToEmail, subject, inwardNo } = entryData;
 
-    // Resolve credentials: CF Worker env bindings take priority, then process.env fallback
-    const emailUser = env.email_user || env.EMAIL_USER || EMAIL_USER;
-    const emailPass = env.email_pass || env.EMAIL_PASS || EMAIL_PASS;
+    const apiKey = env.RESEND_API_KEY || env.resend_api_key;
 
     if (!assignedToEmail) return;
 
-    if (!emailUser || !emailPass) {
-        console.warn('⚠️  Email credentials missing — skipping notification for', inwardNo);
+    if (!apiKey) {
+        console.warn('⚠️  RESEND_API_KEY missing — skipping notification for', inwardNo);
         return;
     }
 
     try {
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: { user: emailUser, pass: emailPass }
+        const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from: 'SSSIHL Inward/Outward System <onboarding@resend.dev>',
+                to: [assignedToEmail],
+                subject: `[${inwardNo}] New Assignment: ${subject}`,
+                html: buildHtml(entryData),
+                text: `New assignment: ${inwardNo} — ${subject}\nFrom: ${entryData.particularsFromWhom || ''}\nDue: ${formatDate(entryData.dueDate)}\nInstructions: ${entryData.assignmentInstructions || 'None'}`
+            })
         });
-        await transporter.sendMail({
-            from: `"SSSIHL Inward/Outward System" <${emailUser}>`,
-            to: assignedToEmail,
-            subject: `[${inwardNo}] New Assignment: ${subject}`,
-            html: buildHtml(entryData),
-            text: `New assignment: ${inwardNo} — ${subject}\nFrom: ${entryData.particularsFromWhom || ''}\nDue: ${formatDate(entryData.dueDate)}\nInstructions: ${entryData.assignmentInstructions || 'None'}`
-        });
+
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(`Resend API error ${res.status}: ${err}`);
+        }
+
         console.log(`✅ Email sent to ${assignedToEmail} for ${inwardNo}`);
     } catch (err) {
         console.error(`❌ Email failed for ${inwardNo}:`, err.message);
