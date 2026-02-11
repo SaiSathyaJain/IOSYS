@@ -326,7 +326,7 @@ function AdminPortal() {
             {/* Create Entry Modal */}
             {showForm && (
                 <div className="modal-overlay" onClick={() => { setShowForm(false); resetForm(); }}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
+                    <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3><Plus size={20} /> Create New Inward Entry</h3>
                             <button className="btn-close" onClick={() => { setShowForm(false); resetForm(); }}>
