@@ -255,8 +255,8 @@ function AdminPortal() {
                     <button className="btn btn-icon-only" onClick={loadData} disabled={loading} title="Refresh">
                         <RefreshCw size={18} className={loading ? 'spin' : ''} />
                     </button>
-                    <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-                        {showForm ? <><X size={18} /> Cancel</> : <><Plus size={18} /> New Entry</>}
+                    <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+                        <Plus size={18} /> New Entry
                     </button>
                 </div>
             </div>
@@ -323,81 +323,92 @@ function AdminPortal() {
                 </div>
             </div>
 
-            {/* Create Form */}
+            {/* Create Entry Modal */}
             {showForm && (
-                <div className="card form-card">
-                    <h3 className="card-title"><Plus size={20} /> Create New Inward Entry</h3>
-                    <form onSubmit={handleSubmit}>
-                        <div className="grid-2">
-                            <div className="form-group">
-                                <label className="form-label">Means *</label>
-                                <select name="means" className="form-select" value={formData.means} onChange={handleChange} required>
-                                    <option value="">Select...</option>
-                                    <option value="Post">Post</option>
-                                    <option value="Email">Email</option>
-                                    <option value="Hand Delivery">Hand Delivery</option>
-                                    <option value="Courier">Courier</option>
-                                </select>
+                <div className="modal-overlay" onClick={() => { setShowForm(false); resetForm(); }}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3><Plus size={20} /> Create New Inward Entry</h3>
+                            <button className="btn-close" onClick={() => { setShowForm(false); resetForm(); }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleSubmit}>
+                            <div className="modal-body">
+                                <div className="grid-2">
+                                    <div className="form-group">
+                                        <label className="form-label">Means *</label>
+                                        <select name="means" className="form-select" value={formData.means} onChange={handleChange} required>
+                                            <option value="">Select...</option>
+                                            <option value="Post">Post</option>
+                                            <option value="Email">Email</option>
+                                            <option value="Hand Delivery">Hand Delivery</option>
+                                            <option value="Courier">Courier</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Date & Time *</label>
+                                        <input type="datetime-local" name="signReceiptDateTime" className="form-input"
+                                            value={formData.signReceiptDateTime} onChange={handleChange} required />
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">From Whom *</label>
+                                    <input type="text" name="particularsFromWhom" className="form-input"
+                                        value={formData.particularsFromWhom} onChange={handleChange} required
+                                        placeholder="Name or organization" />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Subject *</label>
+                                    <input type="text" name="subject" className="form-input"
+                                        value={formData.subject} onChange={handleChange} required
+                                        placeholder="Brief description of the correspondence" />
+                                </div>
+
+                                <hr className="divider" />
+                                <h4 className="section-title"><ClipboardList size={20} /> Team Assignment</h4>
+
+                                <div className="grid-2">
+                                    <div className="form-group">
+                                        <label className="form-label">Assign to Team *</label>
+                                        <select name="assignedTeam" className="form-select" value={formData.assignedTeam} onChange={handleChange} required>
+                                            <option value="">Select Team...</option>
+                                            <option value="UG">UG Team</option>
+                                            <option value="PG/PRO">PG/PRO Team</option>
+                                            <option value="PhD">PhD Team</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Team Leader Email *</label>
+                                        <input type="email" name="assignedToEmail" className="form-input"
+                                            value={formData.assignedToEmail} onChange={handleChange} required
+                                            placeholder="Auto-filled based on team" />
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Due Date</label>
+                                    <input type="date" name="dueDate" className="form-input"
+                                        value={formData.dueDate} onChange={handleChange} />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Assignment Instructions</label>
+                                    <textarea name="assignmentInstructions" className="form-textarea"
+                                        value={formData.assignmentInstructions} onChange={handleChange}
+                                        placeholder="Special instructions for the team..." rows={3} />
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">Date & Time *</label>
-                                <input type="datetime-local" name="signReceiptDateTime" className="form-input"
-                                    value={formData.signReceiptDateTime} onChange={handleChange} required />
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">
+                                    <Check size={18} /> Create Entry
+                                </button>
                             </div>
-                        </div>
-
-                        <div className="form-group">
-                            <label className="form-label">From Whom *</label>
-                            <input type="text" name="particularsFromWhom" className="form-input"
-                                value={formData.particularsFromWhom} onChange={handleChange} required
-                                placeholder="Name or organization" />
-                        </div>
-
-                        <div className="form-group">
-                            <label className="form-label">Subject *</label>
-                            <input type="text" name="subject" className="form-input"
-                                value={formData.subject} onChange={handleChange} required
-                                placeholder="Brief description of the correspondence" />
-                        </div>
-
-                        <hr className="divider" />
-                        <h4 className="section-title"><ClipboardList size={20} /> Team Assignment</h4>
-
-                        <div className="grid-2">
-                            <div className="form-group">
-                                <label className="form-label">Assign to Team *</label>
-                                <select name="assignedTeam" className="form-select" value={formData.assignedTeam} onChange={handleChange} required>
-                                    <option value="">Select Team...</option>
-                                    <option value="UG">UG Team</option>
-                                    <option value="PG/PRO">PG/PRO Team</option>
-                                    <option value="PhD">PhD Team</option>
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Team Leader Email *</label>
-                                <input type="email" name="assignedToEmail" className="form-input"
-                                    value={formData.assignedToEmail} onChange={handleChange} required
-                                    placeholder="Auto-filled based on team" />
-                            </div>
-                        </div>
-
-                        <div className="form-group">
-                            <label className="form-label">Due Date</label>
-                            <input type="date" name="dueDate" className="form-input"
-                                value={formData.dueDate} onChange={handleChange} />
-                        </div>
-
-                        <div className="form-group">
-                            <label className="form-label">Assignment Instructions</label>
-                            <textarea name="assignmentInstructions" className="form-textarea"
-                                value={formData.assignmentInstructions} onChange={handleChange}
-                                placeholder="Special instructions for the team..." rows={3} />
-                        </div>
-
-                        <button type="submit" className="btn btn-primary btn-lg">
-                            <Check size={18} /> Create Entry
-                        </button>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             )}
 
