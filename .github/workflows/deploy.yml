@@ -14,7 +14,8 @@ jobs:
         with:
           node-version: 20
       - name: Install server dependencies
-        run: cd server && npm install
+        run: npm install
+        working-directory: server
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:
@@ -29,12 +30,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install and build
-        run: cd client && npm install && npm run build
+      - name: Install and build frontend
+        run: npm install && npm run build
+        working-directory: client
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy ../dist --project-name=inward-outward-client
-          workingDirectory: server
+          command: pages deploy dist --project-name=inward-outward-client
