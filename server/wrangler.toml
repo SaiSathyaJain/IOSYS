@@ -1,12 +1,13 @@
 name = "inward-outward-server"
 main = "src/worker.js"
 compatibility_date = "2024-02-03"
+account_id = "1966c03f4aadbbe46523c450e7c71c51"
 
 # D1 Database Binding
 [[d1_databases]]
 binding = "DB"
-database_name = "io-sys-db"
-database_id = "8ad96fad-2a1d-4452-973b-2dbed7417b62"
+database_name = "inward-outward-db"
+database_id = "65cdca58-f391-42fd-b314-2bdf52aa6a19"
 
 [vars]
 # Environment Variables (Secrets should be set via 'npx wrangler secret put ...')

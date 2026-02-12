@@ -1,107 +1,159 @@
-import nodemailer from 'nodemailer';
-
-export async function sendAssignmentNotification(entryData) {
-  const { assignedToEmail, subject, inwardNo } = entryData;
-
-  if (!assignedToEmail) return { skipped: true, reason: 'No recipient email' };
-
-  // Check for SMTP configuration
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-    console.log('SMTP not configured - logging email content only');
-    console.log(`📧 [MOCK EMAIL] To: ${assignedToEmail}`);
-    console.log(`Subject: New Assignment: ${subject} [${inwardNo}]`);
-    return { skipped: true, reason: 'SMTP configuration missing in .env' };
-  }
-
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-
-    const htmlContent = buildEmailHtml(entryData);
-
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"Inward/Outward System" <noreply@iosystem.com>',
-      to: assignedToEmail,
-      subject: `New Assignment: ${subject} [${inwardNo}]`,
-      html: htmlContent,
-    });
-
-    console.log(`Email sent: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
-
-  } catch (error) {
-    console.error('Email sending failed:', error);
-    return { success: false, error: error.message };
-  }
+function formatDate(val) {
+    if (!val) return '—';
+    try {
+        return new Date(val).toLocaleDateString('en-IN', {
+            day: '2-digit', month: 'short', year: 'numeric'
+        });
+    } catch {
+        return val;
+    }
 }
 
-function buildEmailHtml(entryData) {
-  const {
-    inwardNo, subject, particularsFromWhom,
-    assignedTeam, assignmentInstructions, dueDate
-  } = entryData;
-
-  const formattedDueDate = dueDate
-    ? new Date(dueDate).toLocaleDateString('en-IN', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    })
-    : 'Not specified';
-
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-        .content { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; }
-        .field { margin-bottom: 15px; }
-        .label { font-weight: bold; color: #4b5563; }
-        .value { color: #1f2937; margin-top: 5px; }
-        .due-date { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px; margin: 15px 0; }
-        .instructions { background: #e0f2fe; border-left: 4px solid #0ea5e9; padding: 10px; margin: 15px 0; }
-        .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280; border-radius: 0 0 8px 8px; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h2>New Assignment - ${assignedTeam} Team</h2>
-          <p>Inward No: ${inwardNo}</p>
-        </div>
-        <div class="content">
-          <div class="field">
-            <div class="label">Subject:</div>
-            <div class="value">${subject}</div>
-          </div>
-          <div class="field">
-            <div class="label">From:</div>
-            <div class="value">${particularsFromWhom}</div>
-          </div>
-          <div class="due-date">
-            <strong>Due Date:</strong> ${formattedDueDate}
-          </div>
-          ${assignmentInstructions ? `
-          <div class="instructions">
-            <strong>Instructions:</strong><br/>
-            ${assignmentInstructions}
-          </div>
-          ` : ''}
-          <p>Please coordinate with your team members to complete this task.</p>
-        </div>
-        <div class="footer">
-          <p>This is an automated notification from the Inward/Outward Management System</p>
-        </div>
+function buildHtml({ inwardNo, subject, particularsFromWhom, assignedTeam, dueDate, assignmentInstructions, signReceiptDateTime }) {
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    body { margin:0; padding:0; font-family: 'Segoe UI', Arial, sans-serif; background:#f4f6fb; color:#1e293b; }
+    .wrapper { max-width:580px; margin:32px auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08); }
+    .header { background:linear-gradient(135deg,#5B7CFF 0%,#7c9eff 100%); padding:28px 32px; }
+    .header h1 { margin:0; color:#fff; font-size:20px; font-weight:700; }
+    .header p { margin:6px 0 0; color:rgba(255,255,255,0.8); font-size:13px; }
+    .badge { display:inline-block; background:rgba(255,255,255,0.2); color:#fff; border-radius:20px; padding:3px 12px; font-size:12px; font-weight:600; margin-top:10px; }
+    .body { padding:28px 32px; }
+    .label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin-bottom:4px; }
+    .value { font-size:14px; color:#1e293b; margin-bottom:18px; line-height:1.5; }
+    .highlight { font-size:15px; font-weight:700; color:#5B7CFF; }
+    .divider { border:none; border-top:1px solid #e8edf5; margin:8px 0 20px; }
+    .section-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#5B7CFF; margin:0 0 14px; }
+    .row { display:flex; gap:24px; }
+    .col { flex:1; }
+    .instructions-box { background:#f4f7ff; border:1px solid #c7d2fe; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; line-height:1.6; }
+    .footer { background:#f8fafc; padding:18px 32px; border-top:1px solid #e8edf5; font-size:12px; color:#94a3b8; text-align:center; }
+    .footer strong { color:#64748b; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>📋 New Assignment</h1>
+    <p>You have been assigned an inward entry from the Inward/Outward Management System.</p>
+    <span class="badge">${inwardNo}</span>
+  </div>
+  <div class="body">
+    <p class="label">Subject</p>
+    <p class="value highlight">${subject}</p>
+    <div class="row">
+      <div class="col">
+        <p class="label">From</p>
+        <p class="value">${particularsFromWhom || '—'}</p>
       </div>
-    </body>
-    </html>
-  `;
+      <div class="col">
+        <p class="label">Received On</p>
+        <p class="value">${formatDate(signReceiptDateTime)}</p>
+      </div>
+    </div>
+    <hr class="divider"/>
+    <p class="section-title">Assignment Details</p>
+    <div class="row">
+      <div class="col">
+        <p class="label">Assigned Team</p>
+        <p class="value"><strong>${assignedTeam}</strong></p>
+      </div>
+      <div class="col">
+        <p class="label">Due Date</p>
+        <p class="value">${formatDate(dueDate)}</p>
+      </div>
+    </div>
+    ${assignmentInstructions ? `<p class="label">Instructions</p><div class="instructions-box">${assignmentInstructions}</div>` : ''}
+  </div>
+  <div class="footer">
+    <strong>SSSIHL Inward/Outward System</strong> &nbsp;·&nbsp; This is an automated notification. Please do not reply.
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+async function getGmailAccessToken(env) {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            client_id: env.GMAIL_CLIENT_ID,
+            client_secret: env.GMAIL_CLIENT_SECRET,
+            refresh_token: env.GMAIL_REFRESH_TOKEN,
+            grant_type: 'refresh_token'
+        })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.access_token) {
+        throw new Error('Failed to get Gmail access token: ' + (data.error_description || data.error));
+    }
+    return data.access_token;
+}
+
+function buildMime({ from, to, subject, html }) {
+    const boundary = 'boundary_' + Math.random().toString(36).slice(2);
+    const mime = [
+        `From: ${from}`,
+        `To: ${to}`,
+        `Subject: ${subject}`,
+        'MIME-Version: 1.0',
+        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/html; charset=utf-8',
+        'Content-Transfer-Encoding: base64',
+        '',
+        btoa(Array.from(new TextEncoder().encode(html), b => String.fromCharCode(b)).join('')),
+        '',
+        `--${boundary}--`
+    ].join('\r\n');
+
+    // Gmail API requires URL-safe base64
+    return btoa(Array.from(new TextEncoder().encode(mime), b => String.fromCharCode(b)).join(''))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+}
+
+export async function sendAssignmentNotification(entryData, env = {}) {
+    const { assignedToEmail, subject, inwardNo } = entryData;
+
+    if (!assignedToEmail) return;
+
+    if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) {
+        console.warn('⚠️  Gmail OAuth credentials missing — skipping notification for', inwardNo);
+        return;
+    }
+
+    const from = env.GMAIL_FROM || 'saisathyajain@sssihl.edu.in';
+
+    const accessToken = await getGmailAccessToken(env);
+
+    const raw = buildMime({
+        from: `"SSSIHL Inward/Outward System" <${from}>`,
+        to: assignedToEmail,
+        subject: `[${inwardNo}] New Assignment: ${subject}`,
+        html: buildHtml(entryData)
+    });
+
+    const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ raw })
+    });
+
+    if (!sendRes.ok) {
+        const err = await sendRes.text();
+        throw new Error(`Gmail API ${sendRes.status}: ${err}`);
+    }
+
+    console.log(`✅ Email sent to ${assignedToEmail} for ${inwardNo}`);
 }

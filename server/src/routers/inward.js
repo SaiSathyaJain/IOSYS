@@ -71,20 +71,26 @@ inwardRouter.post('/', async (c) => {
         const id = insertedEntry.id;
 
         // Send notification if assigned
+        let emailStatus = 'skipped';
         if (assignedTeam && assignedToEmail) {
-            c.executionCtx.waitUntil(
-                sendAssignmentNotification({
+            try {
+                await sendAssignmentNotification({
                     id, inwardNo, subject, particularsFromWhom,
                     assignedTeam, assignedToEmail, assignmentInstructions, dueDate
-                }, c.env).catch(err => console.error('Notification error:', err))
-            );
+                }, c.env);
+                emailStatus = 'sent';
+            } catch (err) {
+                console.error('Notification error:', err.message);
+                emailStatus = 'failed: ' + err.message;
+            }
         }
 
         return c.json({
             success: true,
             message: 'Inward entry created successfully',
             id,
-            inwardNo
+            inwardNo,
+            emailStatus
         });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);
@@ -118,12 +124,14 @@ inwardRouter.put('/:id/assign', async (c) => {
         ).run();
 
         // Send notification
-        c.executionCtx.waitUntil(
-            sendAssignmentNotification({
+        try {
+            await sendAssignmentNotification({
                 ...toCamelCase(existing),
                 assignedTeam, assignedToEmail, assignmentInstructions, dueDate
-            }, c.env).catch(err => console.error('Notification error:', err))
-        );
+            }, c.env);
+        } catch (err) {
+            console.error('Notification error:', err.message);
+        }
 
         return c.json({
             success: true,
