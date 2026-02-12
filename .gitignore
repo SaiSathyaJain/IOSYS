@@ -8,6 +8,7 @@ dist/
 
 # OS files
 .DS_Store
+nul
 
 # Environment Variables
 .env
