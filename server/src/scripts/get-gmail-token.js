@@ -17,8 +17,8 @@
 import http from 'http';
 
 // ── FILL THESE IN ──────────────────────────────────────────────────────────────
-const CLIENT_ID     = '4737331866-hvuevukis1oeppdra041k8as6notemsi.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
+const CLIENT_ID     = '4737331866-7oeubhb1068kn7vd23ahrhvethofoo2r.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
 // ───────────────────────────────────────────────────────────────────────────────
 
 const PORT = 3456;
