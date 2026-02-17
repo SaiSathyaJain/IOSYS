@@ -9,8 +9,6 @@ binding = "DB"
 database_name = "inward-outward-db"
 database_id = "65cdca58-f391-42fd-b314-2bdf52aa6a19"
 
-[vars]
-# Environment Variables (Secrets should be set via 'npx wrangler secret put ...')
-# OPENROUTER_API_KEY = ""
-# EMAIL_USER = ""
-# EMAIL_PASS = ""
+# Cron: Every Saturday at 11:00 AM IST (05:30 UTC)
+[triggers]
+crons = ["30 5 * * 6"]

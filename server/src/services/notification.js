@@ -120,6 +120,28 @@ function buildMime({ from, to, subject, html }) {
         .replace(/=+$/, '');
 }
 
+export async function sendEmail({ to, subject, html, env }) {
+    if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) {
+        throw new Error('Gmail OAuth credentials missing');
+    }
+    const from = env.GMAIL_FROM || 'saisathyajain@sssihl.edu.in';
+    const accessToken = await getGmailAccessToken(env);
+    const raw = buildMime({
+        from: `"SSSIHL Inward/Outward System" <${from}>`,
+        to,
+        subject,
+        html
+    });
+    const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ raw })
+    });
+    if (!sendRes.ok) {
+        throw new Error(`Gmail API ${sendRes.status}: ${await sendRes.text()}`);
+    }
+}
+
 export async function sendAssignmentNotification(entryData, env = {}) {
     const { assignedToEmail, subject, inwardNo } = entryData;
 
@@ -130,30 +152,12 @@ export async function sendAssignmentNotification(entryData, env = {}) {
         return;
     }
 
-    const from = env.GMAIL_FROM || 'saisathyajain@sssihl.edu.in';
-
-    const accessToken = await getGmailAccessToken(env);
-
-    const raw = buildMime({
-        from: `"SSSIHL Inward/Outward System" <${from}>`,
+    await sendEmail({
         to: assignedToEmail,
         subject: `[${inwardNo}] New Assignment: ${subject}`,
-        html: buildHtml(entryData)
+        html: buildHtml(entryData),
+        env
     });
-
-    const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ raw })
-    });
-
-    if (!sendRes.ok) {
-        const err = await sendRes.text();
-        throw new Error(`Gmail API ${sendRes.status}: ${err}`);
-    }
 
     console.log(`✅ Email sent to ${assignedToEmail} for ${inwardNo}`);
 }

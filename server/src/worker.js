@@ -4,6 +4,7 @@ import { inwardRouter } from './routers/inward.js';
 import { outwardRouter } from './routers/outward.js';
 import { dashboardRouter } from './routers/dashboard.js';
 import { aiRouter } from './routers/ai.js';
+import { sendWeeklyReport } from './services/weeklyReport.js';
 
 
 const app = new Hono();
@@ -47,4 +48,9 @@ app.route('/api/dashboard', dashboardRouter);
 app.route('/api/ai', aiRouter);
 
 
-export default app;
+export default {
+    fetch: app.fetch.bind(app),
+    async scheduled(_event, env, ctx) {
+        ctx.waitUntil(sendWeeklyReport(env));
+    }
+};
