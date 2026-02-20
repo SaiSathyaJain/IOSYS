@@ -1,0 +1,7 @@
+X [ERROR] A request to the Cloudflare API (/accounts/ffa4661b29a77f4318b1bb9fe9e95bc0/pages/projects/inward-outward-client) failed.
+
+  Authentication error
+  [code: 10000]
+
+
+­ƒ¬Á  Logs were written to "C:\Users\sathy\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-02-11_18-42-22_454.log"
