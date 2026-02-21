@@ -88,6 +88,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="header-nav">
                     <button className="nav-tab active">Dashboard</button>
+                    <button className="nav-tab" onClick={() => navigate('/admin/intelligence')}>Intelligence</button>
                     <button className="nav-tab" onClick={loadData}>
                         <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ marginRight: '6px' }} /> Refresh
                     </button>

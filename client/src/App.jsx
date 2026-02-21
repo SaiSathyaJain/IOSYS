@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import AdminEntry from './pages/AdminEntry'
 import AdminDashboard from './pages/AdminDashboard'
+import IntelligenceDashboard from './pages/IntelligenceDashboard'
 import TeamSelection from './pages/TeamSelection'
 import TeamWorkspace from './pages/TeamWorkspace'
 import './index.css'
@@ -16,6 +17,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/entry" element={<AdminEntry />} />
+          <Route path="/admin/intelligence" element={<IntelligenceDashboard />} />
           <Route path="/team" element={<TeamSelection />} />
           <Route path="/team/:teamId" element={<TeamWorkspace />} />
         </Routes>
