@@ -1,0 +1,221 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Core Colors */
+  --bg-color: #12151c;
+  --panel-bg: rgba(22, 27, 34, 0.65);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --accent-color: #2f81f7;
+  --accent-hover: #3b8cf8;
+  --accent-glow: rgba(47, 129, 247, 0.4);
+  
+  /* Status Colors */
+  --status-success: #238636;
+  --status-warning: #d29922;
+  --status-danger: #f85149;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+/* 
+  ========================================
+  1. Dynamic Background 
+  A subtle network of floating lines/particles
+  ========================================
+*/
+.dynamic-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 15% 50%, rgba(47, 129, 247, 0.05), transparent 40%),
+    radial-gradient(circle at 85% 30%, rgba(47, 129, 247, 0.03), transparent 50%);
+  overflow: hidden;
+}
+
+/* Subtle grid overlay for depth */
+.dynamic-background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* 
+  ========================================
+  2. Staggered Entry
+  Vertical fade-in for page elements
+  ========================================
+*/
+@keyframes staggerFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-stagger-1 { animation: staggerFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+.animate-stagger-2 { animation: staggerFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+.animate-stagger-3 { animation: staggerFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+
+/* 
+  ========================================
+  3. Luminous Pulse & Glass Cards
+  Soft "breathing" border glow
+  ========================================
+*/
+@keyframes subtlePulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  50% { box-shadow: 0 0 15px 0 rgba(255, 255, 255, 0.03); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+.glass-card {
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  animation: subtlePulse 4s infinite alternate ease-in-out;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* 
+  ========================================
+  4. Tactile Hovers
+  Cards react with slight lift and intense glow
+  ========================================
+*/
+.glass-card.interactive:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px 0 rgba(47, 129, 247, 0.15);
+}
+
+/* 
+  ========================================
+  5. Action Shimmers
+  Light sweep over primary buttons
+  ========================================
+*/
+@keyframes shimmerSweep {
+  0% { transform: translateX(-150%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+.btn-primary {
+  position: relative;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 15px 0 var(--accent-glow);
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  background: linear-gradient(
+    90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.2), 
+    transparent
+  );
+  transform: translateX(-150%) skewX(-15deg);
+}
+
+.btn-primary:hover::after {
+  animation: shimmerSweep 1.5s infinite;
+}
+
+/* Basic utility overrides */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+input, select {
+  font-family: inherit;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--panel-border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+input:focus, select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(47, 129, 247, 0.2);
+}
+
+/* Layout Utilities */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.app-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+}
