@@ -1,16 +1,4 @@
-name = "iosys"
-compatibility_date = "2026-02-04"
-pages_build_output_dir = "./dist"
-
-# Worker script (Managed via _worker.js in dist)
-# main = "worker/src/spa.js"
-
-# D1 Database binding
-[[d1_databases]]
-binding = "DB"
-database_name = "inward-outward-db"
-database_id = "65cdca58-f391-42fd-b314-2bdf52aa6a19"
-
-[vars]
-ENVIRONMENT = "production"
+# Root wrangler.toml - kept for reference only.
+# Pages config lives in client/wrangler.toml
+# Worker config lives in worker/wrangler.toml
 
