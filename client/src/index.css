@@ -151,6 +151,43 @@
 [data-theme="light"] .icon-btn { color: var(--text-secondary); }
 [data-theme="light"] .icon-btn:hover { background: rgba(0, 0, 0, 0.06); color: var(--text-primary); }
 
+/* ── Intelligence Dashboard ── */
+[data-theme="light"] .id-header {
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.07);
+}
+[data-theme="light"] .id-search-input {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+[data-theme="light"] .id-ico-btn:hover  { background: rgba(0, 0, 0, 0.06); color: var(--text-primary); }
+[data-theme="light"] .id-ico-btn-sm:hover { background: rgba(0, 0, 0, 0.06); }
+[data-theme="light"] .id-card  {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(0, 0, 0, 0.07);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+[data-theme="light"] .id-stat-card {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(0, 0, 0, 0.07);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+[data-theme="light"] .id-stat-bg-icon { color: rgba(0, 0, 0, 0.04); }
+[data-theme="light"] .id-stat-badge.success { background: rgba(22, 102, 36, 0.12); color: #166624; }
+[data-theme="light"] .id-stat-badge.warning { background: rgba(137, 86, 0, 0.12);  color: #895600; }
+[data-theme="light"] .id-stat-badge.danger  { background: rgba(185, 28, 28, 0.12); color: #b91c1c; }
+[data-theme="light"] .id-act-item { border-bottom-color: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .id-tooltip {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+[data-theme="light"] .id-tooltip-label { color: var(--text-secondary); }
+[data-theme="light"] .id-team-btn:hover { background: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .id-team-btn.danger { border-color: rgba(185, 28, 28, 0.35); color: #b91c1c; }
+[data-theme="light"] .id-btn-ghost:hover { background: rgba(0, 0, 0, 0.05); color: var(--text-primary); }
+
 * {
   box-sizing: border-box;
   margin: 0;
