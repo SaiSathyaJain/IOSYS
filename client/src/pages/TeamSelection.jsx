@@ -20,6 +20,7 @@ const TeamSelection = () => {
                 <button className="back-btn" onClick={() => navigate('/')}>
                     <ArrowLeft size={20} />
                 </button>
+                <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover' }} />
                 <div className="selection-title">
                     <h1>Select Workspace</h1>
                     <p>Choose your academic department to access tasks and files.</p>

@@ -147,10 +147,10 @@ const TeamWorkspace = () => {
             {/* Header */}
             <header className="workspace-header">
                 <div className="header-brand interactive" onClick={() => navigate('/team')}>
-                    <div className="logo-icon-small">🎓</div>
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
                     <div>
-                        <h2 className="brand-title">Luminous Depth</h2>
-                        <p className="brand-subtitle">SSSIHL Team Workspace</p>
+                        <h2 className="brand-title">SSSIHL</h2>
+                        <p className="brand-subtitle">Team Workspace</p>
                     </div>
                 </div>
 

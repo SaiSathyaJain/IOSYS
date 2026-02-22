@@ -84,7 +84,10 @@ const AdminDashboard = () => {
                     <button className="back-btn" onClick={() => navigate('/')}>
                         <ArrowLeft size={20} />
                     </button>
-                    <div className="logo-small">🎓 SSSIHL <span>| Correspondence</span></div>
+                    <div className="logo-small" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover' }} />
+                        SSSIHL <span>| Correspondence</span>
+                    </div>
                 </div>
                 <div className="header-nav">
                     <button className="nav-tab active">Dashboard</button>

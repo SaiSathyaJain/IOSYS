@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import {
     Bell, Settings, Search, Download, Calendar,
     MoreHorizontal, TrendingUp, TrendingDown,
-    GraduationCap, BookOpen, Microscope, ArrowLeft,
+    GraduationCap, BookOpen, Microscope,
     Clock, AlertCircle, Layers, ArrowDownLeft, Send,
-    ChevronRight, Shield
+    ChevronRight
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -224,10 +224,10 @@ const IntelligenceDashboard = () => {
             {/* ── Header ── */}
             <header className="id-header">
                 <div className="id-brand">
-                    <div className="id-brand-icon"><Shield size={17} /></div>
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
                     <div>
-                        <div className="id-brand-name">Luminous Depth</div>
-                        <div className="id-brand-sub">SSSIHL ADMIN PORTAL</div>
+                        <div className="id-brand-name">SSSIHL</div>
+                        <div className="id-brand-sub">ADMIN PORTAL</div>
                     </div>
                 </div>
 
