@@ -1,49 +1,33 @@
-import nodemailer from 'nodemailer';
+import { sendGmailMessage } from './gmail.js';
 
 /**
- * Send assignment notification using Nodemailer (SMTP)
- * Requires 'nodejs_compat' flag in wrangler.toml
+ * Send assignment notification via Gmail API (HTTPS-based, works in Cloudflare Workers).
+ * NOTE: Nodemailer/SMTP was removed — Workers cannot open raw TCP sockets.
  */
 export async function sendAssignmentNotification(env, entryData) {
   const { assignedToEmail, subject, inwardNo } = entryData;
 
-  // DEBUG LOGGING
-  console.log('Worker Notification Service called for:', assignedToEmail);
-  console.log('Env keys available:', Object.keys(env));
+  console.log('[Notification] sendAssignmentNotification called for:', assignedToEmail);
 
-  if (!env.SMTP_HOST || !env.SMTP_USER) {
-    console.log('SMTP not configured in Worker - logging email content only');
-    return { skipped: true, reason: 'SMTP secrets missing (SMTP_HOST/SMTP_USER)' };
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_REFRESH_TOKEN) {
+    console.log('[Notification] Gmail API credentials not configured — skipping email');
+    return { skipped: true, reason: 'Gmail API credentials missing (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN)' };
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: parseInt(env.SMTP_PORT || '587'),
-      secure: env.SMTP_SECURE === 'true',
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS,
-      },
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
-
     const htmlContent = buildEmailHtml(entryData);
 
-    const info = await transporter.sendMail({
-      from: env.EMAIL_FROM || '"Inward/Outward System" <noreply@iosystem.com>',
+    const result = await sendGmailMessage(env, {
       to: assignedToEmail,
       subject: `New Assignment: ${subject} [${inwardNo}]`,
-      html: htmlContent,
+      htmlBody: htmlContent,
     });
 
-    console.log(`Email sent from Worker: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    console.log('[Notification] Email sent via Gmail API, message ID:', result.messageId);
+    return { success: true, messageId: result.messageId };
 
   } catch (error) {
-    console.error('Worker Notification error:', error);
+    console.error('[Notification] Gmail send error:', error);
     return { success: false, error: error.message };
   }
 }
@@ -80,7 +64,7 @@ function buildEmailHtml(entryData) {
     <body>
       <div class="container">
         <div class="header">
-          <h2>New Assignment - ${assignedTeam} Team</h2>
+          <h2>New Assignment — ${assignedTeam} Team</h2>
           <p>Inward No: ${inwardNo}</p>
         </div>
         <div class="content">
@@ -101,10 +85,10 @@ function buildEmailHtml(entryData) {
             ${assignmentInstructions}
           </div>
           ` : ''}
-          <p>Please coordinate with your team members to complete this task.</p>
+          <p>Please log in to the SSSIHL Team Portal to process this assignment.</p>
         </div>
         <div class="footer">
-          <p>This is an automated notification from the Inward/Outward Management System</p>
+          <p>Automated notification from the SSSIHL Inward/Outward Management System</p>
         </div>
       </div>
     </body>
