@@ -5,7 +5,7 @@ import {
     MoreHorizontal, TrendingUp, TrendingDown,
     GraduationCap, BookOpen, Microscope,
     Clock, AlertCircle, Layers, ArrowDownLeft, Send,
-    ChevronRight
+    ChevronRight, Sun, Moon
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -127,6 +127,12 @@ const IntelligenceDashboard = () => {
     const [recentActivity, setRecentActivity] = useState(FALLBACK_ACTIVITY);
     const [outwardTotal, setOutwardTotal] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
+
+    useEffect(() => {
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    }, [isDarkMode]);
 
     const loadData = async () => {
         try {
@@ -237,6 +243,9 @@ const IntelligenceDashboard = () => {
                 </div>
 
                 <div className="id-header-right">
+                    <button className="id-ico-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                        {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
+                    </button>
                     <button className="id-ico-btn" onClick={() => navigate('/admin')}>
                         <Bell size={17} />
                     </button>

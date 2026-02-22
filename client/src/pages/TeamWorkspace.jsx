@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Bell, Search, Edit2, Plus, Clock, FileText, CheckCircle, ArrowRight, Loader2, X, Lock, Link2, Calendar } from 'lucide-react';
+import { Bell, Search, Edit2, Plus, Clock, FileText, CheckCircle, ArrowRight, Loader2, X, Lock, Link2, Calendar, Sun, Moon } from 'lucide-react';
 import { dashboardAPI, inwardAPI, outwardAPI } from '../services/api';
 import './TeamWorkspace.css';
 
@@ -18,6 +18,12 @@ const TeamWorkspace = () => {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
+
+    useEffect(() => {
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    }, [isDarkMode]);
 
     const [formData, setFormData] = useState({
         means: '', toWhom: '', subject: '', sentBy: '',
@@ -160,6 +166,9 @@ const TeamWorkspace = () => {
                 </div>
 
                 <div className="header-actions">
+                    <button className="icon-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                        {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
+                    </button>
                     <button className="icon-btn">
                         <Bell size={18} />
                         <span className="badge"></span>

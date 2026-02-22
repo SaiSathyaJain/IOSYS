@@ -1,10 +1,16 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, BookOpen, Users, Folder, Building, ArrowLeft } from 'lucide-react';
+import { BookOpen, Users, Building, ArrowLeft, Sun, Moon } from 'lucide-react';
 import './TeamSelection.css';
 
 const TeamSelection = () => {
     const navigate = useNavigate();
+    const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
+
+    useEffect(() => {
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    }, [isDarkMode]);
 
     const teams = [
         { id: 'ug', name: 'UG Team', desc: 'Handle undergraduate correspondence', icon: <Users size={32} />, color: '#2196f3' },
@@ -15,17 +21,30 @@ const TeamSelection = () => {
     return (
         <div className="team-selection">
 
-            {/* Header */}
-            <header className="selection-header animate-stagger-1">
-                <button className="back-btn" onClick={() => navigate('/')}>
-                    <ArrowLeft size={20} />
-                </button>
-                <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover' }} />
-                <div className="selection-title">
-                    <h1>Select Workspace</h1>
-                    <p>Choose your academic department to access tasks and files.</p>
+            {/* Navbar */}
+            <header className="selection-header">
+                <div className="sel-nav-left">
+                    <button className="back-btn" onClick={() => navigate('/')}>
+                        <ArrowLeft size={20} />
+                    </button>
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '32px', height: '32px', borderRadius: '7px', objectFit: 'cover' }} />
+                    <div className="sel-brand">
+                        <span className="sel-brand-name">SSSIHL</span>
+                        <span className="sel-brand-sub">Team Portal</span>
+                    </div>
+                </div>
+                <div className="sel-nav-right">
+                    <button className="back-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                        {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
+                    </button>
                 </div>
             </header>
+
+            {/* Page Title */}
+            <div className="selection-title animate-stagger-1">
+                <h1>Select Workspace</h1>
+                <p>Choose your academic department to access tasks and files.</p>
+            </div>
 
             {/* Grid */}
             <main className="team-grid-container animate-stagger-2">

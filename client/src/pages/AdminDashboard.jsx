@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronDown, CheckCircle, Clock, AlertCircle, FileText, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
+import { Search, ChevronDown, CheckCircle, Clock, AlertCircle, FileText, ArrowLeft, Loader2, RefreshCw, Sun, Moon } from 'lucide-react';
 import { dashboardAPI, inwardAPI } from '../services/api';
 import './AdminDashboard.css';
 
@@ -12,6 +12,12 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [adminUserPhoto, setAdminUserPhoto] = useState("https://ui-avatars.com/api/?name=Admin&background=random");
+    const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
+
+    useEffect(() => {
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    }, [isDarkMode]);
 
     useEffect(() => {
         loadData();
@@ -97,6 +103,9 @@ const AdminDashboard = () => {
                     </button>
                 </div>
                 <div className="header-user">
+                    <button className="back-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                        {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                    </button>
                     <div className="user-info">
                         <span className="name">Admin User</span>
                         <span className="role">Administrator</span>
