@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+client/node_modules/
+worker/node_modules/
+
+# Build output
+dist/
+client/dist/
+
+# Wrangler state
+.wrangler/
+worker/.wrangler/
+**/.wrangler/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment secrets
+.dev.vars
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
