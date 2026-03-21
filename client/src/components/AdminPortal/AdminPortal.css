@@ -865,6 +865,15 @@
     font-size: 0.8rem;
 }
 
+.section-optional {
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: 0;
+    text-transform: none;
+    margin-left: 0.4rem;
+}
+
 .modal-info {
     padding: 0.85rem 1rem;
     background: rgba(var(--primary-rgb), 0.08);

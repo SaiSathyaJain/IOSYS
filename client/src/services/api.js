@@ -29,7 +29,8 @@ export const outwardAPI = {
 export const dashboardAPI = {
     getStats: () => api.get('/dashboard/stats'),
     getTeamStats: (team) => api.get(`/dashboard/team/${encodeURIComponent(team)}`),
-    getAllTeams: () => api.get('/dashboard/teams')
+    getAllTeams: () => api.get('/dashboard/teams'),
+    getChartData: () => api.get('/dashboard/chart-data')
 };
 
 // Notifications API

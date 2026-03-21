@@ -113,4 +113,49 @@ app.get('/teams', async (c) => {
   }
 });
 
+// Get chart data — monthly inward vs outward counts for last 6 months
+app.get('/chart-data', async (c) => {
+  try {
+    const db = c.env.DB;
+
+    const [inwardRows, outwardRows] = await Promise.all([
+      db.prepare(`
+        SELECT strftime('%Y-%m', created_at) as month, COUNT(*) as count
+        FROM inward
+        WHERE created_at >= date('now', '-6 months')
+        GROUP BY month
+        ORDER BY month ASC
+      `).all(),
+      db.prepare(`
+        SELECT strftime('%Y-%m', created_at) as month, COUNT(*) as count
+        FROM outward
+        WHERE created_at >= date('now', '-6 months')
+        GROUP BY month
+        ORDER BY month ASC
+      `).all(),
+    ]);
+
+    // Build a merged month list with short month labels
+    const monthLabels = { '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec' };
+    const inwardMap = Object.fromEntries((inwardRows.results || []).map(r => [r.month, r.count]));
+    const outwardMap = Object.fromEntries((outwardRows.results || []).map(r => [r.month, r.count]));
+
+    // Collect all distinct months
+    const allMonths = [...new Set([
+      ...(inwardRows.results || []).map(r => r.month),
+      ...(outwardRows.results || []).map(r => r.month)
+    ])].sort();
+
+    const chartData = allMonths.map(m => ({
+      month: monthLabels[m.split('-')[1]] || m,
+      inward: inwardMap[m] || 0,
+      outward: outwardMap[m] || 0,
+    }));
+
+    return c.json({ success: true, chartData });
+  } catch (error) {
+    return c.json({ success: false, message: error.message }, 500);
+  }
+});
+
 export default app;

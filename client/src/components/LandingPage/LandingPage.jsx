@@ -104,8 +104,8 @@ function LandingPage() {
             {/* Top Navbar overlay */}
             <div className="space-navbar">
                 <div className="space-brand">
-                    <img src="/sssihl-icon.jpg" alt="SSSIHL Logo" style={{ width: '35px', height: '35px', borderRadius: '8px', objectFit: 'cover' }} />
-                    <span>Inward/Outward</span>
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL Logo" style={{ width: '35px', height: '35px', borderRadius: '50%', objectFit: 'cover' }} />
+                    <span>SSSIHL</span>
                 </div>
                 <div className="space-actions">
                     <button className="icon-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
@@ -123,40 +123,50 @@ function LandingPage() {
                 </div>
             </div>
 
-            <div className="space-content animate-fade">
-                <div className="space-header">
-                    <img src="/IO_SYS_LOGO.png" alt="Inward/Outward System" className="landing-logo" />
-                    <p>Please select your portal to continue.</p>
+            <div className="space-content">
+                <div className="space-header stagger-1">
+                    <h1 className="landing-heading">
+                        Unified <span className="gradient-text">Correspondence Intelligence</span>
+                    </h1>
+                    <p className="landing-sub">SSSIHL — Document Tracking &amp; Correspondence Portal</p>
                 </div>
 
                 <div className="glass-cards">
                     {/* Admin Card */}
-                    <Link to="/admin" className="glass-card admin-glass">
-                        <div className="glow-effect"></div>
-                        <div className="card-icon-wrapper">
-                            <Shield size={48} strokeWidth={1.5} />
+                    <Link to="/admin" className="glass-card admin-glass stagger-2">
+                        <div className="card-icon-wrapper admin-icon">
+                            <Shield size={36} strokeWidth={1.5} />
                         </div>
                         <h2>Admin Portal</h2>
-                        <p>Manage inward entries, assign tasks, and view dashboard statistics.</p>
-                        <span className="glass-link">
-                            Enter Admin Portal <ArrowRight size={16} />
-                        </span>
+                        <p>Comprehensive management suite for institutional oversight, secure logging, and real-time correspondence analytics.</p>
+                        <div className="card-cta">
+                            <span className="cta-text admin-cta">ACCESS INFRASTRUCTURE</span>
+                            <span className="circle-btn admin-circle">
+                                <ArrowRight size={20} />
+                            </span>
+                        </div>
                     </Link>
 
                     {/* Team Card */}
-                    <Link to="/team" className="glass-card team-glass">
-                        <div className="glow-effect"></div>
-                        <div className="card-icon-wrapper">
-                            <Users size={48} strokeWidth={1.5} />
+                    <Link to="/team" className="glass-card team-glass stagger-3">
+                        <div className="card-icon-wrapper team-icon">
+                            <Users size={36} strokeWidth={1.5} />
                         </div>
                         <h2>Team Portal</h2>
-                        <p>View assignments, process tasks, and create outward entries.</p>
-                        <span className="glass-link">
-                            Enter Team Portal <ArrowRight size={16} />
-                        </span>
+                        <p>Collaborative workspace for academic departments to streamline document workflows and response generation.</p>
+                        <div className="card-cta">
+                            <span className="cta-text team-cta">OPEN WORKSPACE</span>
+                            <span className="circle-btn team-circle">
+                                <ArrowRight size={20} />
+                            </span>
+                        </div>
                     </Link>
                 </div>
             </div>
+
+            <footer className="landing-footer">
+                © 2024 SSSIHL DIGITAL INFRASTRUCTURE
+            </footer>
         </div>
     );
 }
