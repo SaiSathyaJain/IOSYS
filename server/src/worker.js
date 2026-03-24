@@ -53,6 +53,24 @@ app.get('/api/debug-env', (c) => {
     });
 });
 
+app.post('/api/test-email', async (c) => {
+    const { sendAssignmentNotification } = await import('./services/notification.js');
+    try {
+        await sendAssignmentNotification({
+            inwardNo: 'TEST/001',
+            subject: 'Test Email – Please Ignore',
+            particularsFromWhom: 'System Test',
+            assignedTeam: 'UG',
+            assignedToEmail: c.env.BOSS_EMAIL || 'sathyajain9@gmail.com',
+            assignmentInstructions: 'This is a test to verify email delivery.',
+            dueDate: new Date().toISOString(),
+        }, c.env);
+        return c.json({ success: true, message: 'Email sent successfully' });
+    } catch (err) {
+        return c.json({ success: false, error: err.message });
+    }
+});
+
 app.route('/api/inward', inwardRouter);
 app.route('/api/outward', outwardRouter);
 app.route('/api/dashboard', dashboardRouter);

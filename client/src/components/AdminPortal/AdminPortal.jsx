@@ -98,15 +98,14 @@ function AdminPortal() {
             console.log('Server Response:', response.data);
 
             let message = 'Inward entry created successfully!';
-            if (response.data.notification) {
-                if (response.data.notification.success) {
+            if (response.data.emailStatus) {
+                if (response.data.emailStatus === 'sent') {
                     message += ` Email sent to ${formData.assignedToEmail}`;
-                } else if (response.data.notification.skipped) {
-                    message += ` Email skipped: ${response.data.notification.reason}`;
-                    console.warn('Email skipped:', response.data.notification);
-                } else {
-                    message += ` Warning: Email failed - ${response.data.notification.error}`;
-                    console.error('Email failed:', response.data.notification);
+                } else if (response.data.emailStatus === 'skipped') {
+                    console.warn('Email skipped');
+                } else if (response.data.emailStatus.startsWith('failed')) {
+                    message += `\n\nWarning: Email failed - ${response.data.emailStatus}`;
+                    console.error('Email failed:', response.data.emailStatus);
                 }
             }
 
@@ -128,19 +127,27 @@ function AdminPortal() {
 
             let message = `Entry reassigned to ${reassignData.assignedTeam} team!`;
 
-            if (response.data.notification) {
-                if (response.data.notification.success) {
+            if (response.data.emailStatus) {
+                if (response.data.emailStatus === 'sent') {
                     message += ` Email sent to ${reassignData.assignedToEmail}`;
-                } else if (response.data.notification.skipped) {
-                    message += ` Email skipped: ${response.data.notification.reason}`;
-                    console.warn('Email skipped:', response.data.notification);
-                } else {
-                    message += ` Warning: Email failed - ${response.data.notification.error}`;
-                    console.error('Email failed:', response.data.notification);
+                } else if (response.data.emailStatus === 'skipped') {
+                    console.warn('Email skipped');
+                } else if (response.data.emailStatus.startsWith('failed')) {
+                    message += `\n\nWarning: Email failed - ${response.data.emailStatus}`;
+                    console.error('Email failed:', response.data.emailStatus);
+                }
+            } else if (response.data.message) {
+                // Fallback for current message or if emailStatus wasn't provided
+                if (response.data.emailStatus !== 'sent' && !response.data.emailStatus && response.data.message.includes('Notification sent')) {
+                    // if it wasn't sent, do nothing more here to avoid confusion because backend sets custom message
                 }
             }
 
-            alert(message);
+            if (response.data.emailStatus && response.data.emailStatus.startsWith('failed')) {
+                alert(message);
+            } else {
+                alert(response.data.message || message);
+            }
             setShowReassignModal(false);
             setSelectedEntry(null);
             loadData();

@@ -124,18 +124,29 @@ inwardRouter.put('/:id/assign', async (c) => {
         ).run();
 
         // Send notification
+        let emailStatus = 'skipped';
         try {
             await sendAssignmentNotification({
                 ...toCamelCase(existing),
                 assignedTeam, assignedToEmail, assignmentInstructions, dueDate
             }, c.env);
+            emailStatus = 'sent';
         } catch (err) {
             console.error('Notification error:', err.message);
+            emailStatus = 'failed: ' + err.message;
+        }
+
+        let responseMessage = `Entry assigned to ${assignedTeam} team.`;
+        if (emailStatus === 'sent') {
+            responseMessage += ` Notification sent to ${assignedToEmail}`;
+        } else if (emailStatus.startsWith('failed')) {
+            responseMessage += `\nWarning: Email failed - ${emailStatus}`;
         }
 
         return c.json({
             success: true,
-            message: `Entry assigned to ${assignedTeam} team. Notification sent to ${assignedToEmail}`
+            message: responseMessage,
+            emailStatus
         });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);
