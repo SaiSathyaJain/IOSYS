@@ -43,7 +43,7 @@ const TeamSelection = () => {
             {/* Page Title */}
             <div className="selection-title animate-stagger-1">
                 <h1>Select Workspace</h1>
-                <p>Choose your academic department to access tasks and files.</p>
+                
             </div>
 
             {/* Grid */}
