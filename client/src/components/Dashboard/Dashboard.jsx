@@ -5,11 +5,15 @@ import {
     Users, ChevronRight, X, Clock, TrendingUp, Calendar, FileText,
     RefreshCw, Loader2, ArrowLeft, AlertCircle
 } from 'lucide-react';
+import {
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 import './Dashboard.css';
 
 function Dashboard() {
     const [stats, setStats] = useState(null);
     const [teamStats, setTeamStats] = useState([]);
+    const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [teamDetail, setTeamDetail] = useState(null);
@@ -24,12 +28,14 @@ function Dashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [statsRes, teamsRes] = await Promise.all([
+            const [statsRes, teamsRes, chartRes] = await Promise.all([
                 dashboardAPI.getStats(),
-                dashboardAPI.getAllTeams()
+                dashboardAPI.getAllTeams(),
+                dashboardAPI.getChartData()
             ]);
             setStats(statsRes.data.stats || {});
             setTeamStats(teamsRes.data.teamStats || []);
+            setChartData(chartRes.data.chartData || []);
         } catch (error) {
             console.error('Error loading dashboard:', error);
         } finally {
@@ -142,6 +148,34 @@ function Dashboard() {
                         <div className="stat-value">{stats?.totalOutward || 0}</div>
                         <div className="stat-label">Total Outward</div>
                     </div>
+                </div>
+            </div>
+
+            {/* Volume Analytics Chart */}
+            <div className="card stagger-2">
+                <div className="card-header">
+                    <h3 className="card-title"><TrendingUp size={20} /> Volume Analytics</h3>
+                    <span className="header-hint">Last 6 months</span>
+                </div>
+                <div className="chart-body">
+                    {chartData.length === 0 ? (
+                        <div className="chart-empty">No data yet</div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={240}>
+                            <LineChart data={chartData} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                <Tooltip
+                                    contentStyle={{ background: '#0D1526', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', fontSize: '0.85rem' }}
+                                    labelStyle={{ color: '#e2e8f0' }}
+                                />
+                                <Legend wrapperStyle={{ fontSize: '0.8rem', color: '#94a3b8' }} />
+                                <Line type="monotone" dataKey="inward" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                                <Line type="monotone" dataKey="outward" stroke="#F97316" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
             </div>
 

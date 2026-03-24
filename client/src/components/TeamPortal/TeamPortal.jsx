@@ -330,6 +330,11 @@ function TeamPortal() {
                 )}
             </div>
 
+            {/* FAB — Create Outward Entry */}
+            <button className="tp-fab" onClick={() => setShowForm(true)} title="Create Outward Entry">
+                <Plus size={24} />
+            </button>
+
             {/* Create Outward Form — Modal */}
             {showForm && (
                 <div className="modal-overlay drawer-overlay" onClick={() => { setShowForm(false); resetForm(); }}>

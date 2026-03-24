@@ -550,6 +550,146 @@
     transform: translateX(5px);
 }
 
+/* ══ New Design System ══ */
+.landing-heading {
+    font-size: clamp(1.8rem, 4.5vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin: 0 0 1rem;
+}
+
+.gradient-text {
+    background: linear-gradient(90deg, #60A5FA, #F97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.landing-sub {
+    font-size: 0.95rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+}
+
+.dark-mode .landing-sub  { color: rgba(255,255,255,0.45); }
+.light-mode .landing-sub { color: #64748b; }
+
+/* ── Card CTA row ── */
+.card-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: auto;
+    gap: 0.75rem;
+    padding-top: 1.5rem;
+}
+
+.cta-text {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.dark-mode  .admin-cta { color: rgba(249,115,22,0.85); }
+.light-mode .admin-cta { color: #ea580c; }
+.dark-mode  .team-cta  { color: rgba(59,130,246,0.85); }
+.light-mode .team-cta  { color: #2563eb; }
+
+/* ── Circular arrow button ── */
+.circle-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.circle-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: translateX(-120%) skewX(-15deg);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.glass-card:hover .circle-btn::after {
+    animation: shimmerSweep 0.65s ease forwards;
+}
+
+.glass-card:hover .circle-btn {
+    transform: scale(1.1);
+}
+
+.admin-circle {
+    background: #F97316;
+    color: white;
+}
+
+.team-circle {
+    background: #3B82F6;
+    color: white;
+}
+
+.dark-mode .glass-card:hover .admin-circle {
+    box-shadow: 0 0 18px rgba(249,115,22,0.55);
+}
+
+.dark-mode .glass-card:hover .team-circle {
+    box-shadow: 0 0 18px rgba(59,130,246,0.55);
+}
+
+/* ── Card glow pulse & hover lift ── */
+.dark-mode .admin-glass {
+    animation: glowPulseOrange 4.5s ease-in-out infinite;
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.dark-mode .team-glass {
+    animation: glowPulse 4.5s ease-in-out infinite;
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.dark-mode .glass-card:hover {
+    transform: translateY(-4px);
+}
+
+.dark-mode .admin-glass:hover {
+    border-color: rgba(249,115,22,0.45) !important;
+    box-shadow: 0 14px 36px rgba(249,115,22,0.1);
+}
+
+.dark-mode .team-glass:hover {
+    border-color: rgba(59,130,246,0.45) !important;
+    box-shadow: 0 14px 36px rgba(59,130,246,0.1);
+}
+
+/* ── Footer ── */
+.landing-footer {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 1.25rem;
+}
+
+.dark-mode  .landing-footer { color: rgba(255,255,255,0.18); }
+.light-mode .landing-footer { color: rgba(0,0,0,0.22); }
+
 /* Responsive */
 @media (max-width: 768px) {
     .landing-logo {

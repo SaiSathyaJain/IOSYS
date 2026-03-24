@@ -35,8 +35,9 @@ function TeamSelector() {
     return (
         <div className="ts-page">
             <div className="ts-header">
-                <h1 className="ts-title">Team Portal</h1>
-                <p className="ts-subtitle">Select your team to access your dedicated workspace</p>
+                <div className="ts-badge">Internal Workflow</div>
+                <h1 className="ts-title">Select Workspace</h1>
+                <p className="ts-subtitle">Choose your team to access your dedicated correspondence portal</p>
             </div>
 
             <div className="ts-grid">

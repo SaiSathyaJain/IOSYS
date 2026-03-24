@@ -772,6 +772,26 @@
     to { transform: rotate(360deg); }
 }
 
+/* Chart */
+.chart-body {
+    padding: 1.25rem 1.5rem 1rem;
+}
+
+.chart-empty {
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Stat card stagger */
+.stats-grid .stat-card:nth-child(1) { animation: staggerFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+.stats-grid .stat-card:nth-child(2) { animation: staggerFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
+.stats-grid .stat-card:nth-child(3) { animation: staggerFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.31s both; }
+.stats-grid .stat-card:nth-child(4) { animation: staggerFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.44s both; }
+
 /* Responsive */
 @media (max-width: 768px) {
     .page-header {

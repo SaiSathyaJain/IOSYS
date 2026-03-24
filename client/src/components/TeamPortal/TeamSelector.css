@@ -11,17 +11,33 @@
     margin-bottom: 3rem;
 }
 
+.ts-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--primary);
+    border: 1px solid rgba(59,130,246,0.35);
+    background: rgba(59,130,246,0.08);
+    padding: 0.3rem 0.9rem;
+    border-radius: 4px;
+    margin-bottom: 1.25rem;
+}
+
 .ts-title {
-    font-size: 2rem;
+    font-size: 2.2rem;
     font-weight: 700;
     letter-spacing: -0.03em;
     margin: 0 0 0.5rem;
+    animation: staggerFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.05s both;
 }
 
 .ts-subtitle {
     font-size: 0.9375rem;
     color: var(--text-secondary);
     margin: 0;
+    animation: staggerFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both;
 }
 
 /* ── Cards Grid ──────────────────────────────────── */
@@ -32,7 +48,6 @@
 }
 
 @media (max-width: 768px) { .ts-grid { grid-template-columns: 1fr; } }
-@media (max-width: 1024px) and (min-width: 769px) { .ts-grid { grid-template-columns: repeat(3, 1fr); } }
 
 /* ── Card Base ───────────────────────────────────── */
 .ts-card {
@@ -41,19 +56,23 @@
     align-items: flex-start;
     gap: 1.25rem;
     padding: 1.75rem 1.5rem 1.375rem;
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.07);
-    border-top: 3px solid transparent;
     background: var(--bg-card-elevated);
     cursor: pointer;
     text-align: left;
-    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
     width: 100%;
+    position: relative;
+    overflow: hidden;
 }
 
+.ts-card:nth-child(1) { animation: staggerFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.15s both; }
+.ts-card:nth-child(2) { animation: staggerFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
+.ts-card:nth-child(3) { animation: staggerFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.41s both; }
+
 .ts-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    transform: translateY(-4px);
 }
 
 .ts-card:active { transform: translateY(-1px); }
@@ -69,47 +88,59 @@
 }
 
 /* ── Accent colors ───────────────────────────────── */
-.ts-card-blue  { border-top-color: #475569; }
-.ts-card-amber { border-top-color: #d97706; }
-.ts-card-green { border-top-color: #059669; }
+.ts-card-blue  {
+    border-top: 3px solid #3B82F6;
+    animation: glowPulse 4.5s ease-in-out infinite;
+}
+.ts-card-amber {
+    border-top: 3px solid #F97316;
+    animation: glowPulseOrange 4.5s ease-in-out infinite;
+}
+.ts-card-green {
+    border-top: 3px solid #10B981;
+}
 
-[data-theme="dark"] .ts-card-blue  { border-top-color: #94A3B8; }
-[data-theme="dark"] .ts-card-amber { border-top-color: #fbbf24; }
-[data-theme="dark"] .ts-card-green { border-top-color: #34D399; }
+.ts-card-blue:hover  { border-color: rgba(59,130,246,0.6); box-shadow: 0 14px 36px rgba(59,130,246,0.1); }
+.ts-card-amber:hover { border-color: rgba(249,115,22,0.6); box-shadow: 0 14px 36px rgba(249,115,22,0.1); }
+.ts-card-green:hover { border-color: rgba(16,185,129,0.6); box-shadow: 0 14px 36px rgba(16,185,129,0.1); }
+
+[data-theme="light"] .ts-card-blue  { border-top-color: #3B82F6; }
+[data-theme="light"] .ts-card-amber { border-top-color: #F97316; }
+[data-theme="light"] .ts-card-green { border-top-color: #10B981; }
 
 /* ── Card Icon ───────────────────────────────────── */
 .ts-card-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 10px;
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
-.ts-card-blue  .ts-card-icon { background: rgba(71,85,105,0.12);  color: #475569; }
-.ts-card-amber .ts-card-icon { background: rgba(217,119,6,0.12);  color: #d97706; }
-.ts-card-green .ts-card-icon { background: rgba(5,150,105,0.12);  color: #059669; }
+.ts-card-blue  .ts-card-icon { background: rgba(59,130,246,0.12);  color: #3B82F6; }
+.ts-card-amber .ts-card-icon { background: rgba(249,115,22,0.12);  color: #F97316; }
+.ts-card-green .ts-card-icon { background: rgba(16,185,129,0.12);  color: #10B981; }
 
-[data-theme="dark"] .ts-card-blue  .ts-card-icon { background: rgba(148,163,184,0.12); color: #94A3B8; }
-[data-theme="dark"] .ts-card-amber .ts-card-icon { background: rgba(251,191,36,0.12);  color: #fbbf24; }
-[data-theme="dark"] .ts-card-green .ts-card-icon { background: rgba(52,211,153,0.12);  color: #34D399; }
+[data-theme="light"] .ts-card-blue  .ts-card-icon { background: #dbeafe; color: #2563eb; }
+[data-theme="light"] .ts-card-amber .ts-card-icon { background: #ffedd5; color: #ea580c; }
+[data-theme="light"] .ts-card-green .ts-card-icon { background: #d1fae5; color: #059669; }
 
 /* ── Card Body ───────────────────────────────────── */
 .ts-card-body { flex: 1; }
 
 .ts-card-label {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
+    letter-spacing: 0.1em;
     color: var(--text-secondary);
     margin-bottom: 0.25rem;
 }
 
 .ts-card-name {
-    font-size: 1.125rem;
+    font-size: 1.15rem;
     font-weight: 700;
     margin: 0 0 0.5rem;
     letter-spacing: -0.01em;
@@ -127,19 +158,20 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     padding-top: 0.25rem;
     transition: gap 150ms ease;
 }
 
 .ts-card:hover .ts-card-enter { gap: 0.6rem; }
 
-.ts-card-blue  .ts-card-enter { color: #475569; }
-.ts-card-amber .ts-card-enter { color: #d97706; }
-.ts-card-green .ts-card-enter { color: #059669; }
+.ts-card-blue  .ts-card-enter { color: #3B82F6; }
+.ts-card-amber .ts-card-enter { color: #F97316; }
+.ts-card-green .ts-card-enter { color: #10B981; }
 
-[data-theme="dark"] .ts-card-blue  .ts-card-enter { color: #94A3B8; }
-[data-theme="dark"] .ts-card-amber .ts-card-enter { color: #fbbf24; }
-[data-theme="dark"] .ts-card-green .ts-card-enter { color: #34D399; }
+[data-theme="light"] .ts-card-blue  .ts-card-enter { color: #2563eb; }
+[data-theme="light"] .ts-card-amber .ts-card-enter { color: #ea580c; }
+[data-theme="light"] .ts-card-green .ts-card-enter { color: #059669; }
