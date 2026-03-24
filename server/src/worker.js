@@ -42,6 +42,17 @@ app.get('/api/health', (c) => {
     });
 });
 
+app.get('/api/debug-env', (c) => {
+    const id = c.env.GMAIL_CLIENT_ID || '';
+    return c.json({
+        GMAIL_CLIENT_ID_prefix: id ? id.slice(0, 16) + '...' : '❌ missing',
+        GMAIL_CLIENT_SECRET:    c.env.GMAIL_CLIENT_SECRET ? '✅ set' : '❌ missing',
+        GMAIL_REFRESH_TOKEN:    c.env.GMAIL_REFRESH_TOKEN ? '✅ set' : '❌ missing',
+        GMAIL_FROM:             c.env.GMAIL_FROM          || '❌ missing',
+        BOSS_EMAIL:             c.env.BOSS_EMAIL          || '❌ missing',
+    });
+});
+
 app.route('/api/inward', inwardRouter);
 app.route('/api/outward', outwardRouter);
 app.route('/api/dashboard', dashboardRouter);
