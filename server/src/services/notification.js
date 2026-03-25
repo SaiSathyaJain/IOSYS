@@ -108,36 +108,26 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
 <body style="margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;color:#1e293b">
   <div style="max-width:600px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,0.10)">
 
-    <!-- Top accent bar -->
-    <div style="height:4px;background:#1d4ed8"></div>
-
-    <!-- Header -->
-    <div style="background:#1d4ed8;padding:28px 32px">
-      <table style="width:100%;border-collapse:collapse">
-        <tr>
-          <td style="vertical-align:middle">
-            <table style="border-collapse:collapse;margin-bottom:14px">
-              <tr>
-                <td style="vertical-align:middle;padding-right:10px">
-                  <img src="https://iosys.pages.dev/IO_SYS_LOGO.png" alt="IOSYS" width="36" height="36" style="border-radius:8px;display:block;border:0"/>
-                </td>
-                <td style="vertical-align:middle">
-                  <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6)">SSSIHL &mdash; IOSYS</div>
-                </td>
-              </tr>
-            </table>
-            <div style="font-size:22px;font-weight:700;color:#fff;line-height:1.2">New Entry Assigned to You</div>
-            <div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.65)">Action required before the due date</div>
-          </td>
-          <td style="vertical-align:top;text-align:right;padding-left:16px">
-            <div style="display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 12px;border-radius:20px">Action Required</div>
-          </td>
-        </tr>
-      </table>
+    <!-- Logo Header -->
+    <div style="background:#ffffff;padding:24px 32px;text-align:center;border-bottom:1px solid #e2e8f0">
+      <img src="https://iosys.pages.dev/IO_SYS_LOGO.png" alt="IOSYS" height="56" style="display:inline-block;border:0"/>
     </div>
 
     <!-- Body -->
     <div style="background:#fff;padding:28px 32px">
+
+      <!-- Title + badge -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+        <tr>
+          <td style="vertical-align:middle">
+            <div style="font-size:20px;font-weight:700;color:#0f172a;line-height:1.2">New Entry Assigned to You</div>
+            <div style="margin-top:6px;font-size:13px;color:#64748b">Action required before the due date</div>
+          </td>
+          <td style="vertical-align:middle;text-align:right;padding-left:16px">
+            <div style="display:inline-block;background:#1d4ed8;color:#fff;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 12px;border-radius:20px;white-space:nowrap">Action Required</div>
+          </td>
+        </tr>
+      </table>
 
       <!-- Entry ID pill -->
       <div style="margin-bottom:20px">
@@ -185,7 +175,6 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
       </div>
     </div>
 
-    <!-- Bottom accent bar -->
     <div style="height:3px;background:#1d4ed8"></div>
 
   </div>
