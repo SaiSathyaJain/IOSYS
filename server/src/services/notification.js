@@ -105,19 +105,28 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
   <div style="max-width:600px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,0.10)">
 
     <!-- Top accent bar -->
-    <div style="height:4px;background:linear-gradient(90deg,#1d4ed8,#f97316)"></div>
+    <div style="height:4px;background:#1d4ed8"></div>
 
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);padding:32px">
+    <div style="background:#1d4ed8;padding:28px 32px">
       <table style="width:100%;border-collapse:collapse">
         <tr>
           <td style="vertical-align:middle">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:10px">SSSIHL &mdash; IOSYS</div>
+            <table style="border-collapse:collapse;margin-bottom:14px">
+              <tr>
+                <td style="vertical-align:middle;padding-right:10px">
+                  <img src="https://iosys.pages.dev/sssihl-icon.jpg" alt="SSSIHL" width="36" height="36" style="border-radius:8px;display:block;border:0"/>
+                </td>
+                <td style="vertical-align:middle">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6)">SSSIHL &mdash; IOSYS</div>
+                </td>
+              </tr>
+            </table>
             <div style="font-size:22px;font-weight:700;color:#fff;line-height:1.2">New Entry Assigned to You</div>
-            <div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.6)">Action required before the due date</div>
+            <div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.65)">Action required before the due date</div>
           </td>
-          <td style="vertical-align:middle;text-align:right;padding-left:16px">
-            <div style="display:inline-block;background:rgba(249,115,22,0.2);border:1px solid rgba(249,115,22,0.4);color:#fdba74;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 12px;border-radius:20px">Action Required</div>
+          <td style="vertical-align:top;text-align:right;padding-left:16px">
+            <div style="display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 12px;border-radius:20px">Action Required</div>
           </td>
         </tr>
       </table>
@@ -160,7 +169,7 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
 
       <!-- CTA Button -->
       <div style="text-align:center;margin:28px 0 8px">
-        <a href="https://iosys.pages.dev" style="display:inline-block;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;text-decoration:none;padding:13px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.02em">Open IOSYS Portal &rarr;</a>
+        <a href="https://iosys.pages.dev" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;padding:13px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.02em">Open IOSYS Portal &rarr;</a>
       </div>
     </div>
 
@@ -173,7 +182,7 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
     </div>
 
     <!-- Bottom accent bar -->
-    <div style="height:3px;background:linear-gradient(90deg,#f97316,#1d4ed8)"></div>
+    <div style="height:3px;background:#1d4ed8"></div>
 
   </div>
 </body>
