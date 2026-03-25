@@ -3,7 +3,6 @@ import { cors } from 'hono/cors';
 import { inwardRouter } from './routers/inward.js';
 import { outwardRouter } from './routers/outward.js';
 import { dashboardRouter } from './routers/dashboard.js';
-import { aiRouter } from './routers/ai.js';
 import { sendWeeklyReport } from './services/weeklyReport.js';
 
 
@@ -46,7 +45,6 @@ app.get('/api/health', (c) => {
 app.route('/api/inward', inwardRouter);
 app.route('/api/outward', outwardRouter);
 app.route('/api/dashboard', dashboardRouter);
-app.route('/api/ai', aiRouter);
 
 
 export default {
