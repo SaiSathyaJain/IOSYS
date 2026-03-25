@@ -105,8 +105,8 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
     return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
-<body style="margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;color:#1e293b">
-  <div style="max-width:600px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,0.10)">
+<body style="margin:0;padding:16px;font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;color:#1e293b">
+  <div style="max-width:560px;margin:24px auto;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,0.10)">
 
     <!-- Logo Header -->
     <div style="background:#ffffff;padding:24px 32px;text-align:center;border-bottom:1px solid #e2e8f0">
