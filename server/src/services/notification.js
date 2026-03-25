@@ -119,7 +119,7 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
             <table style="border-collapse:collapse;margin-bottom:14px">
               <tr>
                 <td style="vertical-align:middle;padding-right:10px">
-                  <img src="https://iosys.pages.dev/sssihl-icon.jpg" alt="SSSIHL" width="36" height="36" style="border-radius:8px;display:block;border:0"/>
+                  <img src="https://iosys.pages.dev/IO_SYS_LOGO.png" alt="IOSYS" width="36" height="36" style="border-radius:8px;display:block;border:0"/>
                 </td>
                 <td style="vertical-align:middle">
                   <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6)">SSSIHL &mdash; IOSYS</div>
