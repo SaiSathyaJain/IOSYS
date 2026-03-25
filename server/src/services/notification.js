@@ -33,13 +33,21 @@ function toBase64Url(str) {
 }
 
 /**
+ * RFC 2047 encode a subject line so non-ASCII chars (em dash, etc.) survive email headers.
+ */
+function encodeSubject(text) {
+    const encoded = btoa(unescape(encodeURIComponent(text)));
+    return `=?UTF-8?B?${encoded}?=`;
+}
+
+/**
  * Build a minimal RFC-2822 message and base64url-encode it.
  */
 function buildRawMessage({ from, to, subject, html }) {
     const msg = [
         `From: ${from}`,
         `To: ${to}`,
-        `Subject: ${subject}`,
+        `Subject: ${encodeSubject(subject)}`,
         `MIME-Version: 1.0`,
         `Content-Type: text/html; charset=UTF-8`,
         ``,
@@ -79,74 +87,94 @@ export async function sendEmail({ to, subject, html, env }) {
 function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedTeam, assignmentInstructions, dueDate }) {
     const formattedDue = dueDate
         ? new Date(dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-        : '—';
+        : 'Not specified';
 
     const instructionsBlock = assignmentInstructions
         ? `<div style="background:#fefce8;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:24px">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#92400e;margin-bottom:8px">Assignment Instructions</div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#92400e;margin-bottom:8px">Instructions from Admin</div>
             <p style="font-size:13px;color:#78350f;line-height:1.6;margin:0">${assignmentInstructions}</p>
            </div>`
         : '';
 
+    const teamColor = assignedTeam === 'UG' ? '#2563eb' : assignedTeam === 'PhD' ? '#7c3aed' : '#0891b2';
+
     return `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:#f4f6fb;color:#1e293b">
-  <div style="max-width:600px;margin:32px auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;color:#1e293b">
+  <div style="max-width:600px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,0.10)">
+
+    <!-- Top accent bar -->
+    <div style="height:4px;background:linear-gradient(90deg,#1d4ed8,#f97316)"></div>
 
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);padding:28px 32px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <div style="width:36px;height:36px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">📋</div>
-        <div style="color:rgba(255,255,255,0.65);font-size:11px;letter-spacing:0.1em;text-transform:uppercase">SSSIHL — Inward/Outward System</div>
-      </div>
-      <h1 style="margin:0 0 6px;color:#fff;font-size:21px;font-weight:700">New Entry Assigned to You</h1>
-      <p style="margin:0;color:rgba(255,255,255,0.65);font-size:13px">Please review the details below and take action before the due date.</p>
+    <div style="background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);padding:32px">
+      <table style="width:100%;border-collapse:collapse">
+        <tr>
+          <td style="vertical-align:middle">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:10px">SSSIHL &mdash; IOSYS</div>
+            <div style="font-size:22px;font-weight:700;color:#fff;line-height:1.2">New Entry Assigned to You</div>
+            <div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.6)">Action required before the due date</div>
+          </td>
+          <td style="vertical-align:middle;text-align:right;padding-left:16px">
+            <div style="display:inline-block;background:rgba(249,115,22,0.2);border:1px solid rgba(249,115,22,0.4);color:#fdba74;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 12px;border-radius:20px">Action Required</div>
+          </td>
+        </tr>
+      </table>
     </div>
 
     <!-- Body -->
-    <div style="padding:28px 32px">
+    <div style="background:#fff;padding:28px 32px">
 
-      <!-- Entry details -->
-      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;margin-bottom:24px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#94a3b8;margin-bottom:14px">Entry Details</div>
+      <!-- Entry ID pill -->
+      <div style="margin-bottom:20px">
+        <span style="background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;font-family:monospace;font-size:13px;font-weight:700;padding:6px 14px;border-radius:6px">${inwardNo}</span>
+      </div>
+
+      <!-- Entry details table -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:24px">
+        <div style="padding:12px 20px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#64748b">Entry Details</div>
         <table style="width:100%;border-collapse:collapse;font-size:13px">
           <tr>
-            <td style="padding:7px 0;color:#64748b;width:42%">Entry Number</td>
-            <td style="padding:7px 0;font-weight:700;color:#1e293b;font-family:monospace">${inwardNo}</td>
+            <td style="padding:12px 20px;color:#64748b;width:38%;border-bottom:1px solid #f1f5f9">Subject</td>
+            <td style="padding:12px 20px;font-weight:600;color:#0f172a;border-bottom:1px solid #f1f5f9">${subject}</td>
           </tr>
           <tr>
-            <td style="padding:7px 0;color:#64748b;border-top:1px solid #f1f5f9">Subject</td>
-            <td style="padding:7px 0;font-weight:600;color:#1e293b;border-top:1px solid #f1f5f9">${subject}</td>
+            <td style="padding:12px 20px;color:#64748b;border-bottom:1px solid #f1f5f9">From / Sender</td>
+            <td style="padding:12px 20px;color:#1e293b;border-bottom:1px solid #f1f5f9">${particularsFromWhom}</td>
           </tr>
           <tr>
-            <td style="padding:7px 0;color:#64748b;border-top:1px solid #f1f5f9">From / Sender</td>
-            <td style="padding:7px 0;color:#1e293b;border-top:1px solid #f1f5f9">${particularsFromWhom}</td>
-          </tr>
-          <tr>
-            <td style="padding:7px 0;color:#64748b;border-top:1px solid #f1f5f9">Assigned Team</td>
-            <td style="padding:7px 0;border-top:1px solid #f1f5f9">
-              <span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">${assignedTeam}</span>
+            <td style="padding:12px 20px;color:#64748b;border-bottom:1px solid #f1f5f9">Assigned Team</td>
+            <td style="padding:12px 20px;border-bottom:1px solid #f1f5f9">
+              <span style="background:${teamColor};color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700">${assignedTeam}</span>
             </td>
           </tr>
           <tr>
-            <td style="padding:7px 0;color:#64748b;border-top:1px solid #f1f5f9">Due Date</td>
-            <td style="padding:7px 0;font-weight:600;color:#dc2626;border-top:1px solid #f1f5f9">${formattedDue}</td>
+            <td style="padding:12px 20px;color:#64748b">Due Date</td>
+            <td style="padding:12px 20px;font-weight:700;color:#dc2626">${formattedDue}</td>
           </tr>
         </table>
       </div>
 
       ${instructionsBlock}
 
-      <p style="font-size:12px;color:#94a3b8;text-align:center;margin:0">
-        Log in to IOSYS to update the status and respond to this entry.
-      </p>
+      <!-- CTA Button -->
+      <div style="text-align:center;margin:28px 0 8px">
+        <a href="https://iosys.pages.dev" style="display:inline-block;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;text-decoration:none;padding:13px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.02em">Open IOSYS Portal &rarr;</a>
+      </div>
     </div>
 
     <!-- Footer -->
-    <div style="background:#f8fafc;padding:14px 32px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;text-align:center">
-      <strong>SSSIHL Inward/Outward System</strong> &nbsp;·&nbsp; This is an automated notification. Please do not reply.
+    <div style="background:#f8fafc;padding:16px 32px;border-top:1px solid #e2e8f0;text-align:center">
+      <div style="font-size:12px;color:#94a3b8">
+        <strong style="color:#64748b">SSSIHL Inward / Outward System</strong><br/>
+        <span style="margin-top:4px;display:inline-block">This is an automated notification &mdash; please do not reply to this email.</span>
+      </div>
     </div>
+
+    <!-- Bottom accent bar -->
+    <div style="height:3px;background:linear-gradient(90deg,#f97316,#1d4ed8)"></div>
+
   </div>
 </body>
 </html>`;
