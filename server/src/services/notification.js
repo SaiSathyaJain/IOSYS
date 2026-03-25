@@ -36,8 +36,10 @@ function toBase64Url(str) {
  * RFC 2047 encode a subject line so non-ASCII chars (em dash, etc.) survive email headers.
  */
 function encodeSubject(text) {
-    const encoded = btoa(unescape(encodeURIComponent(text)));
-    return `=?UTF-8?B?${encoded}?=`;
+    const bytes = new TextEncoder().encode(text);
+    let binary = '';
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return `=?UTF-8?B?${btoa(binary)}?=`;
 }
 
 /**
@@ -97,6 +99,8 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
         : '';
 
     const teamColor = assignedTeam === 'UG' ? '#2563eb' : assignedTeam === 'PhD' ? '#7c3aed' : '#0891b2';
+    const teamUrlMap = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'PhD': 'phd' };
+    const portalUrl = `https://iosys.pages.dev/team/${teamUrlMap[assignedTeam] || 'ug'}`;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -169,7 +173,7 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
 
       <!-- CTA Button -->
       <div style="text-align:center;margin:28px 0 8px">
-        <a href="https://iosys.pages.dev" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;padding:13px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.02em">Open IOSYS Portal &rarr;</a>
+        <a href="${portalUrl}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;padding:13px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.02em">Open ${assignedTeam} Portal &rarr;</a>
       </div>
     </div>
 
