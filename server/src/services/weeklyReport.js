@@ -37,53 +37,69 @@ function buildReportHtml({ generatedDate, entries }) {
     return `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"/>
-<style>
-  body{margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:#f4f6fb;color:#1e293b}
-  .wrapper{max-width:760px;margin:32px auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
-  .header{background:linear-gradient(135deg,#1e293b 0%,#334155 100%);padding:28px 32px}
-  .header h1{margin:0;color:#fff;font-size:22px;font-weight:700}
-  .header p{margin:6px 0 0;color:rgba(255,255,255,0.7);font-size:13px}
-  .body{padding:28px 32px}
-  .summary-box{background:#fff8e1;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;margin-bottom:24px}
-  .summary-box h3{margin:0 0 10px;font-size:14px;color:#92400e}
-  .summary-grid{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
-  .stat-card{flex:1;min-width:120px;background:#fff;border:1px solid #e8edf5;border-radius:8px;padding:14px;text-align:center}
-  .stat-num{font-size:28px;font-weight:700;color:#1e293b}
-  .stat-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-top:4px}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th{background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;border-bottom:2px solid #e8edf5}
-  .footer{background:#f8fafc;padding:16px 32px;border-top:1px solid #e8edf5;font-size:12px;color:#94a3b8;text-align:center}
-</style>
 </head>
-<body>
-<div class="wrapper">
-  <div class="header">
-    <h1>Weekly Pending Entries Report</h1>
-    <p>Generated: ${generatedDate} &nbsp;|&nbsp; Total Pending: ${total}</p>
+<body style="margin:0;padding:16px;font-family:'Segoe UI',Arial,sans-serif;background:#f4f6fb;color:#1e293b">
+<div style="max-width:700px;margin:24px auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+  <div style="background:#1e293b;padding:28px 32px">
+    <div style="font-size:22px;font-weight:700;color:#fff;margin:0">Weekly Pending Entries Report</div>
+    <div style="margin:6px 0 0;color:rgba(255,255,255,0.7);font-size:13px">Generated: ${generatedDate} &nbsp;|&nbsp; Total Pending: ${total}</div>
   </div>
-  <div class="body">
-    <div class="summary-box">
-      <h3>Summary</h3>
-      <p style="margin:0;font-size:13px;color:#78350f">The following entries require attention and are pending completion:</p>
-      <div class="summary-grid">
-        <div class="stat-card"><div class="stat-num">${unassigned}</div><div class="stat-label">Unassigned</div></div>
-        <div class="stat-card"><div class="stat-num">${pending}</div><div class="stat-label">Pending</div></div>
-        <div class="stat-card"><div class="stat-num">${inProgress}</div><div class="stat-label">In Progress</div></div>
-        <div class="stat-card"><div class="stat-num">${openOutward}</div><div class="stat-label">Open Outward</div></div>
-        <div class="stat-card" style="border-color:#5B7CFF"><div class="stat-num" style="color:#5B7CFF">${total}</div><div class="stat-label">Total Pending</div></div>
-      </div>
+  <div style="padding:28px 32px">
+    <div style="background:#fff8e1;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;margin-bottom:24px">
+      <div style="font-size:14px;font-weight:700;color:#92400e;margin:0 0 8px">Summary</div>
+      <p style="margin:0 0 16px;font-size:13px;color:#78350f">The following entries require attention and are pending completion:</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+        <tr>
+          <td width="20%" style="padding:4px">
+            <div style="background:#fff;border:1px solid #e8edf5;border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:28px;font-weight:700;color:#1e293b">${unassigned}</div>
+              <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-top:4px">Unassigned</div>
+            </div>
+          </td>
+          <td width="20%" style="padding:4px">
+            <div style="background:#fff;border:1px solid #e8edf5;border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:28px;font-weight:700;color:#1e293b">${pending}</div>
+              <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-top:4px">Pending</div>
+            </div>
+          </td>
+          <td width="20%" style="padding:4px">
+            <div style="background:#fff;border:1px solid #e8edf5;border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:28px;font-weight:700;color:#1e293b">${inProgress}</div>
+              <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-top:4px">In Progress</div>
+            </div>
+          </td>
+          <td width="20%" style="padding:4px">
+            <div style="background:#fff;border:1px solid #e8edf5;border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:28px;font-weight:700;color:#1e293b">${openOutward}</div>
+              <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-top:4px">Open Outward</div>
+            </div>
+          </td>
+          <td width="20%" style="padding:4px">
+            <div style="background:#fff;border:1px solid #5B7CFF;border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:28px;font-weight:700;color:#5B7CFF">${total}</div>
+              <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-top:4px">Total Pending</div>
+            </div>
+          </td>
+        </tr>
+      </table>
     </div>
     ${total === 0 ? '<p style="text-align:center;color:#10b981;font-weight:600;padding:20px">All entries are up to date!</p>' : `
-    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:0.1em;color:#5B7CFF;margin:0 0 14px">Detailed Report</h3>
-    <table>
+    <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#5B7CFF;margin:0 0 14px">Detailed Report</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px">
       <thead><tr>
-        <th>Type</th><th>Entry Number</th><th>Subject</th><th>Person</th><th>Date</th><th>Team</th><th>Status</th>
+        <th style="background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;border-bottom:2px solid #e8edf5">Type</th>
+        <th style="background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;border-bottom:2px solid #e8edf5">Entry Number</th>
+        <th style="background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;border-bottom:2px solid #e8edf5">Subject</th>
+        <th style="background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;border-bottom:2px solid #e8edf5">Person</th>
+        <th style="background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;border-bottom:2px solid #e8edf5">Date</th>
+        <th style="background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;border-bottom:2px solid #e8edf5">Team</th>
+        <th style="background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;border-bottom:2px solid #e8edf5">Status</th>
       </tr></thead>
       <tbody>${rowsHtml}</tbody>
     </table>`}
   </div>
-  <div class="footer">
-    <strong>SSSIHL Inward/Outward System</strong> &nbsp;·&nbsp; This is an automated weekly report. Please do not reply.
+  <div style="background:#f8fafc;padding:16px 32px;border-top:1px solid #e8edf5;font-size:12px;color:#94a3b8;text-align:center">
+    <strong style="color:#64748b">SSSIHL Inward/Outward System</strong> &nbsp;·&nbsp; This is an automated weekly report. Please do not reply.
   </div>
 </div>
 </body>

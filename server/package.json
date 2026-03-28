@@ -1,0 +1,14 @@
+{
+    "name": "inward-outward-server",
+    "version": "1.0.0",
+    "description": "Backend API for Inward/Outward Document Management System",
+    "main": "src/worker.js",
+    "type": "module",
+    "scripts": {
+        "dev": "npx wrangler dev",
+        "deploy": "npx wrangler deploy"
+    },
+    "dependencies": {
+        "hono": "^4.11.7"
+    }
+}
