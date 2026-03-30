@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import LandingPage from './components/LandingPage/LandingPage'
+import LandingPage from './pages/LandingPage'
 import AdminPortal from './components/AdminPortal/AdminPortal'
 import Dashboard from './components/Dashboard/Dashboard'
 import TeamSelection from './pages/TeamSelection'
