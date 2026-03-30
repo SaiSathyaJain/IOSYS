@@ -1,9 +1,9 @@
 # Inward/Outward Management System
 ## Software Documentation
 
-**Version:** 1.0.0
+**Version:** 1.2.0
 **Organization:** Sri Sathya Sai Institute of Higher Learning (SSSIHL)
-**Last Updated:** February 7, 2026
+**Last Updated:** March 30, 2026
 
 ---
 
@@ -25,18 +25,19 @@
 ## System Overview
 
 ### Purpose
-The Inward/Outward Management System is a web-based application designed to streamline the management of inward and outward correspondence within SSSIHL. It provides a centralized platform for tracking, assigning, and processing institutional communications.
+The Inward/Outward Management System (IOSYS) is a web-based application designed to streamline the management of inward and outward correspondence within SSSIHL. It provides a centralized platform for tracking, assigning, and processing institutional communications across three academic teams.
 
 ### Key Objectives
-- Digitize and track all inward correspondence
-- Enable efficient task assignment to teams
-- Facilitate outward communication management
+- Digitize and track all inward correspondence with auto-generated reference numbers
+- Enable efficient task assignment to UG, PG/PRO, and PhD teams
+- Facilitate outward communication management per team
 - Provide real-time dashboard analytics
-- Ensure accountability and transparency in document processing
+- Send automated email notifications on task assignment
+- Deliver weekly summary reports to administrators via scheduled emails
 
 ### Target Users
-- **Administrators**: Manage inward entries, assign tasks, view comprehensive statistics
-- **Team Members**: Process assigned tasks, create outward entries, track work progress
+- **Administrators**: Manage inward entries, assign tasks, view comprehensive statistics, export reports
+- **Team Members (UG / PG/PRO / PhD)**: Process assigned tasks, create outward entries, track work progress
 
 ---
 
@@ -46,38 +47,38 @@ The Inward/Outward Management System is a web-based application designed to stre
 
 #### Frontend
 - **Framework**: React 19.2.0
-- **Build Tool**: Vite 7.2.4
+- **Build Tool**: Vite 7.2.4 (requires `vite.config.js` with `@vitejs/plugin-react`)
 - **Routing**: React Router DOM 7.13.0
-- **Styling**: Custom CSS with theme support (Dark/Light mode)
+- **Styling**: Custom CSS with Dark/Light theme support
 - **UI Components**: Lucide React icons
-- **Particles**: @tsparticles for animated backgrounds
 - **HTTP Client**: Axios 1.13.2
-- **Authentication**: Google OAuth (@react-oauth/google)
+- **Date Picker**: react-datepicker
 
 #### Backend
 - **Runtime**: Cloudflare Workers
 - **Framework**: Hono 4.4.0
 - **Database**: Cloudflare D1 (SQLite)
-- **Authentication**: JWT token-based
-- **Email Service**: Supabase (@supabase/supabase-js)
+- **Email Service**: Gmail REST API via OAuth2 (fetch-based — no SMTP/TCP)
+- **AI Features**: OpenRouter API (via `routers/ai.js`)
+- **Scheduled Jobs**: Cloudflare Workers Cron Triggers
 
 #### Deployment
-- **Frontend Hosting**: Cloudflare Pages
-- **Backend API**: Cloudflare Workers
-- **Database**: Cloudflare D1
+- **Frontend Hosting**: Cloudflare Pages (`iosys.pages.dev`)
+- **Backend API**: Cloudflare Workers (`iosys.saisathyajain.workers.dev`)
+- **Database**: Cloudflare D1 (`inward-outward-db`)
 - **Version Control**: Git/GitHub
-- **CI/CD**: Automated deployment via GitHub integration
+- **CI/CD**: Cloudflare Pages auto-deploy on push to `main`
 
 ### System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      Client Layer                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Landing    │  │    Admin     │  │     Team     │      │
-│  │     Page     │  │    Portal    │  │    Portal    │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│         React SPA (Cloudflare Pages)                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │ Landing  │  │  Admin   │  │  Team    │  │  Team    │   │
+│  │  Page    │  │  Portal  │  │Selection │  │  Portal  │   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
+│         React SPA (Cloudflare Pages — iosys.pages.dev)      │
 └─────────────────────────────────────────────────────────────┘
                             │
                             │ HTTPS/REST API
@@ -85,57 +86,78 @@ The Inward/Outward Management System is a web-based application designed to stre
 ┌─────────────────────────────────────────────────────────────┐
 │                   API Layer (Hono)                          │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │  Inward  │  │ Outward  │  │Dashboard │  │   Auth   │   │
-│  │   API    │  │   API    │  │   API    │  │   API    │   │
+│  │  Inward  │  │ Outward  │  │Dashboard │  │   AI     │   │
+│  │  Router  │  │  Router  │  │  Router  │  │  Router  │   │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
-│         Cloudflare Workers                                  │
+│    Cloudflare Workers (iosys.saisathyajain.workers.dev)     │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                  Data Layer (D1/SQLite)                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │  Inward  │  │ Outward  │  │   Teams  │  │  Users   │   │
-│  │  Entries │  │  Entries │  │          │  │          │   │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
-│              Cloudflare D1 Database                         │
+│         ┌───────────────────┐  ┌───────────────────┐       │
+│         │      inward       │  │      outward      │       │
+│         │  (58+ entries)    │  │   (entries)       │       │
+│         └───────────────────┘  └───────────────────┘       │
+│              Cloudflare D1 — inward-outward-db              │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### Routing
+
+| Path | Component | Description |
+|------|-----------|-------------|
+| `/` | `pages/LandingPage` | Entry point with portal links |
+| `/admin` | `components/AdminPortal/AdminPortal` | Admin entry management |
+| `/admin/dashboard` | `components/Dashboard/Dashboard` | Analytics dashboard |
+| `/team` | `pages/TeamSelection` | Team workspace picker |
+| `/team/:teamSlug` | `components/TeamPortal/TeamPortal` | Team-specific portal |
+
+Team slugs: `ug`, `pg-pro`, `phd`
 
 ### Project Structure
 
 ```
 Inward_outward System/
-├── client/                  # Frontend React application
+├── client/                      # Frontend React application
 │   ├── src/
-│   │   ├── components/      # React components
-│   │   │   ├── AdminPortal/ # Admin portal components
-│   │   │   ├── TeamPortal/  # Team portal components
-│   │   │   ├── Dashboard/   # Dashboard components
-│   │   │   ├── LandingPage/ # Landing page
-│   │   │   └── Messages/    # Messaging components
-│   │   ├── services/        # API service layer
-│   │   │   └── api.js       # API endpoints
-│   │   ├── App.jsx          # Main app component
-│   │   ├── App.css          # Global styles
-│   │   └── main.jsx         # Entry point
-│   ├── public/              # Static assets
-│   │   ├── sssihl-icon.jpg  # University logo
-│   │   └── IO_SYS_LOGO.png  # System logo
-│   ├── .env                 # Development environment
-│   ├── .env.production      # Production environment
-│   └── package.json         # Dependencies
+│   │   ├── components/
+│   │   │   ├── AdminPortal/     # Admin entry management + navbar
+│   │   │   ├── TeamPortal/      # Team-specific work portal
+│   │   │   └── Dashboard/       # Analytics dashboard
+│   │   ├── pages/
+│   │   │   ├── LandingPage.jsx  # Home page with portal cards
+│   │   │   └── TeamSelection.jsx# Team workspace selector
+│   │   ├── services/
+│   │   │   └── api.js           # Axios API service layer
+│   │   ├── App.jsx              # Router + route definitions
+│   │   ├── index.css            # Global CSS variables + themes
+│   │   └── main.jsx             # React entry point
+│   ├── public/
+│   │   ├── sssihl-icon.jpg      # SSSIHL logo (used in navbars)
+│   │   └── IO_SYS_LOGO.png      # Email header logo
+│   ├── vite.config.js           # Vite config with React plugin
+│   ├── .env                     # Dev: VITE_API_URL=http://localhost:8787/api
+│   └── package.json
 │
-├── worker/                  # Backend Cloudflare Worker
+├── server/                      # Cloudflare Worker backend
 │   ├── src/
-│   │   └── index.js         # API routes and handlers
-│   ├── migrations/          # Database migrations
-│   │   └── 0001_init.sql    # Initial schema
-│   ├── wrangler.toml        # Worker configuration
-│   └── package.json         # Dependencies
+│   │   ├── worker.js            # Hono app entry point + cron handler
+│   │   ├── routers/
+│   │   │   ├── inward.js        # Inward CRUD + email trigger
+│   │   │   ├── outward.js       # Outward CRUD
+│   │   │   ├── dashboard.js     # Stats aggregation
+│   │   │   └── ai.js            # AI features (OpenRouter)
+│   │   ├── services/
+│   │   │   └── notification.js  # Gmail REST API email sender
+│   │   └── scripts/
+│   │       └── get-gmail-token.js # One-time OAuth token setup
+│   ├── schema.sql               # D1 table definitions
+│   ├── wrangler.toml            # Worker config + cron schedule
+│   ├── .dev.vars                # Local secrets (Gmail OAuth, OpenRouter)
+│   └── package.json
 │
-├── package.json             # Root workspace config
-└── README.md                # Project readme
+└── DOCUMENTATION.md
 ```
 
 ---
@@ -144,82 +166,79 @@ Inward_outward System/
 
 ### Admin Portal
 
-#### Dashboard
-- **Overview Statistics**
-  - Total inward entries
-  - Pending work count
-  - Completed tasks count
-  - Total outward entries
-- **Team Performance Metrics**
-  - Individual team statistics
-  - Assigned tasks per team
-  - Pending and completed work
-  - Completion rate percentage
-- **Team Detail View**
-  - Click on team to view detailed statistics
-  - Assigned entries for selected team
-  - Team-specific outward entries
+#### Navbar
+- SSSIHL logo + brand name
+- Back button (returns to landing page)
+- **Export Report** button — downloads outward expenditure report
+- **Refresh** button — reloads entry data
+- **New Entry** button — opens create entry form
+- Theme toggle (dark/light)
+- Admin user pill (role + avatar)
 
 #### Entry Management
 - **Create Inward Entry**
-  - Subject, department, reference number
-  - Date received, type, remarks
-  - Automatic timestamp tracking
-- **Assign Tasks**
-  - Assign entries to specific teams
-  - Set assignment status (Pending/In Progress/Completed)
-  - Add assignment remarks
+  - Means of receipt, sender (particulars from whom), subject
+  - Sign/receipt date & time, file reference
+  - Assign team (UG / PG/PRO / PhD), assignee email, instructions, due date
+  - Auto-generates `INW/YYYY/NNN` reference numbers
+  - Triggers email notification to assignee on creation
+- **Reassign Entry**
+  - Change team, email, instructions, due date on existing entries
+  - Sends new assignment email notification
 - **Search & Filter**
-  - Search by subject or reference
-  - Filter by team, status, type
-  - Sort by date or status
-- **View All Entries**
-  - Comprehensive list with details
-  - Color-coded status indicators
-  - Quick action buttons
+  - Search by inward number, subject, or sender
+  - Filter by status (All / Pending / Completed / Unassigned)
+  - Filter by team (All / UG / PG/PRO / PhD)
+- **View Entry Detail** — modal with all fields
+- **Stats Cards** — Total Inward, Pending, Completed, Unassigned
+
+#### Export Report
+- Downloads outward expenditure data as a report
+- Accessible via navbar Export Report button
 
 ### Team Portal
 
-#### Assignments View
-- **Active Assignments**
-  - View all assigned tasks
-  - Filter by status and team
-  - Update assignment status
-  - Add remarks/comments
-- **Create Outward Entry**
-  - Subject, recipient, type
-  - Date sent, remarks
-  - Link to related inward entry (optional)
-- **Task Processing**
-  - Update status (Pending → In Progress → Completed)
-  - Add processing remarks
-  - Track completion time
+#### Workspace Selection
+- Landing at `/team` shows three team cards: UG, PG/PRO, PhD
+- Each card navigates to `/team/:teamSlug`
 
-#### Statistics
-- Total assigned tasks
-- Pending work count
-- Completed tasks count
-- Total outward entries created
+#### Team-Specific View (`/team/:teamSlug`)
+- Lists inward entries assigned to that team
+- Filter by status
+- Update assignment status (Pending → Completed)
+- Create outward entries linked to inward entries
+- View team statistics
+
+### Email Notifications
+
+#### Assignment Notification
+Triggered automatically when an inward entry is created or reassigned with both `assignedTeam` and `assignedToEmail` set.
+
+Email includes:
+- Inward reference number, subject, sender
+- Team name + portal link
+- Assignment instructions and due date
+- SSSIHL logo header
+
+#### Weekly Summary Report (Scheduled)
+- **Schedule**: Every Saturday at 11:00 AM IST (05:30 UTC)
+- Configured in `wrangler.toml` as a cron trigger: `30 5 * * 6`
+- Report sent to the admin/boss email
+- Includes total inward, pending, completed, unassigned counts
+- Per-team breakdown table
 
 ### Common Features
 
-#### Authentication
-- Google OAuth integration
-- Email-based authentication
-- Whitelisted email domains (@sssihl.edu.in)
-- Session management with localStorage
-
 #### Theme Support
-- Dark mode (default)
-- Light mode
-- User preference persistence
-- Smooth theme transitions
+- Dark mode (default) and light mode
+- User preference saved in `localStorage`
+- Applied via `data-theme` attribute on `<body>`
+- All pages sync theme state on load
 
 #### Responsive Design
-- Mobile-friendly interface
-- Tablet optimization
-- Desktop full-feature experience
-- Adaptive layouts
+- Mobile-friendly layouts
+- Tablet and desktop optimized
+- Sticky navbars on all pages
 
 ---
 
@@ -228,7 +247,6 @@ Inward_outward System/
 ### Prerequisites
 
 ```bash
-# Required software
 Node.js >= 18.x
 npm >= 10.x
 Git
@@ -240,359 +258,219 @@ Cloudflare account (for deployment)
 #### 1. Clone Repository
 
 ```bash
-git clone https://github.com/sathyajain12/IO_SYS.git
-cd Inward_outward\ System
+git clone https://github.com/SaiSathyaJain/IOSYS.git
+cd "Inward_outward System"
 ```
 
 #### 2. Install Dependencies
 
 ```bash
-# Install all workspace dependencies
-npm install
-
-# Or install individually
 cd client && npm install
-cd ../worker && npm install
+cd ../server && npm install
 ```
 
 #### 3. Environment Configuration
 
-**Client (.env)**
+**`client/.env`**
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=http://localhost:8787/api
 ```
 
-**Client (.env.production)**
+**`server/.dev.vars`** (create this file — never commit)
 ```env
-VITE_API_URL=https://inward-outward-api.saisathyajain.workers.dev/api
+GMAIL_CLIENT_ID=your_client_id
+GMAIL_CLIENT_SECRET=your_client_secret
+GMAIL_REFRESH_TOKEN=your_refresh_token
+GMAIL_FROM=your_gmail@gmail.com
+OPENROUTER_API_KEY=your_openrouter_key
 ```
 
 #### 4. Database Setup
 
 ```bash
-# Navigate to worker directory
-cd worker
-
-# Create local D1 database
-wrangler d1 create inward-outward-db
-
-# Run migrations locally
-npm run db:migrate:local
-
-# Run migrations on production
-npm run db:migrate
+cd server
+# Create local D1 tables
+npx wrangler d1 execute inward-outward-db --local --file=schema.sql
 ```
 
-#### 5. Run Development Servers
+#### 5. Gmail OAuth Setup (one-time)
 
-**Terminal 1 - Frontend**
+```bash
+cd server
+node src/scripts/get-gmail-token.js
+# Follow prompts, copy refresh token into .dev.vars
+```
+
+> OAuth credential type must be **Web application** with redirect URI `http://localhost:3456`
+
+#### 6. Run Development Servers
+
+**Terminal 1 — Frontend**
 ```bash
 cd client
 npm run dev
-# Opens at http://localhost:5173
+# http://localhost:5173
 ```
 
-**Terminal 2 - Backend**
+**Terminal 2 — Backend**
 ```bash
-cd worker
-npm run dev
-# Runs at http://localhost:8787
+cd server
+npx wrangler dev
+# http://localhost:8787
 ```
 
-### Build for Production
+#### 7. Test Scheduled Email (local)
 
 ```bash
-# Build client
-cd client
-npm run build
-
-# Build worker (if needed)
-cd ../worker
-npm run build
-
-# Or build both from root
-cd ..
-npm run build
+# In a separate terminal while wrangler dev is running:
+curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
 ```
-
----
-
-## User Guide
-
-### Admin User Guide
-
-#### Logging In
-1. Navigate to the application URL
-2. Click "Enter Admin Portal"
-3. Sign in with Google using @sssihl.edu.in email
-4. Access granted if whitelisted
-
-#### Creating an Inward Entry
-1. Click "Entries" in navigation
-2. Click "+ New Entry" button
-3. Fill in required fields:
-   - Subject
-   - Department
-   - Reference Number
-   - Date Received
-   - Type (Letter/Application/Notice/etc.)
-   - Remarks (optional)
-4. Click "Create Entry"
-
-#### Assigning Tasks to Teams
-1. View entry list
-2. Click "Assign" on desired entry
-3. Select team from dropdown
-4. Set initial status (usually "Pending")
-5. Add assignment remarks if needed
-6. Click "Assign" to confirm
-
-#### Viewing Dashboard Statistics
-1. Click "Dashboard" in navigation
-2. View overview cards (Total Inward, Pending, Completed, Outward)
-3. Scroll to Team Performance section
-4. Click on any team card to view detailed statistics
-5. View team-specific entries and outward communications
-
-#### Searching and Filtering
-1. Use search bar to find entries by subject/reference
-2. Use filters to narrow results:
-   - Filter by Team
-   - Filter by Status
-   - Filter by Type
-3. Click "Clear Filters" to reset
-
-### Team User Guide
-
-#### Logging In
-1. Navigate to application URL
-2. Click "Enter Team Portal"
-3. Sign in with Google using @sssihl.edu.in email
-
-#### Viewing Assignments
-1. Dashboard shows all assigned tasks
-2. Use team filter to see specific team assignments
-3. Use status filter to see Pending/In Progress/Completed tasks
-
-#### Processing Assignments
-1. Locate assigned entry
-2. Click "Update Status" button
-3. Change status as work progresses:
-   - Pending → In Progress (when starting work)
-   - In Progress → Completed (when finished)
-4. Add remarks about actions taken
-5. Save changes
-
-#### Creating Outward Entry
-1. Click "+ New Outward" button
-2. Fill in details:
-   - Subject
-   - Recipient
-   - Type (Letter/Report/Notice/etc.)
-   - Date Sent
-   - Remarks
-   - Related Inward Entry (optional)
-3. Click "Create"
-
-#### Viewing Statistics
-1. Statistics cards show:
-   - Total Assigned
-   - Pending Work
-   - Completed Tasks
-   - Total Outward
-2. Auto-updates as you process entries
 
 ---
 
 ## API Documentation
 
 ### Base URL
-- **Production**: `https://inward-outward-api.saisathyajain.workers.dev/api`
+- **Production**: `https://iosys.saisathyajain.workers.dev/api`
 - **Local**: `http://localhost:8787/api`
 
-### Authentication
-All API requests require authentication. Include credentials in requests as needed.
-
-### Endpoints
-
-#### Inward Entries
+### Inward Endpoints
 
 **GET /api/inward**
-- Retrieves all inward entries
-- Response: `{ success: true, entries: [...] }`
+- Returns all inward entries
+- Response: `{ success: true, data: { entries: [...] } }`
 
 **POST /api/inward**
-- Creates new inward entry
+- Creates a new inward entry, triggers assignment email if team + email set
 - Body:
 ```json
 {
+  "means": "string",
+  "particularsFromWhom": "string",
   "subject": "string",
-  "department": "string",
-  "referenceNo": "string",
-  "dateReceived": "YYYY-MM-DD",
-  "type": "string",
-  "remarks": "string"
+  "signReceiptDateTime": "string",
+  "fileReference": "string",
+  "assignedTeam": "UG | PG/PRO | PhD",
+  "assignedToEmail": "string",
+  "assignmentInstructions": "string",
+  "dueDate": "YYYY-MM-DD"
 }
 ```
-- Response: `{ success: true, entry: {...} }`
 
-**PUT /api/inward/:id/assign**
-- Assigns entry to team
-- Body:
-```json
-{
-  "assignedTeam": "string",
-  "assignmentStatus": "string",
-  "assignedRemarks": "string"
-}
-```
+**PUT /api/inward/:id**
+- Updates/reassigns an entry
+- Same body shape as POST
 
 **PUT /api/inward/:id/status**
-- Updates assignment status
-- Body: `{ "assignmentStatus": "string" }`
+- Updates assignment status only
+- Body: `{ "assignmentStatus": "Pending | Completed | Unassigned" }`
 
-#### Outward Entries
+**DELETE /api/inward/:id**
+- Deletes an inward entry
 
-**GET /api/outward?team=**
-- Retrieves outward entries (optionally filtered by team)
-- Response: `{ success: true, entries: [...] }`
+### Outward Endpoints
+
+**GET /api/outward**
+- Returns all outward entries (optionally `?team=UG`)
 
 **POST /api/outward**
-- Creates new outward entry
-- Body:
+- Creates an outward entry
 ```json
 {
+  "means": "string",
+  "toWhom": "string",
   "subject": "string",
-  "recipient": "string",
-  "dateSent": "YYYY-MM-DD",
-  "type": "string",
-  "remarks": "string",
-  "relatedInwardId": "number (optional)"
+  "sentBy": "string",
+  "signReceiptDateTime": "string",
+  "postalTariff": 0.0,
+  "dueDate": "YYYY-MM-DD",
+  "linkedInwardId": null,
+  "createdByTeam": "UG | PG/PRO | PhD",
+  "teamMemberEmail": "string"
 }
 ```
 
-**PUT /api/outward/:id**
-- Updates outward entry
-
 **PUT /api/outward/:id/close**
-- Marks outward entry as closed
+- Marks outward entry as case closed
 
-#### Dashboard Statistics
+### Dashboard Endpoints
 
 **GET /api/dashboard/stats**
-- Retrieves overall system statistics
-- Response:
 ```json
 {
   "success": true,
-  "stats": {
-    "totalInward": number,
-    "pendingWork": number,
-    "completedWork": number,
-    "totalOutward": number
+  "data": {
+    "stats": {
+      "totalInward": 58,
+      "pending": 55,
+      "completed": 1,
+      "unassigned": 2,
+      "totalOutward": 0
+    }
   }
 }
 ```
 
-**GET /api/dashboard/teams**
-- Retrieves all teams with statistics
-- Response:
-```json
-{
-  "success": true,
-  "teamStats": [
-    {
-      "teamName": "string",
-      "assigned": number,
-      "pending": number,
-      "completed": number,
-      "completionRate": number
-    }
-  ]
-}
-```
-
-**GET /api/dashboard/team-stats/:teamName**
-- Retrieves statistics for specific team
+**GET /api/dashboard/team-stats**
+- Per-team breakdown of assigned, pending, completed counts
 
 ---
 
 ## Database Schema
 
-### Tables
-
-#### inward_entries
-Stores all incoming correspondence
+### `inward` table
 
 ```sql
-CREATE TABLE inward_entries (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    subject TEXT NOT NULL,
-    department TEXT,
-    referenceNo TEXT,
-    dateReceived DATE,
-    type TEXT,
-    remarks TEXT,
-    assignedTeam TEXT,
-    assignmentStatus TEXT DEFAULT 'Pending',
-    assignedRemarks TEXT,
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS inward (
+    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+    inward_no               TEXT UNIQUE NOT NULL,       -- e.g. INW/2026/058
+    means                   TEXT,                       -- e.g. Email, Post
+    particulars_from_whom   TEXT,                       -- Sender name/org
+    subject                 TEXT,
+    sign_receipt_datetime   TEXT,
+    file_reference          TEXT,
+    assigned_team           TEXT,                       -- UG | PG/PRO | PhD
+    assigned_to_email       TEXT,
+    assignment_instructions TEXT,
+    assignment_date         TEXT,
+    assignment_status       TEXT DEFAULT 'Unassigned',  -- Unassigned | Pending | Completed
+    due_date                TEXT,
+    completion_date         TEXT,
+    created_at              TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TEXT DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-**Fields:**
-- `id`: Unique identifier
-- `subject`: Subject/title of the entry
-- `department`: Originating department
-- `referenceNo`: Reference number
-- `dateReceived`: Date entry was received
-- `type`: Category (Letter, Application, Notice, etc.)
-- `remarks`: Additional notes
-- `assignedTeam`: Team assigned to process
-- `assignmentStatus`: Status (Pending/In Progress/Completed)
-- `assignedRemarks`: Assignment notes
-- `createdAt`: Entry creation timestamp
-- `updatedAt`: Last update timestamp
-
-#### outward_entries
-Stores all outgoing correspondence
+### `outward` table
 
 ```sql
-CREATE TABLE outward_entries (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    subject TEXT NOT NULL,
-    recipient TEXT,
-    dateSent DATE,
-    type TEXT,
-    team TEXT,
-    remarks TEXT,
-    relatedInwardId INTEGER,
-    status TEXT DEFAULT 'Open',
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (relatedInwardId) REFERENCES inward_entries(id)
+CREATE TABLE IF NOT EXISTS outward (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    outward_no          TEXT UNIQUE NOT NULL,
+    means               TEXT,
+    to_whom             TEXT,
+    subject             TEXT,
+    sent_by             TEXT,
+    sign_receipt_datetime TEXT,
+    case_closed         INTEGER DEFAULT 0,
+    file_reference      TEXT,
+    postal_tariff       REAL,
+    due_date            TEXT,
+    linked_inward_id    INTEGER,
+    created_by_team     TEXT,
+    team_member_email   TEXT,
+    created_at          TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (linked_inward_id) REFERENCES inward(id)
 );
 ```
-
-**Fields:**
-- `id`: Unique identifier
-- `subject`: Subject/title
-- `recipient`: Recipient name/organization
-- `dateSent`: Date sent
-- `type`: Category
-- `team`: Originating team
-- `remarks`: Additional notes
-- `relatedInwardId`: Link to related inward entry
-- `status`: Open/Closed status
-- `createdAt`: Creation timestamp
-- `updatedAt`: Update timestamp
 
 ### Indexes
+
 ```sql
-CREATE INDEX idx_inward_team ON inward_entries(assignedTeam);
-CREATE INDEX idx_inward_status ON inward_entries(assignmentStatus);
-CREATE INDEX idx_outward_team ON outward_entries(team);
+CREATE INDEX IF NOT EXISTS idx_inward_status       ON inward(assignment_status);
+CREATE INDEX IF NOT EXISTS idx_inward_assigned_team ON inward(assigned_team);
+CREATE INDEX IF NOT EXISTS idx_outward_created_by_team ON outward(created_by_team);
 ```
 
 ---
@@ -601,130 +479,111 @@ CREATE INDEX idx_outward_team ON outward_entries(team);
 
 ### Cloudflare Pages (Frontend)
 
-#### Prerequisites
-- Cloudflare account
-- GitHub repository connected
+#### Build Settings
+| Setting | Value |
+|---------|-------|
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Root directory | `client` |
 
-#### Configuration
-1. **Build Settings**
-   - Build command: `npm run build --workspace=client`
-   - Build output directory: `client/dist`
-   - Root directory: `/`
+#### Required Environment Variable (CF Pages Dashboard)
+```
+VITE_API_URL = https://iosys.saisathyajain.workers.dev/api
+```
 
-2. **Environment Variables**
-   - Set `VITE_API_URL` to your Worker API URL
+> This cannot be committed (`.env.production` is gitignored). It **must** be set in the Cloudflare Pages dashboard under Settings → Environment Variables.
 
-#### Deployment Steps
-1. Push code to GitHub
-2. Cloudflare Pages auto-builds and deploys
-3. Access at: `https://io-sys.pages.dev` (or custom domain)
+#### Deployment
+Push to `main` — Cloudflare Pages auto-builds and deploys.
+
+Live URL: `https://iosys.pages.dev`
 
 ### Cloudflare Workers (Backend)
 
-#### Prerequisites
-- Wrangler CLI installed: `npm install -g wrangler`
-- Cloudflare account authenticated: `wrangler login`
-
-#### Configuration
-**wrangler.toml**
+#### wrangler.toml
 ```toml
-name = "inward-outward-api"
-main = "src/index.js"
-compatibility_date = "2024-01-01"
+name = "iosys"
+main = "src/worker.js"
+compatibility_date = "2024-02-03"
+account_id = "1966c03f4aadbbe46523c450e7c71c51"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "inward-outward-db"
 database_id = "65cdca58-f391-42fd-b314-2bdf52aa6a19"
 
-[vars]
-ENVIRONMENT = "production"
+[triggers]
+crons = ["30 5 * * 6"]   # Every Saturday 11:00 AM IST
 ```
 
-#### Deployment Steps
+#### Deploy Worker
 ```bash
-cd worker
-
-# Deploy worker
-npm run deploy
-# or
-wrangler deploy
-
-# Run database migrations
-npm run db:migrate
+cd server
+npx wrangler deploy
 ```
 
-### Custom Domain Setup
+Live URL: `https://iosys.saisathyajain.workers.dev`
 
-#### Cloudflare Pages
-1. Go to Pages project settings
-2. Navigate to "Custom domains"
-3. Add domain: `io-sys.yourdomain.com`
-4. Update DNS records as instructed
-
-#### Cloudflare Workers
-1. Go to Worker settings
-2. Navigate to "Triggers"
-3. Add custom domain route
-4. Update DNS records
+#### Production Database Migration
+```bash
+cd server
+npx wrangler d1 execute inward-outward-db --remote --file=schema.sql
+```
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+### 1. Blank Page on iosys.pages.dev
+**Cause**: `main.jsx` or `App.jsx` missing, or `vite.config.js` missing.
 
-#### 1. API Connection Failed
-**Symptom**: Frontend can't connect to backend
+**Fix**:
+- Ensure `client/src/main.jsx` and `client/src/App.jsx` exist
+- Ensure `client/vite.config.js` exists with `@vitejs/plugin-react` plugin
+- Check CF Pages build logs for errors
 
-**Solutions**:
-- Check `.env.production` has correct API URL
-- Verify Worker is deployed and accessible
-- Check CORS settings in Worker
-- Verify Cloudflare D1 database is accessible
+### 2. Entries Not Showing in Production
+**Cause**: `VITE_API_URL` not set — API calls go to `/api` (Pages) instead of the Worker.
 
-#### 2. Authentication Fails
-**Symptom**: Can't log in with Google
+**Fix**: Add `VITE_API_URL = https://iosys.saisathyajain.workers.dev/api` in CF Pages dashboard → Environment Variables → Production. Redeploy.
 
-**Solutions**:
-- Verify email is whitelisted in code
-- Check Google OAuth credentials
-- Clear browser cookies/localStorage
-- Verify `@sssihl.edu.in` domain is allowed
+### 3. D1 Table Missing Locally
+**Symptom**: `D1_ERROR: no such table: inward`
 
-#### 3. Database Errors
-**Symptom**: SQL errors or data not loading
-
-**Solutions**:
+**Fix**:
 ```bash
-# Verify database exists
-wrangler d1 list
-
-# Re-run migrations
-cd worker
-npm run db:migrate
-
-# Check database locally
-npm run db:migrate:local
+cd server
+npx wrangler d1 execute inward-outward-db --local --file=schema.sql
 ```
 
-#### 4. Build Failures
-**Symptom**: Build errors during deployment
+### 4. Email Not Sending
+**Symptom**: `emailStatus: failed` in API response
 
+**Fix**:
+- Verify `GMAIL_REFRESH_TOKEN` in `.dev.vars` (local) or Worker secrets (production)
+- Re-run `node src/scripts/get-gmail-token.js` to get a fresh token
+- Ensure OAuth credential type is **Web application** with redirect URI `http://localhost:3456`
+
+### 5. Weekly Report Shows All Zeros
+**Cause**: Worker is querying local DB instead of remote, or scheduled event fired before data exists.
+
+**Fix**:
+```bash
+# Test against remote DB
+curl "https://iosys.saisathyajain.workers.dev/__scheduled?cron=*+*+*+*+*"
+```
+
+### 6. API Connection Failed
 **Solutions**:
-- Verify Node.js version >= 18
-- Clear node_modules: `rm -rf node_modules && npm install`
-- Check for syntax errors in code
-- Verify all dependencies are installed
+- Check `VITE_API_URL` in `.env` (local) or CF Pages env vars (production)
+- Verify Worker is deployed: `npx wrangler deploy` from `server/`
+- Check CORS settings in `server/src/worker.js`
 
-#### 5. Blank Page After Deployment
-**Symptom**: White screen or nothing loads
-
+### 7. Build Fails on CF Pages
 **Solutions**:
-- Hard refresh: Ctrl+Shift+R
-- Check browser console for errors
-- Verify build completed successfully
-- Check API URL is correct in production
+- Ensure `client/vite.config.js` exists
+- Ensure `client/src/main.jsx` and `client/src/App.jsx` exist
+- Clear build cache in CF Pages dashboard and retry
 
 ---
 
@@ -732,82 +591,40 @@ npm run db:migrate:local
 
 ### Planned Features
 
-#### Phase 1: Core Improvements
-- **Priority Levels**: Urgent/High/Medium/Low
-- **Due Dates**: Deadline tracking with overdue alerts
-- **Comments**: Discussion threads on entries
-- **Tags**: Custom categorization
-- **Email Notifications**: Automated assignment alerts
+#### Phase 1
+- **Priority Levels**: Urgent/High/Medium/Low tags on entries
+- **Due Date Alerts**: Overdue highlight and reminders
+- **Audit Log**: Track who created/reassigned each entry
 
-#### Phase 2: Advanced Features
-- **File Attachments**: Upload and attach documents
-- **Advanced Search**: Full-text search with filters
-- **Audit Logs**: Complete action history
-- **Reports**: PDF/Excel export with custom date ranges
-- **Bulk Actions**: Update multiple entries at once
+#### Phase 2
+- **File Attachments**: Upload scanned letters/documents
+- **Advanced Search**: Full-text search across all fields
+- **Bulk Actions**: Update status of multiple entries at once
+- **PDF Export**: Formatted report with date range selection
 
-#### Phase 3: Automation
-- **Auto-Assignment**: Rule-based task assignment
-- **Workflow Templates**: Predefined processes
-- **Reminders**: Automated deadline reminders
-- **SLA Tracking**: Service level monitoring
-
-#### Phase 4: Integration
-- **Email Integration**: Create entries from emails
-- **Calendar Sync**: Google Calendar integration
-- **Mobile App**: Native mobile applications
-- **API Access**: Public API for integrations
-
-### Contribution Guidelines
-To contribute to future enhancements:
-1. Fork the repository
-2. Create feature branch
-3. Implement changes with tests
-4. Submit pull request with documentation
-5. Code review and merge
+#### Phase 3
+- **Auto-Assignment Rules**: Route entries by keyword/sender
+- **SLA Tracking**: Monitor response time against targets
+- **Mobile App**: Native iOS/Android application
 
 ---
 
 ## Support & Contact
 
 **Technical Support**
-- GitHub Issues: https://github.com/sathyajain12/IO_SYS/issues
+- GitHub: https://github.com/SaiSathyaJain/IOSYS/issues
 - Email: sathyajain9@gmail.com
 
-**Documentation Updates**
-- Last reviewed: February 7, 2026
-- Review frequency: Quarterly
-- Maintained by: Development Team
-
 ---
 
-## Appendix
+## Version History
 
-### Technology References
-- [React Documentation](https://react.dev)
-- [Vite Documentation](https://vitejs.dev)
-- [Cloudflare Workers](https://developers.cloudflare.com/workers/)
-- [Cloudflare D1](https://developers.cloudflare.com/d1/)
-- [Hono Framework](https://hono.dev)
-
-### Glossary
-- **Inward Entry**: Incoming correspondence to the institution
-- **Outward Entry**: Outgoing communication from the institution
-- **Assignment**: Task allocated to a team for processing
-- **Dashboard**: Overview screen with statistics
-- **D1**: Cloudflare's serverless SQL database
-- **Worker**: Cloudflare's serverless compute platform
-
-### Version History
-- **v1.0.0** (February 2026): Initial release
-  - Admin Portal with dashboard
-  - Team Portal for assignments
-  - Inward/Outward entry management
-  - Google OAuth authentication
-  - Cloudflare deployment
+| Version | Date | Changes |
+|---------|------|---------|
+| v1.0.0 | February 2026 | Initial release — Admin Portal, Team Portal, Inward/Outward management, Google OAuth |
+| v1.1.0 | March 2026 | Email notifications (Gmail OAuth2), weekly report cron, SSSIHL logo in emails, team portal links in emails |
+| v1.2.0 | March 30, 2026 | Fixed blank page (restored `main.jsx`, `App.jsx`, `vite.config.js`), fixed production API URL env var, full navbar on all pages (Admin Portal, Team Selection), removed bell button, moved action buttons into Admin Portal navbar |
 
 ---
-
-**Document End**
 
 *This documentation is maintained by the SSSIHL Development Team and is subject to updates as the system evolves.*
