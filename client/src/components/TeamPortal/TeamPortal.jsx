@@ -40,7 +40,8 @@ function TeamPortal() {
         teamMemberEmail: '',
         ackRec: '',
         crossNo: '',
-        receiptNo: ''
+        receiptNo: '',
+        remarks: ''
     });
 
     useEffect(() => {
@@ -174,7 +175,7 @@ function TeamPortal() {
             signReceiptDateTime: '', caseClosed: false, fileReference: '',
             postalTariff: '', dueDate: '', linkedInwardId: '',
             createdByTeam: selectedTeam || '', teamMemberEmail: '',
-            ackRec: '', crossNo: '', receiptNo: ''
+            ackRec: '', crossNo: '', receiptNo: '', remarks: ''
         });
     };
 
@@ -460,6 +461,12 @@ function TeamPortal() {
                                         value={formData.receiptNo} onChange={handleChange}
                                         placeholder="Receipt number" />
                                 </div>
+                                <div className="form-group">
+                                    <label className="form-label">Remarks</label>
+                                    <textarea name="remarks" className="form-input"
+                                        value={formData.remarks} onChange={handleChange}
+                                        placeholder="Enter remarks..." rows="2" />
+                                </div>
                                 <div className="modal-footer" style={{padding: '1rem 0 0', border: 'none'}}>
                                     <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); }}>
                                         Cancel
@@ -627,6 +634,12 @@ function TeamPortal() {
                                     <label>Case Closed</label>
                                     <span>{selectedEntry.caseClosed ? 'Yes' : 'No'}</span>
                                 </div>
+                                {selectedEntry.remarks && (
+                                    <div className="detail-item full">
+                                        <label>Remarks</label>
+                                        <span>{selectedEntry.remarks}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="modal-footer">

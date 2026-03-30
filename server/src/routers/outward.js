@@ -68,7 +68,7 @@ outwardRouter.post('/', async (c) => {
         const {
             means, toWhom, subject, sentBy,
             signReceiptDateTime, caseClosed, fileReference, postalTariff,
-            dueDate, linkedInwardId, createdByTeam, teamMemberEmail
+            dueDate, linkedInwardId, createdByTeam, teamMemberEmail, remarks
         } = body;
 
         const year = new Date().getFullYear();
@@ -85,13 +85,13 @@ outwardRouter.post('/', async (c) => {
                 outward_no, means, to_whom, subject, sent_by,
                 sign_receipt_datetime, case_closed, file_reference,
                 postal_tariff, due_date, linked_inward_id,
-                created_by_team, team_member_email
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
+                created_by_team, team_member_email, remarks
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
         `).bind(
             outwardNo, means, toWhom, subject, sentBy,
             signReceiptDateTime, isCaseClosed, fileReference || '',
             tariff, dueDate || null, linkedInwardId || null,
-            createdByTeam, teamMemberEmail
+            createdByTeam, teamMemberEmail, remarks || ''
         ).first();
 
         const insertedEntry = toCamelCase(result);

@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS outward (
     linked_inward_id INTEGER,
     created_by_team TEXT,
     team_member_email TEXT,
+    remarks TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (linked_inward_id) REFERENCES inward(id)
