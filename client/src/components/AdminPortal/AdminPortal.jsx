@@ -310,6 +310,16 @@ function AdminPortal() {
                     <span className="ap-nav-brand">SSSIHL</span>
                 </div>
                 <div className="ap-nav-right">
+                    <button className="btn btn-secondary ap-nav-action-btn" onClick={downloadOutwardReport} title="Download Outward Expenditure Report">
+                        <Download size={16} /> Export Report
+                    </button>
+                    <button className="btn btn-icon-only" onClick={loadData} disabled={loading} title="Refresh">
+                        <RefreshCw size={16} className={loading ? 'spin' : ''} />
+                    </button>
+                    <button className="btn btn-primary ap-nav-action-btn" onClick={() => setShowForm(true)}>
+                        <Plus size={16} /> New Entry
+                    </button>
+                    <div className="ap-nav-divider" />
                     <button className="ap-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
                         {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
                     </button>
@@ -327,17 +337,6 @@ function AdminPortal() {
             {/* Header */}
             <div className="page-header">
                 <h2 className="page-title"><Inbox className="icon-svg" /> Admin Portal</h2>
-                <div className="header-actions">
-                    <button className="btn btn-secondary" onClick={downloadOutwardReport} title="Download Outward Expenditure Report">
-                        <Download size={18} /> Export Report
-                    </button>
-                    <button className="btn btn-icon-only" onClick={loadData} disabled={loading} title="Refresh">
-                        <RefreshCw size={18} className={loading ? 'spin' : ''} />
-                    </button>
-                    <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-                        <Plus size={18} /> New Entry
-                    </button>
-                </div>
             </div>
 
             {/* Stats Cards */}
