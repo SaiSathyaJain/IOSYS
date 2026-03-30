@@ -299,7 +299,7 @@ function AdminPortal() {
     };
 
     return (
-        <div className="admin-portal animate-fade">
+        <div className="ap-page-wrapper">
             {/* Top Navbar */}
             <nav className="ap-top-nav">
                 <div className="ap-nav-left">
@@ -323,6 +323,7 @@ function AdminPortal() {
                 </div>
             </nav>
 
+        <div className="admin-portal animate-fade">
             {/* Header */}
             <div className="page-header">
                 <h2 className="page-title"><Inbox className="icon-svg" /> Admin Portal</h2>
@@ -737,6 +738,7 @@ function AdminPortal() {
                     </div>
                 </div>
             )}
+        </div>
         </div>
     );
 }
