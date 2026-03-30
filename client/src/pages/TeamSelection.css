@@ -48,6 +48,21 @@
     gap: 0.5rem;
 }
 
+.theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-primary);
+    transition: background 0.2s;
+}
+
 /* Page Title */
 .selection-title {
     padding: 2.5rem 4rem 0.5rem;
