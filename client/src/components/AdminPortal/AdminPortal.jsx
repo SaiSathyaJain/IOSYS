@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { inwardAPI, dashboardAPI, outwardAPI } from '../../services/api';
 import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
     Clock, CheckCircle2, AlertCircle, Calendar, Mail, User,
-    FileText, RefreshCw, Eye, Edit3, ArrowDownToLine, Loader2, Download
+    FileText, RefreshCw, Eye, Edit3, ArrowDownToLine, Loader2, Download,
+    Sun, Moon, ArrowLeft
 } from 'lucide-react';
 import './AdminPortal.css';
 
 function AdminPortal() {
+    const navigate = useNavigate();
+    const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
+    const [userPhoto, setUserPhoto] = useState(null);
     const [entries, setEntries] = useState([]);
     const [filteredEntries, setFilteredEntries] = useState([]);
     const [stats, setStats] = useState(null);
@@ -45,7 +50,16 @@ function AdminPortal() {
     };
 
     useEffect(() => {
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    }, [isDarkMode]);
+
+    useEffect(() => {
         loadData();
+        const user = localStorage.getItem('adminUser');
+        if (user) {
+            try { setUserPhoto(JSON.parse(user).picture); } catch (e) {}
+        }
     }, []);
 
     useEffect(() => {
@@ -286,6 +300,29 @@ function AdminPortal() {
 
     return (
         <div className="admin-portal animate-fade">
+            {/* Top Navbar */}
+            <nav className="ap-top-nav">
+                <div className="ap-nav-left">
+                    <button className="ap-back-btn" onClick={() => navigate('/')} title="Back to home">
+                        <ArrowLeft size={18} />
+                    </button>
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '30px', height: '30px', borderRadius: '7px', objectFit: 'cover' }} />
+                    <span className="ap-nav-brand">SSSIHL</span>
+                </div>
+                <div className="ap-nav-right">
+                    <button className="ap-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                        {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
+                    </button>
+                    <div className="ap-user-pill">
+                        <div className="ap-user-info">
+                            <span className="ap-user-role">ADMIN</span>
+                            <span className="ap-user-status">Logged In</span>
+                        </div>
+                        <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=random"} alt="Profile" className="ap-avatar" />
+                    </div>
+                </div>
+            </nav>
+
             {/* Header */}
             <div className="page-header">
                 <h2 className="page-title"><Inbox className="icon-svg" /> Admin Portal</h2>
