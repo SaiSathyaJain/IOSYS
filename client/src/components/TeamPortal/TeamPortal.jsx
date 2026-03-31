@@ -5,7 +5,7 @@ import {
     Clock, CheckCircle2, ArrowRight, Calendar, Plus, X,
     ClipboardList, Check, FileText, Search, RefreshCw, Eye,
     ArrowUpFromLine, Loader2, AlertTriangle, Link2, Lock,
-    Sun, Moon, LayoutDashboard, Send, History, User, Bell, Download
+    Sun, Moon, LayoutDashboard, Send, History, User, Download
 } from 'lucide-react';
 import './TeamPortal.css';
 
@@ -223,7 +223,7 @@ function TeamPortal() {
             {/* ── Sidebar ── */}
             <aside className="tp-sidebar">
                 <div className="tp-sidebar-logo">
-                    <div className="tp-logo-grid"><span/><span/><span/><span/></div>
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL" className="tp-sidebar-logo-img" />
                     <div>
                         <div className="tp-logo-title">SSSIHL · IOSYS</div>
                         <div className="tp-logo-sub">INWARD OUTWARD</div>
@@ -259,11 +259,7 @@ function TeamPortal() {
                         <button className="tp-new-outward-btn" onClick={() => setShowForm(true)}>
                             <Plus size={15} /> + New Outward
                         </button>
-                        <button className="tp-bell-btn" title="Notifications">
-                            <Bell size={17} />
-                            {overdueCount > 0 && <span className="tp-bell-dot" />}
-                        </button>
-                        <button className="tp-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+<button className="tp-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
                             {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                         </button>
                     </div>
