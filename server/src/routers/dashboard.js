@@ -93,40 +93,36 @@ dashboardRouter.get('/chart-data', async (c) => {
         const inwardRows = await db.prepare("SELECT sign_receipt_datetime FROM inward").all();
         const outwardRows = await db.prepare("SELECT sign_receipt_datetime FROM outward").all();
         
-        // Initialize last 6 months
+        // Initialize last 6 months keyed by YYYY-MM (avoids cross-year name collisions)
         const months = [];
         const chartDataMap = {};
+        const now = new Date();
         for (let i = 5; i >= 0; i--) {
-            const d = new Date();
-            d.setMonth(d.getMonth() - i);
-            const monthStr = d.toLocaleString('en-US', { month: 'short' });
-            const key = monthStr;
-            months.push(key);
-            chartDataMap[key] = { month: key, inward: 0, outward: 0 };
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const label = d.toLocaleString('en-US', { month: 'short', year: '2-digit' });
+            months.push(ym);
+            chartDataMap[ym] = { month: label, inward: 0, outward: 0 };
         }
-        
-        // Safely parse date
-        const parseDate = (val) => {
+
+        // Parse a stored date value → YYYY-MM key, or null if invalid
+        const toYM = (val) => {
             if (!val) return null;
-            return val._seconds ? new Date(val._seconds * 1000) : new Date(val);
+            const d = val._seconds ? new Date(val._seconds * 1000) : new Date(val);
+            if (isNaN(d)) return null;
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         };
 
         // Populate inward
         (inwardRows.results || []).forEach(row => {
-            const d = parseDate(row.sign_receipt_datetime);
-            if (d) {
-                const key = d.toLocaleString('en-US', { month: 'short' });
-                if (chartDataMap[key]) chartDataMap[key].inward++;
-            }
+            const ym = toYM(row.sign_receipt_datetime);
+            if (ym && chartDataMap[ym]) chartDataMap[ym].inward++;
         });
 
         // Populate outward
         (outwardRows.results || []).forEach(row => {
-            const d = parseDate(row.sign_receipt_datetime);
-            if (d) {
-                const key = d.toLocaleString('en-US', { month: 'short' });
-                if (chartDataMap[key]) chartDataMap[key].outward++;
-            }
+            const ym = toYM(row.sign_receipt_datetime);
+            if (ym && chartDataMap[ym]) chartDataMap[ym].outward++;
         });
 
         const chartData = months.map(m => chartDataMap[m]);

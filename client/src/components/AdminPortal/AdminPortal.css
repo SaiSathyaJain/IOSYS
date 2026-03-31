@@ -94,14 +94,29 @@
 }
 
 .ap-user-pill {
-    display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.3rem 0.7rem 0.3rem 0.5rem; border-radius: 999px;
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.28rem 0.4rem 0.28rem 0.85rem; border-radius: 999px;
     background: var(--panel-bg); border: 1px solid var(--panel-border);
 }
-.ap-user-info { display: flex; flex-direction: column; line-height: 1.2; }
-.ap-user-role { color: #f97316; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.ap-user-status { color: var(--text-secondary); font-size: 0.7rem; }
-.ap-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(249,115,22,0.4); object-fit: cover; }
+.ap-user-info { display: flex; flex-direction: column; line-height: 1.25; text-align: right; }
+.ap-user-role { color: var(--text-primary); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.01em; }
+.ap-user-status {
+    display: flex; align-items: center; justify-content: flex-end; gap: 0.3rem;
+    font-size: 0.68rem; color: #10B981; font-weight: 500;
+}
+.ap-online-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #10B981; flex-shrink: 0;
+    box-shadow: 0 0 4px rgba(16,185,129,0.6);
+}
+.ap-avatar-wrap { position: relative; display: flex; }
+.ap-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(var(--primary-rgb), 0.35); display: block; }
+.ap-status-dot {
+    position: absolute; bottom: 0; right: 0;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #10B981; border: 2px solid var(--bg-color);
+    box-shadow: 0 0 4px rgba(16,185,129,0.5);
+}
 
 .admin-portal {
     width: 100%;

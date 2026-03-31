@@ -178,10 +178,16 @@ function Dashboard() {
                     </button>
                     <div className="ap-user-pill">
                         <div className="ap-user-info">
-                            <span className="ap-user-role">ADMIN</span>
-                            <span className="ap-user-status">Logged In</span>
+                            <span className="ap-user-role">Admin</span>
+                            <span className="ap-user-status">
+                                <span className="ap-online-dot" />
+                                Online
+                            </span>
                         </div>
-                        <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=random"} alt="Profile" className="ap-avatar" />
+                        <div className="ap-avatar-wrap">
+                            <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=random"} alt="Profile" className="ap-avatar" />
+                            <span className="ap-status-dot" />
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -253,8 +259,8 @@ function Dashboard() {
                         <span className="dash-card-hint">Last 6 months</span>
                     </div>
                     <div className="chart-area">
-                        {chartData.length === 0 ? (
-                            <div className="chart-empty">No data yet</div>
+                        {chartData.length === 0 || !chartData.some(d => d.inward > 0 || d.outward > 0) ? (
+                            <div className="chart-empty">No correspondence data in the last 6 months</div>
                         ) : (
                             <ResponsiveContainer width="100%" height={260}>
                                 <AreaChart data={chartData} margin={{ top: 10, right: 20, left: -16, bottom: 0 }}>
@@ -270,7 +276,7 @@ function Dashboard() {
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" vertical={false} />
                                     <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                    <YAxis tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} domain={[0, 'dataMax + 1']} />
                                     <Tooltip
                                         contentStyle={{ background: '#0D1526', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.85rem', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
                                         labelStyle={{ color: '#E2E8F0', fontWeight: 600, marginBottom: '4px' }}

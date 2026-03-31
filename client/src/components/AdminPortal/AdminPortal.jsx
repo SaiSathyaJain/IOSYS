@@ -335,10 +335,16 @@ function AdminPortal() {
                     </button>
                     <div className="ap-user-pill">
                         <div className="ap-user-info">
-                            <span className="ap-user-role">ADMIN</span>
-                            <span className="ap-user-status">Logged In</span>
+                            <span className="ap-user-role">Admin</span>
+                            <span className="ap-user-status">
+                                <span className="ap-online-dot" />
+                                Online
+                            </span>
                         </div>
-                        <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=random"} alt="Profile" className="ap-avatar" />
+                        <div className="ap-avatar-wrap">
+                            <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=random"} alt="Profile" className="ap-avatar" />
+                            <span className="ap-status-dot" />
+                        </div>
                     </div>
                 </div>
             </nav>
