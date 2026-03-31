@@ -83,3 +83,56 @@ dashboardRouter.get('/teams', async (c) => {
         return c.json({ success: false, message: error.message }, 500);
     }
 });
+
+// Get chart data
+dashboardRouter.get('/chart-data', async (c) => {
+    try {
+        const db = c.env.DB;
+        
+        // Fetch dates from both tables
+        const inwardRows = await db.prepare("SELECT sign_receipt_datetime FROM inward").all();
+        const outwardRows = await db.prepare("SELECT sign_receipt_datetime FROM outward").all();
+        
+        // Initialize last 6 months
+        const months = [];
+        const chartDataMap = {};
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const monthStr = d.toLocaleString('en-US', { month: 'short' });
+            const key = monthStr;
+            months.push(key);
+            chartDataMap[key] = { month: key, inward: 0, outward: 0 };
+        }
+        
+        // Safely parse date
+        const parseDate = (val) => {
+            if (!val) return null;
+            return val._seconds ? new Date(val._seconds * 1000) : new Date(val);
+        };
+
+        // Populate inward
+        (inwardRows.results || []).forEach(row => {
+            const d = parseDate(row.sign_receipt_datetime);
+            if (d) {
+                const key = d.toLocaleString('en-US', { month: 'short' });
+                if (chartDataMap[key]) chartDataMap[key].inward++;
+            }
+        });
+
+        // Populate outward
+        (outwardRows.results || []).forEach(row => {
+            const d = parseDate(row.sign_receipt_datetime);
+            if (d) {
+                const key = d.toLocaleString('en-US', { month: 'short' });
+                if (chartDataMap[key]) chartDataMap[key].outward++;
+            }
+        });
+
+        const chartData = months.map(m => chartDataMap[m]);
+        
+        return c.json({ success: true, chartData });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});

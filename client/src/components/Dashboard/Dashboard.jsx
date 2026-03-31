@@ -41,14 +41,14 @@ function Dashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [statsRes, teamsRes, chartRes] = await Promise.all([
+            const [statsRes, teamsRes, chartRes] = await Promise.allSettled([
                 dashboardAPI.getStats(),
                 dashboardAPI.getAllTeams(),
                 dashboardAPI.getChartData()
             ]);
-            setStats(statsRes.data.stats || {});
-            setTeamStats(teamsRes.data.teamStats || []);
-            setChartData(chartRes.data.chartData || []);
+            setStats(statsRes.status === 'fulfilled' ? statsRes.value.data.stats || {} : {});
+            setTeamStats(teamsRes.status === 'fulfilled' ? teamsRes.value.data.teamStats || [] : []);
+            setChartData(chartRes.status === 'fulfilled' ? chartRes.value.data.chartData || [] : []);
         } catch (error) {
             console.error('Error loading dashboard:', error);
         } finally {
