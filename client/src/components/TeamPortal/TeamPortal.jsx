@@ -211,7 +211,6 @@ function TeamPortal() {
         { id: 'dashboard', label: 'DASHBOARD', icon: <LayoutDashboard size={15} /> },
         { id: 'pending',   label: 'PENDING',   icon: <Clock size={15} /> },
         { id: 'completed', label: 'COMPLETED', icon: <CheckCircle2 size={15} /> },
-        { id: 'outward',   label: 'OUTWARD',   icon: <Send size={15} /> },
         { id: 'history',   label: 'HISTORY',   icon: <History size={15} /> },
         { id: 'profile',   label: 'PROFILE',   icon: <User size={15} /> },
     ];
@@ -384,7 +383,7 @@ function TeamPortal() {
                 )}
 
                 {/* ── OUTWARD / HISTORY page ── */}
-                {(activePage === 'outward' || activePage === 'history') && (
+                {activePage === 'history' && (
                     <div className="tp-card">
                         <div className="tp-card-header">
                             <div className="tp-card-title-row">
