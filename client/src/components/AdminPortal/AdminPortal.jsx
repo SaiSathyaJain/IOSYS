@@ -342,7 +342,7 @@ function AdminPortal() {
                             </span>
                         </div>
                         <div className="ap-avatar-wrap">
-                            <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=random"} alt="Profile" className="ap-avatar" />
+                            <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=475569&color=ffffff"} alt="Profile" className="ap-avatar" />
                             <span className="ap-status-dot" />
                         </div>
                     </div>

@@ -113,7 +113,7 @@ function LandingPage() {
                     </button>
                     <div className="profile-pill">
                         <img
-                            src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=random"}
+                            src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=475569&color=ffffff"}
                             alt="Profile"
                             className="profile-img"
                         />

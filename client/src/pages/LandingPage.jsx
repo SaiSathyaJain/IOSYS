@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, Moon, Sun } from 'lucide-react';
 import './LandingPage.css';
@@ -46,11 +46,15 @@ const LandingPage = () => {
                     </div>
                     <div className="user-profile">
                         <div className="user-info">
-                            <span className="role">ADMIN</span>
-                            <span className="status">Logged In</span>
+                            <span className="role">Admin</span>
+                            <span className="status">
+                                <span className="online-dot" />
+                                Online
+                            </span>
                         </div>
-                        <div className="avatar">
-                            <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=random"} alt="Profile" />
+                        <div className="avatar-wrap">
+                            <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=475569&color=ffffff"} alt="Profile" />
+                            <span className="avatar-status-dot" />
                         </div>
                     </div>
                 </div>
