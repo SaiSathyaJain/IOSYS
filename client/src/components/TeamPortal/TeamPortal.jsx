@@ -32,6 +32,7 @@ function TeamPortal() {
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [showInwardModal, setShowInwardModal] = useState(false);
     const [selectedInwardEntry, setSelectedInwardEntry] = useState(null);
+    const [completedInward, setCompletedInward] = useState([]);
     const [formData, setFormData] = useState({
         means: '', toWhom: '', subject: '', sentBy: '',
         signReceiptDateTime: '', caseClosed: false, fileReference: '',
@@ -53,12 +54,15 @@ function TeamPortal() {
         setLoading(true);
         try {
             const inwardRes = await inwardAPI.getAll();
-            const pending = (inwardRes.data.entries || []).filter(e => {
-                const matchesTeam = !selectedTeam || e.assignedTeam === selectedTeam;
-                const matchesStatus = e.assignmentStatus === 'Pending' || e.assignmentStatus === 'In Progress';
-                return e.assignedTeam && matchesTeam && matchesStatus;
-            });
+            const allAssigned = (inwardRes.data.entries || []).filter(e =>
+                e.assignedTeam && (!selectedTeam || e.assignedTeam === selectedTeam)
+            );
+            const pending = allAssigned.filter(e =>
+                e.assignmentStatus === 'Pending' || e.assignmentStatus === 'In Progress'
+            );
+            const completed = allAssigned.filter(e => e.assignmentStatus === 'Completed');
             setPendingInward(pending);
+            setCompletedInward(completed);
             if (selectedTeam) {
                 const statsRes = await dashboardAPI.getTeamStats(selectedTeam);
                 setTeamStats(statsRes.data.stats || {});
@@ -245,7 +249,7 @@ function TeamPortal() {
                 {/* Header */}
                 <div className="tp-main-header">
                     <div className="tp-main-header-left">
-                        <h1 className="tp-main-title">Dashboard</h1>
+                        <h1 className="tp-main-title">{navItems.find(n => n.id === activePage)?.label.charAt(0) + navItems.find(n => n.id === activePage)?.label.slice(1).toLowerCase() || 'Dashboard'}</h1>
                         <span className="tp-main-date">{formatHeaderDate()}</span>
                     </div>
                     <div className="tp-main-header-right">
@@ -264,6 +268,190 @@ function TeamPortal() {
                 </div>
 
                 <div className="tp-content">
+
+                {/* ── PROFILE page ── */}
+                {activePage === 'profile' && (
+                    <div className="tp-card" style={{maxWidth:480}}>
+                        <div className="tp-card-header">
+                            <div className="tp-card-title-row"><User size={16} className="tp-icon-muted"/><h3>Team Profile</h3></div>
+                        </div>
+                        <div style={{padding:'1rem 1.25rem',display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+                            <div className="detail-item"><label>Team</label><span className="badge badge-team">{selectedTeam}</span></div>
+                            <div className="detail-item"><label>Portal</label><span>{selectedTeam} Team Portal</span></div>
+                            <div className="detail-item"><label>Total Assigned</label><span>{teamStats?.totalAssigned || 0}</span></div>
+                            <div className="detail-item"><label>Pending</label><span>{teamStats?.pending || 0}</span></div>
+                            <div className="detail-item"><label>Completed</label><span>{teamStats?.completed || 0}</span></div>
+                            <div className="detail-item"><label>Outward Sent</label><span>{teamStats?.totalOutward || 0}</span></div>
+                            <div className="detail-item"><label>Completion Rate</label><span>{completionRate}%</span></div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── COMPLETED page ── */}
+                {activePage === 'completed' && (
+                    <div className="tp-card">
+                        <div className="tp-card-header">
+                            <div className="tp-card-title-row">
+                                <CheckCircle2 size={16} className="tp-icon-muted"/>
+                                <h3>Completed Assignments</h3>
+                                <span className="tp-count-pill">{completedInward.length}</span>
+                            </div>
+                        </div>
+                        {loading ? (
+                            <div className="tp-center-state"><Loader2 size={24} className="spin"/></div>
+                        ) : completedInward.length === 0 ? (
+                            <div className="tp-center-state"><CheckCircle2 size={32} style={{opacity:0.3}}/><p>No completed assignments yet.</p></div>
+                        ) : (
+                            <div className="tp-assign-list">
+                                {completedInward.map(entry => (
+                                    <div key={entry.id} className="tp-assign-card">
+                                        <div className="tp-ac-row">
+                                            <div className="tp-ac-badges">
+                                                <span className="tp-inward-no">{entry.inwardNo}</span>
+                                                <span className="tp-team-chip">{entry.assignedTeam}</span>
+                                            </div>
+                                            <span className="tp-status-chip" style={{background:'#d1fae5',color:'#065f46'}}>COMPLETED</span>
+                                        </div>
+                                        <h4 className="tp-ac-subject">{entry.subject}</h4>
+                                        <p className="tp-ac-from">From: <strong>{entry.particularsFromWhom}</strong></p>
+                                        <div className="tp-ac-actions">
+                                            <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ── PENDING page ── */}
+                {activePage === 'pending' && (
+                    <div className="tp-card">
+                        <div className="tp-card-header">
+                            <div className="tp-card-title-row">
+                                <Clock size={16} className="tp-icon-muted"/>
+                                <h3>Pending Assignments</h3>
+                                <span className="tp-count-pill">{pendingInward.length}</span>
+                                {overdueCount > 0 && <span className="tp-overdue-pill">{overdueCount} OVERDUE</span>}
+                            </div>
+                            <div className="tp-filter-tabs">
+                                {['all','overdue','recent'].map(f => (
+                                    <button key={f} className={`tp-ftab${pendingFilter===f?' active':''}`}
+                                        onClick={() => { setPendingFilter(f); setShowLimit(5); }}>
+                                        {f.charAt(0).toUpperCase()+f.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        {loading ? (
+                            <div className="tp-center-state"><Loader2 size={24} className="spin"/></div>
+                        ) : displayedPending.length === 0 ? (
+                            <div className="tp-center-state"><CheckCircle2 size={32} style={{opacity:0.3}}/><p>No {pendingFilter !== 'all' ? pendingFilter : 'pending'} assignments.</p></div>
+                        ) : (
+                            <div className="tp-assign-list">
+                                {displayedPending.map(entry => (
+                                    <div key={entry.id} className={`tp-assign-card${isOverdue(entry.dueDate)?' overdue':isDueSoon(entry.dueDate)?' due-soon':''}`}>
+                                        <div className="tp-ac-row">
+                                            <div className="tp-ac-badges">
+                                                <span className="tp-inward-no">{entry.inwardNo}</span>
+                                                <span className="tp-team-chip">{entry.assignedTeam}</span>
+                                                {entry.dueDate && (
+                                                    <span className={`tp-due-chip${isOverdue(entry.dueDate)?' overdue':isDueSoon(entry.dueDate)?' soon':''}`}>
+                                                        {isOverdue(entry.dueDate) ? <AlertTriangle size={10}/> : <Calendar size={10}/>}
+                                                        {isOverdue(entry.dueDate) ? `Overdue · ${formatDate(entry.dueDate)}` : `Due Soon · ${formatDate(entry.dueDate)}`}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="tp-status-chip">{entry.assignmentStatus || 'PENDING'}</span>
+                                        </div>
+                                        <h4 className="tp-ac-subject">{entry.subject}</h4>
+                                        <p className="tp-ac-from">From: <strong>{entry.particularsFromWhom}</strong>{entry.assignmentInstructions && <> · <em>{entry.assignmentInstructions}</em></>}</p>
+                                        <div className="tp-ac-actions">
+                                            <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
+                                            <button className="tp-ac-btn complete" onClick={() => handleStatusUpdate(entry.id, 'Completed')}>MARK COMPLETE</button>
+                                            <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>FORWARD</button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {totalFiltered > showLimit && (
+                                    <button className="tp-load-more" onClick={() => setShowLimit(showLimit + 5)}>
+                                        Showing {showLimit} of {totalFiltered} — Load more
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ── OUTWARD / HISTORY page ── */}
+                {(activePage === 'outward' || activePage === 'history') && (
+                    <div className="tp-card">
+                        <div className="tp-card-header">
+                            <div className="tp-card-title-row">
+                                <Send size={16} className="tp-icon-muted"/>
+                                <h3>Outward History</h3>
+                                <span className="tp-count-pill">{filteredEntries.length}</span>
+                            </div>
+                            <div className="tp-history-controls">
+                                <div className="tp-team-tabs">
+                                    {Object.entries(TEAM_MAP).filter(([,n]) => n !== selectedTeam).map(([slug, name]) => (
+                                        <button key={slug}
+                                            className={`tp-team-tab${viewTeam === name ? ' active' : ''}`}
+                                            onClick={() => setViewTeam(viewTeam === name ? selectedTeam : name)}>
+                                            {name}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="tp-search-wrap">
+                                    <Search size={13}/>
+                                    <input type="text" placeholder="Search history..."
+                                        value={searchTerm} onChange={e => setSearchTerm(e.target.value)}/>
+                                </div>
+                            </div>
+                        </div>
+                        {filteredEntries.length === 0 ? (
+                            <div className="tp-center-state"><ArrowUpFromLine size={28} style={{opacity:0.3}}/><p>No outward entries yet.</p></div>
+                        ) : (
+                            <div className="tp-table-wrap">
+                                <table className="tp-history-table">
+                                    <thead><tr>
+                                        <th>OUTWARD NO</th><th>SUBJECT</th><th>RECIPIENT</th>
+                                        <th>TEAM</th><th>STATUS</th><th>DATE</th><th>ACTIONS</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        {filteredEntries.map(entry => (
+                                            <tr key={entry.id}>
+                                                <td className="tp-outward-link">{entry.outwardNo}</td>
+                                                <td className="tp-subject-cell">{entry.subject?.length > 50 ? entry.subject.slice(0,50)+'...' : entry.subject}</td>
+                                                <td>{entry.toWhom}</td>
+                                                <td><span className="tp-team-chip">{entry.createdByTeam}</span></td>
+                                                <td>
+                                                    <div className="tp-status-tags">
+                                                        {entry.caseClosed ? <span className="tp-badge-closed">CLOSED</span> : <span className="tp-badge-open">OPEN</span>}
+                                                        {entry.linkedInwardId && <span className="tp-badge-linked">LINKED</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="tp-date-cell">{formatDate(entry.createdAt)}</td>
+                                                <td>
+                                                    <div className="tp-row-btns">
+                                                        <button onClick={() => { setSelectedEntry(entry); setShowDetailsModal(true); }} title="View"><Eye size={13}/></button>
+                                                        {!entry.caseClosed && viewTeam === selectedTeam && (
+                                                            <button onClick={() => handleCloseCase(entry.id)} title="Close" className="close-btn"><Lock size={13}/></button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                        <div className="tp-table-footer">Showing {filteredEntries.length} results of {entries.length}</div>
+                    </div>
+                )}
+
+                {/* ── DASHBOARD page ── */}
+                {activePage === 'dashboard' && <>
                     {/* Stats */}
                     <div className="tp-stats-row">
                         <div className="tp-stat-card">
@@ -455,6 +643,8 @@ function TeamPortal() {
                         )}
                         <div className="tp-table-footer">Showing {filteredEntries.length} results of {entries.length}</div>
                     </div>
+                </>}
+
                 </div>
             </main>
 
