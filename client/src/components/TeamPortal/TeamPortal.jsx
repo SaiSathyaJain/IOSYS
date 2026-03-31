@@ -484,9 +484,8 @@ function TeamPortal() {
                         </div>
                     </div>
 
-                    {/* Two-column: Pending + Quick Overview */}
-                    <div className="tp-two-col">
-                        <div className="tp-card">
+                    {/* Pending Assignments */}
+                    <div className="tp-card">
                             <div className="tp-card-header">
                                 <div className="tp-card-title-row">
                                     <Clock size={16} className="tp-icon-muted"/>
@@ -550,23 +549,6 @@ function TeamPortal() {
                             )}
                         </div>
 
-                        {/* Quick Overview */}
-                        <div className="tp-quick-overview">
-                            <h4 className="tp-qo-label">QUICK OVERVIEW</h4>
-                            <div className="tp-qo-img">
-                                <div className="tp-qo-img-text">
-                                    {overdueCount > 0 ? 'Campus Activity: High Volume' : 'Campus Activity: Normal'}
-                                </div>
-                            </div>
-                            <div className="tp-qo-row">
-                                <span className="tp-qo-key">Response Efficiency</span>
-                                <span className="tp-qo-val">{completionRate}%</span>
-                            </div>
-                            <div className="tp-qo-bar">
-                                <div className="tp-qo-fill" style={{width:`${Math.min(Number(completionRate),100)}%`}}/>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* Outward History */}
                     <div className="tp-card">
