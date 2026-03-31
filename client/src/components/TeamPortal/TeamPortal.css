@@ -2,61 +2,77 @@
    Team Portal — Full Redesign
    ═══════════════════════════════════════════════ */
 
+.tp-page-wrapper {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Top Navbar ──────────────────────────────────── */
+.tp-top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.65rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    box-sizing: border-box;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme="dark"] .tp-top-nav  { background: rgba(8,13,26,0.75); border-bottom: 1px solid rgba(255,255,255,0.07); }
+[data-theme="light"] .tp-top-nav { background: rgba(255,255,255,0.85); border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+
+.tp-nav-left  { display: flex; align-items: center; gap: 0.65rem; }
+.tp-nav-brand { font-weight: 700; font-size: 1rem; letter-spacing: 0.5px; }
+
+.tp-nav-team-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(249,115,22,0.15);
+    color: #f97316;
+    letter-spacing: 0.05em;
+}
+
+.tp-nav-back-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px; border: none;
+    cursor: pointer; background: var(--panel-bg); color: var(--text-primary);
+    border: 1px solid var(--panel-border);
+}
+
+.tp-nav-right { display: flex; align-items: center; gap: 0.5rem; }
+
+.tp-nav-action-btn { font-size: 0.8rem !important; padding: 0.35rem 0.75rem !important; height: 32px; }
+
+.tp-nav-divider { width: 1px; height: 24px; background: var(--panel-border); margin: 0 0.25rem; }
+
+.tp-nav-theme-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 50%; border: none;
+    cursor: pointer; background: var(--panel-bg); color: var(--text-primary);
+    border: 1px solid var(--panel-border);
+}
+
+.tp-nav-user-pill {
+    display: flex; flex-direction: column; line-height: 1.2;
+    padding: 0.3rem 0.7rem; border-radius: 999px;
+    background: var(--panel-bg); border: 1px solid var(--panel-border);
+}
+.tp-nav-user-role   { color: #f97316; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.tp-nav-user-status { color: var(--text-secondary); font-size: 0.7rem; }
+
 .team-portal {
     width: 100%;
     max-width: 1300px;
     margin: 0 auto;
-    padding: 0 1.5rem 3rem;
-}
-
-/* ── Header ──────────────────────────────────────── */
-.tp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    padding: 2rem 0 1.75rem;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-    margin-bottom: 2rem;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-[data-theme="light"] .tp-header { border-bottom-color: #e8edf3; }
-
-.tp-back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    margin-bottom: 0.375rem;
-    transition: color 120ms ease;
-}
-
-.tp-back-btn:hover { color: var(--text-primary); }
-
-.tp-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 0 0 0.25rem;
-}
-
-.tp-subtitle {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-    margin: 0;
-}
-
-.tp-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    padding: 1.5rem 1.5rem 3rem;
 }
 
 .tp-team-select {

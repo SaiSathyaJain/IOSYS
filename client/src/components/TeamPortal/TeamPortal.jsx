@@ -4,7 +4,8 @@ import { outwardAPI, inwardAPI, dashboardAPI } from '../../services/api';
 import {
     Clock, CheckCircle, ArrowRight, Calendar, Plus, X,
     ClipboardList, Check, FileText, Search, RefreshCw, Eye,
-    ArrowUpFromLine, Hourglass, Loader2, AlertTriangle, Link2, Lock, ChevronLeft
+    ArrowUpFromLine, Hourglass, Loader2, AlertTriangle, Link2, Lock,
+    Sun, Moon, ArrowLeft
 } from 'lucide-react';
 import './TeamPortal.css';
 
@@ -15,6 +16,7 @@ function TeamPortal() {
     const navigate = useNavigate();
     const selectedTeam = TEAM_MAP[teamSlug] || '';
 
+    const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
     const [entries, setEntries] = useState([]);
     const [filteredEntries, setFilteredEntries] = useState([]);
     const [pendingInward, setPendingInward] = useState([]);
@@ -43,6 +45,11 @@ function TeamPortal() {
         receiptNo: '',
         remarks: ''
     });
+
+    useEffect(() => {
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    }, [isDarkMode]);
 
     useEffect(() => {
         loadData();
@@ -218,22 +225,36 @@ function TeamPortal() {
     };
 
     return (
-        <div className="team-portal animate-fade">
-            {/* Header */}
-            <div className="tp-header">
-                <div className="tp-header-left">
-                    <button className="tp-back-btn" onClick={() => navigate('/team')}>
-                        <ChevronLeft size={16} /> All Teams
+        <div className="tp-page-wrapper">
+            {/* Top Navbar */}
+            <nav className="tp-top-nav">
+                <div className="tp-nav-left">
+                    <button className="tp-nav-back-btn" onClick={() => navigate('/team')} title="Back to team selection">
+                        <ArrowLeft size={18} />
                     </button>
-                    <h2 className="tp-title">{selectedTeam} Team Portal</h2>
-                    <p className="tp-subtitle">{selectedTeam} — Assignments &amp; Outward Entries</p>
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '30px', height: '30px', borderRadius: '7px', objectFit: 'cover' }} />
+                    <span className="tp-nav-brand">SSSIHL</span>
+                    <span className="tp-nav-team-badge">{selectedTeam}</span>
                 </div>
-                <div className="tp-header-right">
-                    <button className="tp-refresh-btn" onClick={() => { loadData(); loadEntries(); }} disabled={loading} title="Refresh">
+                <div className="tp-nav-right">
+                    <button className="btn btn-icon-only" onClick={() => { loadData(); loadEntries(); }} disabled={loading} title="Refresh">
                         <RefreshCw size={16} className={loading ? 'spin' : ''} />
                     </button>
+                    <button className="btn btn-primary tp-nav-action-btn" onClick={() => setShowForm(true)}>
+                        <Plus size={16} /> New Outward
+                    </button>
+                    <div className="tp-nav-divider" />
+                    <button className="tp-nav-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                        {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
+                    </button>
+                    <div className="tp-nav-user-pill">
+                        <span className="tp-nav-user-role">{selectedTeam} TEAM</span>
+                        <span className="tp-nav-user-status">Portal</span>
+                    </div>
                 </div>
-            </div>
+            </nav>
+
+        <div className="team-portal animate-fade">
 
             {/* Stats */}
             <div className="tp-stats">
@@ -330,11 +351,6 @@ function TeamPortal() {
                     </div>
                 )}
             </div>
-
-            {/* FAB — Create Outward Entry */}
-            <button className="tp-fab" onClick={() => setShowForm(true)} title="Create Outward Entry">
-                <Plus size={24} />
-            </button>
 
             {/* Create Outward Form — Modal */}
             {showForm && (
@@ -653,6 +669,7 @@ function TeamPortal() {
                     </div>
                 </div>
             )}
+        </div>
         </div>
     );
 }
