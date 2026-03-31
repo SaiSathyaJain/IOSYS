@@ -2,14 +2,42 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardAPI, inwardAPI, outwardAPI } from '../../services/api';
 import {
-    BarChart3, Hourglass, CheckCircle2, ArrowDownToLine, ArrowUpFromLine,
-    Users, ChevronRight, X, Clock, TrendingUp, Calendar, FileText,
+    Hourglass, CheckCircle2, ArrowDownToLine, ArrowUpFromLine,
+    Users, ChevronRight, X, Clock, TrendingUp, FileText,
     RefreshCw, Loader2, ArrowLeft, AlertCircle, Sun, Moon, Activity
 } from 'lucide-react';
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+    ResponsiveContainer
 } from 'recharts';
 import './Dashboard.css';
+
+const RingProgress = ({ percent, color }) => {
+    const size = 76, stroke = 6;
+    const r = (size - stroke * 2) / 2;
+    const cx = size / 2, cy = size / 2;
+    const circumference = 2 * Math.PI * r;
+    const offset = circumference - (Math.min(percent, 100) / 100) * circumference;
+    return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="ring-svg">
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(128,128,128,0.12)" strokeWidth={stroke} />
+            <circle
+                cx={cx} cy={cy} r={r} fill="none"
+                stroke={color} strokeWidth={stroke}
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${cx} ${cy})`}
+                style={{ transition: 'stroke-dashoffset 0.7s cubic-bezier(0.4,0,0.2,1)' }}
+            />
+            <text x={cx} y={cy + 5} textAnchor="middle" fontSize="13" fontWeight="700" fill={color}>
+                {percent}%
+            </text>
+        </svg>
+    );
+};
+
+const TEAM_COLORS = ['#3B82F6', '#8B5CF6', '#10B981'];
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -65,10 +93,7 @@ function Dashboard() {
                 inwardAPI.getAll(),
                 outwardAPI.getAll(teamName)
             ]);
-
             setTeamDetail(detailRes.data.stats || {});
-
-            // Filter inward entries for this team
             const teamInward = (inwardRes.data.entries || []).filter(e => e.assignedTeam === teamName);
             setTeamEntries(teamInward);
             setTeamOutward(outwardRes.data.entries || []);
@@ -116,9 +141,9 @@ function Dashboard() {
 
     if (loading) {
         return (
-            <div className="loading-state">
-                <Loader2 size={40} className="spin" />
-                <p>Loading dashboard...</p>
+            <div className="dash-loading">
+                <Loader2 size={36} className="spin" />
+                <p>Loading dashboard…</p>
             </div>
         );
     }
@@ -161,229 +186,242 @@ function Dashboard() {
                 </div>
             </nav>
 
-        <div className="dashboard animate-fade">
-            <div className="page-header" style={{ marginBottom: '2rem' }}>
-                <h2 className="page-title" style={{ fontSize: '1.75rem', backgroundImage: 'linear-gradient(to right, var(--primary), #8b5cf6)', WebkitBackgroundClip: 'text', color: 'transparent', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Activity color="var(--primary)" size={28} /> Correspondence Intelligence
-                </h2>
-            </div>
+            <div className="dash-body">
 
-            {/* Overall Stats */}
-            <div className="stats-grid">
-                <div className="stat-card total">
-                    <div className="stat-icon"><ArrowDownToLine size={24} /></div>
-                    <div className="stat-content">
-                        <div className="stat-value">{stats?.totalInward || 0}</div>
-                        <div className="stat-label">Total Inward</div>
-                    </div>
-                </div>
-                <div className="stat-card pending">
-                    <div className="stat-icon"><Hourglass size={24} /></div>
-                    <div className="stat-content">
-                        <div className="stat-value">{stats?.pendingWork || 0}</div>
-                        <div className="stat-label">Pending Work</div>
-                    </div>
-                </div>
-                <div className="stat-card completed">
-                    <div className="stat-icon"><CheckCircle2 size={24} /></div>
-                    <div className="stat-content">
-                        <div className="stat-value">{stats?.completedWork || 0}</div>
-                        <div className="stat-label">Completed</div>
-                    </div>
-                </div>
-                <div className="stat-card outward">
-                    <div className="stat-icon"><ArrowUpFromLine size={24} /></div>
-                    <div className="stat-content">
-                        <div className="stat-value">{stats?.totalOutward || 0}</div>
-                        <div className="stat-label">Total Outward</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Volume Analytics Chart */}
-            <div className="card stagger-2">
-                <div className="card-header">
-                    <h3 className="card-title"><TrendingUp size={20} /> Volume Analytics</h3>
-                    <span className="header-hint">Last 6 months</span>
-                </div>
-                <div className="chart-body">
-                    {chartData.length === 0 ? (
-                        <div className="chart-empty">No data yet</div>
-                    ) : (
-                        <ResponsiveContainer width="100%" height={240}>
-                            <LineChart data={chartData} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                <Tooltip
-                                    contentStyle={{ background: '#0D1526', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', fontSize: '0.85rem' }}
-                                    labelStyle={{ color: '#e2e8f0' }}
-                                />
-                                <Legend wrapperStyle={{ fontSize: '0.8rem', color: '#94a3b8' }} />
-                                <Line type="monotone" dataKey="inward" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                                <Line type="monotone" dataKey="outward" stroke="#F97316" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    )}
-                </div>
-            </div>
-
-            {/* Team Performance Overview */}
-            <div className="card">
-                <div className="card-header">
-                    <h3 className="card-title"><Users size={20} /> Team Performance</h3>
-                    <span className="header-hint">Click a team to view details</span>
-                </div>
-                <div className="team-grid">
-                    {teamStats.map(team => (
-                        <div
-                            key={team.team}
-                            className={`team-card ${selectedTeam === team.team ? 'active' : ''}`}
-                            onClick={() => loadTeamDetail(team.team)}
-                        >
-                            <div className="team-card-header">
-                                <h4 className="team-name">{team.team} Team</h4>
-                                <ChevronRight size={20} className="team-arrow" />
-                            </div>
-                            <div className="team-stats-row">
-                                <div className="team-stat">
-                                    <span className="team-stat-value">{team.total}</span>
-                                    <span className="team-stat-label">Assigned</span>
-                                </div>
-                                <div className="team-stat pending">
-                                    <span className="team-stat-value">{team.pending}</span>
-                                    <span className="team-stat-label">Pending</span>
-                                </div>
-                                <div className="team-stat completed">
-                                    <span className="team-stat-value">{team.completed}</span>
-                                    <span className="team-stat-label">Completed</span>
-                                </div>
-                            </div>
-                            <div className="team-progress-wrapper">
-                                <div className="progress-label">
-                                    <span>Completion Rate</span>
-                                    <span className="progress-percent">{getCompletionRate(team)}%</span>
-                                </div>
-                                <div className="team-progress">
-                                    <div
-                                        className="progress-bar"
-                                        style={{ width: `${getCompletionRate(team)}%` }}
-                                    ></div>
-                                </div>
-                            </div>
+                {/* Page Header */}
+                <div className="dash-header">
+                    <div className="dash-title-group">
+                        <div className="dash-title-icon"><Activity size={20} /></div>
+                        <div>
+                            <h2 className="dash-title">Correspondence Intelligence</h2>
+                            <p className="dash-subtitle">Overview of inward &amp; outward correspondence activity</p>
                         </div>
-                    ))}
+                    </div>
                 </div>
-            </div>
 
-            {/* Team Detail Panel */}
-            {selectedTeam && (
-                <div className="team-detail-panel animate-fade">
-                    <div className="card">
-                        <div className="card-header">
+                {/* Stat Cards */}
+                <div className="stat-grid">
+                    <div className="stat-card total">
+                        <div className="stat-icon-box">
+                            <ArrowDownToLine size={22} />
+                        </div>
+                        <div className="stat-content">
+                            <div className="stat-value">{stats?.totalInward ?? 0}</div>
+                            <div className="stat-label">Total Inward</div>
+                        </div>
+                        <div className="stat-bg-orb" />
+                    </div>
+                    <div className="stat-card pending">
+                        <div className="stat-icon-box">
+                            <Hourglass size={22} />
+                        </div>
+                        <div className="stat-content">
+                            <div className="stat-value">{stats?.pendingWork ?? 0}</div>
+                            <div className="stat-label">Pending Work</div>
+                        </div>
+                        <div className="stat-bg-orb" />
+                    </div>
+                    <div className="stat-card completed">
+                        <div className="stat-icon-box">
+                            <CheckCircle2 size={22} />
+                        </div>
+                        <div className="stat-content">
+                            <div className="stat-value">{stats?.completedWork ?? 0}</div>
+                            <div className="stat-label">Completed</div>
+                        </div>
+                        <div className="stat-bg-orb" />
+                    </div>
+                    <div className="stat-card outward">
+                        <div className="stat-icon-box">
+                            <ArrowUpFromLine size={22} />
+                        </div>
+                        <div className="stat-content">
+                            <div className="stat-value">{stats?.totalOutward ?? 0}</div>
+                            <div className="stat-label">Total Outward</div>
+                        </div>
+                        <div className="stat-bg-orb" />
+                    </div>
+                </div>
+
+                {/* Volume Analytics Chart */}
+                <div className="dash-card">
+                    <div className="dash-card-header">
+                        <div className="dash-card-title">
+                            <TrendingUp size={18} />
+                            <span>Volume Analytics</span>
+                        </div>
+                        <span className="dash-card-hint">Last 6 months</span>
+                    </div>
+                    <div className="chart-area">
+                        {chartData.length === 0 ? (
+                            <div className="chart-empty">No data yet</div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height={260}>
+                                <AreaChart data={chartData} margin={{ top: 10, right: 20, left: -16, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="gradInward" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
+                                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="gradOutward" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.25} />
+                                            <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" vertical={false} />
+                                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                    <Tooltip
+                                        contentStyle={{ background: '#0D1526', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.85rem', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
+                                        labelStyle={{ color: '#E2E8F0', fontWeight: 600, marginBottom: '4px' }}
+                                        itemStyle={{ color: '#94A3B8' }}
+                                        cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }}
+                                    />
+                                    <Legend
+                                        wrapperStyle={{ fontSize: '0.8rem', color: '#64748B', paddingTop: '12px' }}
+                                        iconType="circle"
+                                        iconSize={8}
+                                    />
+                                    <Area type="monotone" dataKey="inward" name="Inward" stroke="#3B82F6" strokeWidth={2.5} fill="url(#gradInward)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
+                                    <Area type="monotone" dataKey="outward" name="Outward" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#gradOutward)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
+                </div>
+
+                {/* Team Performance */}
+                <div className="dash-card">
+                    <div className="dash-card-header">
+                        <div className="dash-card-title">
+                            <Users size={18} />
+                            <span>Team Performance</span>
+                        </div>
+                        <span className="dash-card-hint">Click a team to drill down</span>
+                    </div>
+                    <div className="team-grid">
+                        {teamStats.map((team, i) => (
+                            <div
+                                key={team.team}
+                                className={`team-card ${selectedTeam === team.team ? 'active' : ''}`}
+                                onClick={() => loadTeamDetail(team.team)}
+                                style={{ '--team-color': TEAM_COLORS[i % TEAM_COLORS.length] }}
+                            >
+                                <div className="team-card-top">
+                                    <h4 className="team-name">{team.team} Team</h4>
+                                    <ChevronRight size={16} className="team-arrow" />
+                                </div>
+                                <div className="team-card-body">
+                                    <RingProgress percent={getCompletionRate(team)} color={TEAM_COLORS[i % TEAM_COLORS.length]} />
+                                    <div className="team-stats-cols">
+                                        <div className="team-stat-item">
+                                            <span className="tsi-value">{team.total}</span>
+                                            <span className="tsi-label">Assigned</span>
+                                        </div>
+                                        <div className="team-stat-item amber">
+                                            <span className="tsi-value">{team.pending}</span>
+                                            <span className="tsi-label">Pending</span>
+                                        </div>
+                                        <div className="team-stat-item green">
+                                            <span className="tsi-value">{team.completed}</span>
+                                            <span className="tsi-label">Done</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Team Detail Panel */}
+                {selectedTeam && (
+                    <div className="dash-card detail-panel">
+                        <div className="dash-card-header">
                             <div className="detail-header-left">
                                 <button className="btn-back" onClick={closeTeamDetail}>
-                                    <ArrowLeft size={18} />
+                                    <ArrowLeft size={16} />
                                 </button>
-                                <h3 className="card-title">
-                                    <TrendingUp size={20} />
-                                    {selectedTeam} Team Statistics
-                                </h3>
+                                <div className="dash-card-title">
+                                    <TrendingUp size={18} />
+                                    <span>{selectedTeam} Team — Detail</span>
+                                </div>
                             </div>
                             <button className="btn-close-panel" onClick={closeTeamDetail}>
-                                <X size={20} />
+                                <X size={18} />
                             </button>
                         </div>
 
                         {detailLoading ? (
-                            <div className="loading-state small">
-                                <Loader2 size={32} className="spin" />
-                                <p>Loading team data...</p>
+                            <div className="dash-loading-inline">
+                                <Loader2 size={28} className="spin" />
+                                <span>Loading team data…</span>
                             </div>
                         ) : (
                             <>
-                                {/* Team Stats Summary */}
-                                <div className="team-detail-stats">
-                                    <div className="detail-stat">
-                                        <div className="detail-stat-icon assigned">
-                                            <FileText size={20} />
-                                        </div>
-                                        <div className="detail-stat-info">
-                                            <span className="detail-stat-value">{teamDetail?.totalAssigned || 0}</span>
-                                            <span className="detail-stat-label">Total Assigned</span>
-                                        </div>
+                                {/* Detail Stats Row */}
+                                <div className="detail-stats-row">
+                                    <div className="detail-stat-card assigned">
+                                        <div className="dsc-icon"><FileText size={18} /></div>
+                                        <div className="dsc-value">{teamDetail?.totalAssigned ?? 0}</div>
+                                        <div className="dsc-label">Total Assigned</div>
                                     </div>
-                                    <div className="detail-stat">
-                                        <div className="detail-stat-icon pending">
-                                            <Clock size={20} />
-                                        </div>
-                                        <div className="detail-stat-info">
-                                            <span className="detail-stat-value">{teamDetail?.pending || 0}</span>
-                                            <span className="detail-stat-label">Pending</span>
-                                        </div>
+                                    <div className="detail-stat-card pending">
+                                        <div className="dsc-icon"><Clock size={18} /></div>
+                                        <div className="dsc-value">{teamDetail?.pending ?? 0}</div>
+                                        <div className="dsc-label">Pending</div>
                                     </div>
-                                    <div className="detail-stat">
-                                        <div className="detail-stat-icon in-progress">
-                                            <Hourglass size={20} />
-                                        </div>
-                                        <div className="detail-stat-info">
-                                            <span className="detail-stat-value">{teamDetail?.inProgress || 0}</span>
-                                            <span className="detail-stat-label">In Progress</span>
-                                        </div>
+                                    <div className="detail-stat-card in-progress">
+                                        <div className="dsc-icon"><Hourglass size={18} /></div>
+                                        <div className="dsc-value">{teamDetail?.inProgress ?? 0}</div>
+                                        <div className="dsc-label">In Progress</div>
                                     </div>
-                                    <div className="detail-stat">
-                                        <div className="detail-stat-icon completed">
-                                            <CheckCircle2 size={20} />
-                                        </div>
-                                        <div className="detail-stat-info">
-                                            <span className="detail-stat-value">{teamDetail?.completed || 0}</span>
-                                            <span className="detail-stat-label">Completed</span>
-                                        </div>
+                                    <div className="detail-stat-card completed">
+                                        <div className="dsc-icon"><CheckCircle2 size={18} /></div>
+                                        <div className="dsc-value">{teamDetail?.completed ?? 0}</div>
+                                        <div className="dsc-label">Completed</div>
                                     </div>
-                                    <div className="detail-stat">
-                                        <div className="detail-stat-icon outward">
-                                            <ArrowUpFromLine size={20} />
-                                        </div>
-                                        <div className="detail-stat-info">
-                                            <span className="detail-stat-value">{teamDetail?.totalOutward || 0}</span>
-                                            <span className="detail-stat-label">Outward Sent</span>
-                                        </div>
+                                    <div className="detail-stat-card outward">
+                                        <div className="dsc-icon"><ArrowUpFromLine size={18} /></div>
+                                        <div className="dsc-value">{teamDetail?.totalOutward ?? 0}</div>
+                                        <div className="dsc-label">Outward Sent</div>
                                     </div>
                                 </div>
 
-                                {/* Completion Progress */}
-                                <div className="completion-section">
-                                    <h4>Completion Progress</h4>
-                                    <div className="large-progress-wrapper">
-                                        <div className="large-progress">
-                                            <div
-                                                className="large-progress-bar"
-                                                style={{
-                                                    width: `${teamDetail?.totalAssigned
-                                                        ? (teamDetail.completed / teamDetail.totalAssigned) * 100
-                                                        : 0}%`
-                                                }}
-                                            ></div>
-                                        </div>
-                                        <span className="large-progress-text">
-                                            {teamDetail?.totalAssigned
-                                                ? Math.round((teamDetail.completed / teamDetail.totalAssigned) * 100)
-                                                : 0}% Complete
-                                        </span>
+                                {/* Completion Progress Bar */}
+                                <div className="completion-row">
+                                    <span className="completion-label">Completion Progress</span>
+                                    <div className="completion-track">
+                                        <div
+                                            className="completion-fill"
+                                            style={{
+                                                width: `${teamDetail?.totalAssigned
+                                                    ? Math.round((teamDetail.completed / teamDetail.totalAssigned) * 100)
+                                                    : 0}%`
+                                            }}
+                                        />
                                     </div>
+                                    <span className="completion-pct">
+                                        {teamDetail?.totalAssigned
+                                            ? Math.round((teamDetail.completed / teamDetail.totalAssigned) * 100)
+                                            : 0}%
+                                    </span>
                                 </div>
 
-                                {/* Assigned Entries Table */}
+                                {/* Inward Entries Table */}
                                 <div className="entries-section">
-                                    <h4><FileText size={18} /> Assigned Inward Entries ({teamEntries.length})</h4>
+                                    <h4 className="entries-title">
+                                        <FileText size={16} />
+                                        Assigned Inward Entries
+                                        <span className="entries-count">{teamEntries.length}</span>
+                                    </h4>
                                     {teamEntries.length === 0 ? (
-                                        <div className="empty-state-small">
-                                            <AlertCircle size={24} />
-                                            <p>No entries assigned to this team</p>
+                                        <div className="empty-inline">
+                                            <AlertCircle size={20} />
+                                            <span>No entries assigned to this team</span>
                                         </div>
                                     ) : (
-                                        <div className="table-container">
-                                            <table className="table">
+                                        <div className="table-wrap">
+                                            <table className="data-table">
                                                 <thead>
                                                     <tr>
                                                         <th>Inward No</th>
@@ -416,17 +454,21 @@ function Dashboard() {
                                     )}
                                 </div>
 
-                                {/* Outward Entries */}
+                                {/* Outward Entries Table */}
                                 <div className="entries-section">
-                                    <h4><ArrowUpFromLine size={18} /> Outward Entries ({teamOutward.length})</h4>
+                                    <h4 className="entries-title">
+                                        <ArrowUpFromLine size={16} />
+                                        Outward Entries
+                                        <span className="entries-count">{teamOutward.length}</span>
+                                    </h4>
                                     {teamOutward.length === 0 ? (
-                                        <div className="empty-state-small">
-                                            <AlertCircle size={24} />
-                                            <p>No outward entries from this team</p>
+                                        <div className="empty-inline">
+                                            <AlertCircle size={20} />
+                                            <span>No outward entries from this team</span>
                                         </div>
                                     ) : (
-                                        <div className="table-container">
-                                            <table className="table">
+                                        <div className="table-wrap">
+                                            <table className="data-table">
                                                 <thead>
                                                     <tr>
                                                         <th>Outward No</th>
@@ -457,9 +499,8 @@ function Dashboard() {
                             </>
                         )}
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
         </div>
     );
 }
