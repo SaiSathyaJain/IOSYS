@@ -200,12 +200,15 @@ function TeamPortal() {
         }
     };
 
-    const overdueCount    = pendingInward.filter(e => isOverdue(e.dueDate)).length;
+    const overdueCount     = pendingInward.filter(e => isOverdue(e.dueDate)).length;
     const displayedPending = getFilteredPending().slice(0, showLimit);
     const totalFiltered   = getFilteredPending().length;
     const completionRate  = teamStats?.totalAssigned > 0
         ? ((teamStats.completed || 0) / teamStats.totalAssigned * 100).toFixed(1)
         : '0.0';
+    const linkedInwardEntry = formData.linkedInwardId
+        ? pendingInward.find(e => String(e.id) === String(formData.linkedInwardId))
+        : null;
 
     const navItems = [
         { id: 'dashboard', label: 'DASHBOARD', icon: <LayoutDashboard size={15} /> },
@@ -647,111 +650,157 @@ function TeamPortal() {
                 </div>
             </main>
 
-            {/* Create Outward Modal */}
+            {/* Create Outward Modal — Two-panel drawer */}
             {showForm && (
                 <div className="modal-overlay drawer-overlay" onClick={() => { setShowForm(false); resetForm(); }}>
-                    <div className="modal drawer" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3><Plus size={20}/> Create Outward Entry</h3>
-                            <button className="btn-close" onClick={() => { setShowForm(false); resetForm(); }}><X size={20}/></button>
-                        </div>
-                        <div className="modal-body">
-                            {formData.linkedInwardId && (
-                                <div className="linked-notice"><Link2 size={16}/><span>Linked to inward entry — this will mark it as completed</span></div>
+                    <div className="modal drawer tp-two-panel-drawer" onClick={e => e.stopPropagation()}>
+
+                        {/* LEFT PANEL — inward context */}
+                        <div className="tp-drawer-left">
+                            <div className="tp-dl-header">
+                                <Link2 size={14}/>
+                                <span>Linked Inward</span>
+                            </div>
+
+                            {linkedInwardEntry ? (
+                                <div className="tp-dl-body">
+                                    <div className="tp-dl-badge">{linkedInwardEntry.inwardNo}</div>
+                                    <div className="tp-dl-field">
+                                        <span className="tp-dl-key">Subject</span>
+                                        <span className="tp-dl-val">{linkedInwardEntry.subject}</span>
+                                    </div>
+                                    <div className="tp-dl-field">
+                                        <span className="tp-dl-key">From</span>
+                                        <span className="tp-dl-val">{linkedInwardEntry.particularsFromWhom}</span>
+                                    </div>
+                                    <div className="tp-dl-field">
+                                        <span className="tp-dl-key">Team</span>
+                                        <span className="tp-dl-val">{linkedInwardEntry.assignedTeam}</span>
+                                    </div>
+                                    <div className="tp-dl-field">
+                                        <span className="tp-dl-key">Due</span>
+                                        <span className="tp-dl-val">{formatDate(linkedInwardEntry.dueDate)}</span>
+                                    </div>
+                                    {linkedInwardEntry.assignmentInstructions && (
+                                        <div className="tp-dl-field">
+                                            <span className="tp-dl-key">Instructions</span>
+                                            <span className="tp-dl-val">{linkedInwardEntry.assignmentInstructions}</span>
+                                        </div>
+                                    )}
+                                    <div className="tp-dl-notice"><CheckCircle2 size={13}/> Submitting will mark this as Completed</div>
+                                </div>
+                            ) : (
+                                <div className="tp-dl-empty">
+                                    <FileText size={28}/>
+                                    <p>No inward entry linked</p>
+                                    <span>This will be an independent outward entry</span>
+                                </div>
                             )}
-                            <form onSubmit={handleSubmit}>
-                                <div className="grid-2">
-                                    <div className="form-group">
-                                        <label className="form-label">Your Team *</label>
-                                        <select name="createdByTeam" className="form-select" value={formData.createdByTeam} onChange={handleChange} required>
-                                            <option value="">Select Team...</option>
-                                            <option value="UG">UG Team</option>
-                                            <option value="PG/PRO">PG/PRO Team</option>
-                                            <option value="PhD">PhD Team</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Your Email *</label>
-                                        <input type="email" name="teamMemberEmail" className="form-input" value={formData.teamMemberEmail} onChange={handleChange} required placeholder="your@email.com"/>
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Link to Inward Entry</label>
-                                    <select name="linkedInwardId" className="form-select" value={formData.linkedInwardId} onChange={handleChange}>
-                                        <option value="">No link - Independent outward</option>
-                                        {pendingInward.map(e => <option key={e.id} value={e.id}>{e.inwardNo} - {e.subject}</option>)}
-                                    </select>
-                                </div>
-                                <div className="grid-2">
-                                    <div className="form-group">
-                                        <label className="form-label">Means *</label>
-                                        <select name="means" className="form-select" value={formData.means} onChange={handleChange} required>
-                                            <option value="">Select...</option>
-                                            <option value="Post">Post</option>
-                                            <option value="Email">Email</option>
-                                            <option value="Hand Delivery">Hand Delivery</option>
-                                            <option value="Courier">Courier</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Date & Time *</label>
-                                        <input type="datetime-local" name="signReceiptDateTime" className="form-input" value={formData.signReceiptDateTime} onChange={handleChange} required/>
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">To Whom *</label>
-                                    <input type="text" name="toWhom" className="form-input" value={formData.toWhom} onChange={handleChange} required placeholder="Recipient name or organization"/>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Subject *</label>
-                                    <input type="text" name="subject" className="form-input" value={formData.subject} onChange={handleChange} required placeholder="Subject"/>
-                                </div>
-                                <div className="grid-2">
-                                    <div className="form-group">
-                                        <label className="form-label">Sent By *</label>
-                                        <input type="text" name="sentBy" className="form-input" value={formData.sentBy} onChange={handleChange} required placeholder="Your name"/>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">File Reference</label>
-                                        <input type="text" name="fileReference" className="form-input" value={formData.fileReference} onChange={handleChange} placeholder="Optional"/>
-                                    </div>
-                                </div>
-                                <div className="grid-2">
-                                    <div className="form-group">
-                                        <label className="form-label">Postal Tariff (Rs.)</label>
-                                        <input type="number" name="postalTariff" className="form-input" value={formData.postalTariff} onChange={handleChange} placeholder="0" min="0"/>
-                                    </div>
-                                    <div className="form-group checkbox-wrapper">
-                                        <label className="checkbox-label">
-                                            <input type="checkbox" name="caseClosed" checked={formData.caseClosed} onChange={handleChange}/>
-                                            Mark Case as Closed
-                                        </label>
-                                    </div>
-                                </div>
-                                <div className="grid-2">
-                                    <div className="form-group">
-                                        <label className="form-label">Ack Rec</label>
-                                        <input type="text" name="ackRec" className="form-input" value={formData.ackRec} onChange={handleChange} placeholder="Acknowledgement received"/>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Cross No.</label>
-                                        <input type="text" name="crossNo" className="form-input" value={formData.crossNo} onChange={handleChange} placeholder="Cross reference"/>
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Receipt No.</label>
-                                    <input type="text" name="receiptNo" className="form-input" value={formData.receiptNo} onChange={handleChange} placeholder="Receipt number"/>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Remarks</label>
-                                    <textarea name="remarks" className="form-input" value={formData.remarks} onChange={handleChange} placeholder="Enter remarks..." rows="2"/>
-                                </div>
-                                <div className="modal-footer" style={{padding:'1rem 0 0',border:'none'}}>
-                                    <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</button>
-                                    <button type="submit" className="btn btn-primary"><Check size={18}/> Create Outward Entry</button>
-                                </div>
-                            </form>
+
+                            <div className="tp-dl-select-wrap">
+                                <label className="tp-dl-select-label">Link to Inward</label>
+                                <select name="linkedInwardId" className="tp-dl-select" value={formData.linkedInwardId} onChange={handleChange}>
+                                    <option value="">None (independent)</option>
+                                    {pendingInward.map(e => <option key={e.id} value={e.id}>{e.inwardNo} – {e.subject?.slice(0,35)}</option>)}
+                                </select>
+                            </div>
                         </div>
+
+                        {/* RIGHT PANEL — form */}
+                        <div className="tp-drawer-right">
+                            <div className="modal-header">
+                                <h3><Plus size={18}/> Create Outward Entry</h3>
+                                <button className="btn-close" onClick={() => { setShowForm(false); resetForm(); }}><X size={18}/></button>
+                            </div>
+                            <div className="modal-body">
+                                <form id="outward-form" onSubmit={handleSubmit}>
+                                    <div className="grid-2">
+                                        <div className="form-group">
+                                            <label className="form-label">Your Team *</label>
+                                            <select name="createdByTeam" className="form-select" value={formData.createdByTeam} onChange={handleChange} required>
+                                                <option value="">Select Team...</option>
+                                                <option value="UG">UG Team</option>
+                                                <option value="PG/PRO">PG/PRO Team</option>
+                                                <option value="PhD">PhD Team</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Your Email *</label>
+                                            <input type="email" name="teamMemberEmail" className="form-input" value={formData.teamMemberEmail} onChange={handleChange} required placeholder="your@email.com"/>
+                                        </div>
+                                    </div>
+                                    <div className="grid-2">
+                                        <div className="form-group">
+                                            <label className="form-label">Means *</label>
+                                            <select name="means" className="form-select" value={formData.means} onChange={handleChange} required>
+                                                <option value="">Select...</option>
+                                                <option value="Post">Post</option>
+                                                <option value="Email">Email</option>
+                                                <option value="Hand Delivery">Hand Delivery</option>
+                                                <option value="Courier">Courier</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Date & Time *</label>
+                                            <input type="datetime-local" name="signReceiptDateTime" className="form-input" value={formData.signReceiptDateTime} onChange={handleChange} required/>
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">To Whom *</label>
+                                        <input type="text" name="toWhom" className="form-input" value={formData.toWhom} onChange={handleChange} required placeholder="Recipient name or organization"/>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Subject *</label>
+                                        <input type="text" name="subject" className="form-input" value={formData.subject} onChange={handleChange} required placeholder="Subject"/>
+                                    </div>
+                                    <div className="grid-2">
+                                        <div className="form-group">
+                                            <label className="form-label">Sent By *</label>
+                                            <input type="text" name="sentBy" className="form-input" value={formData.sentBy} onChange={handleChange} required placeholder="Your name"/>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">File Reference</label>
+                                            <input type="text" name="fileReference" className="form-input" value={formData.fileReference} onChange={handleChange} placeholder="Optional"/>
+                                        </div>
+                                    </div>
+                                    <div className="grid-2">
+                                        <div className="form-group">
+                                            <label className="form-label">Postal Tariff (Rs.)</label>
+                                            <input type="number" name="postalTariff" className="form-input" value={formData.postalTariff} onChange={handleChange} placeholder="0" min="0"/>
+                                        </div>
+                                        <div className="form-group checkbox-wrapper">
+                                            <label className="checkbox-label">
+                                                <input type="checkbox" name="caseClosed" checked={formData.caseClosed} onChange={handleChange}/>
+                                                Mark Case as Closed
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="grid-2">
+                                        <div className="form-group">
+                                            <label className="form-label">Ack Rec</label>
+                                            <input type="text" name="ackRec" className="form-input" value={formData.ackRec} onChange={handleChange} placeholder="Acknowledgement received"/>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Cross No.</label>
+                                            <input type="text" name="crossNo" className="form-input" value={formData.crossNo} onChange={handleChange} placeholder="Cross reference"/>
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Receipt No.</label>
+                                        <input type="text" name="receiptNo" className="form-input" value={formData.receiptNo} onChange={handleChange} placeholder="Receipt number"/>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Remarks</label>
+                                        <textarea name="remarks" className="form-input" value={formData.remarks} onChange={handleChange} placeholder="Enter remarks..." rows="2"/>
+                                    </div>
+                                </form>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</button>
+                                <button type="submit" form="outward-form" className="btn btn-primary"><Check size={16}/> Create Outward Entry</button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             )}
