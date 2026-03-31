@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { outwardAPI, inwardAPI, dashboardAPI } from '../../services/api';
 import {
-    Clock, CheckCircle, ArrowRight, Calendar, Plus, X,
+    Clock, CheckCircle2, ArrowRight, Calendar, Plus, X,
     ClipboardList, Check, FileText, Search, RefreshCw, Eye,
-    ArrowUpFromLine, Hourglass, Loader2, AlertTriangle, Link2, Lock,
-    Sun, Moon, ArrowLeft
+    ArrowUpFromLine, Loader2, AlertTriangle, Link2, Lock,
+    Sun, Moon, LayoutDashboard, Send, History, User, Bell, Download
 } from 'lucide-react';
 import './TeamPortal.css';
 
@@ -17,6 +17,9 @@ function TeamPortal() {
     const selectedTeam = TEAM_MAP[teamSlug] || '';
 
     const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
+    const [activePage, setActivePage] = useState('dashboard');
+    const [pendingFilter, setPendingFilter] = useState('all');
+    const [showLimit, setShowLimit] = useState(5);
     const [entries, setEntries] = useState([]);
     const [filteredEntries, setFilteredEntries] = useState([]);
     const [pendingInward, setPendingInward] = useState([]);
@@ -27,23 +30,14 @@ function TeamPortal() {
     const [searchTerm, setSearchTerm] = useState('');
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedEntry, setSelectedEntry] = useState(null);
+    const [showInwardModal, setShowInwardModal] = useState(false);
+    const [selectedInwardEntry, setSelectedInwardEntry] = useState(null);
     const [formData, setFormData] = useState({
-        means: '',
-        toWhom: '',
-        subject: '',
-        sentBy: '',
-        signReceiptDateTime: '',
-        caseClosed: false,
-        fileReference: '',
-        postalTariff: '',
-        dueDate: '',
-        linkedInwardId: '',
-        createdByTeam: '',
-        teamMemberEmail: '',
-        ackRec: '',
-        crossNo: '',
-        receiptNo: '',
-        remarks: ''
+        means: '', toWhom: '', subject: '', sentBy: '',
+        signReceiptDateTime: '', caseClosed: false, fileReference: '',
+        postalTariff: '', dueDate: '', linkedInwardId: '',
+        createdByTeam: selectedTeam || '', teamMemberEmail: '',
+        ackRec: '', crossNo: '', receiptNo: '', remarks: ''
     });
 
     useEffect(() => {
@@ -51,31 +45,20 @@ function TeamPortal() {
         document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
     }, [isDarkMode]);
 
-    useEffect(() => {
-        loadData();
-    }, [selectedTeam]);
+    useEffect(() => { loadData(); }, [selectedTeam]);
+    useEffect(() => { loadEntries(); }, [viewTeam]);
+    useEffect(() => { filterEntries(); }, [entries, searchTerm]);
 
-    useEffect(() => {
-        loadEntries();
-    }, [viewTeam]);
-
-    useEffect(() => {
-        filterEntries();
-    }, [entries, searchTerm]);
-
-    // Loads pending assignments + stats (always scoped to own team)
     const loadData = async () => {
         setLoading(true);
         try {
             const inwardRes = await inwardAPI.getAll();
-
             const pending = (inwardRes.data.entries || []).filter(e => {
                 const matchesTeam = !selectedTeam || e.assignedTeam === selectedTeam;
                 const matchesStatus = e.assignmentStatus === 'Pending' || e.assignmentStatus === 'In Progress';
                 return e.assignedTeam && matchesTeam && matchesStatus;
             });
             setPendingInward(pending);
-
             if (selectedTeam) {
                 const statsRes = await dashboardAPI.getTeamStats(selectedTeam);
                 setTeamStats(statsRes.data.stats || {});
@@ -96,7 +79,6 @@ function TeamPortal() {
         }
     };
 
-    // Loads outward entries for the currently viewed team (may differ from own team)
     const loadEntries = async () => {
         try {
             const outwardRes = await outwardAPI.getAll(viewTeam);
@@ -107,17 +89,13 @@ function TeamPortal() {
     };
 
     const filterEntries = () => {
-        if (!searchTerm) {
-            setFilteredEntries(entries);
-            return;
-        }
+        if (!searchTerm) { setFilteredEntries(entries); return; }
         const term = searchTerm.toLowerCase();
-        const filtered = entries.filter(e =>
+        setFilteredEntries(entries.filter(e =>
             e.outwardNo?.toLowerCase().includes(term) ||
             e.subject?.toLowerCase().includes(term) ||
             e.toWhom?.toLowerCase().includes(term)
-        );
-        setFilteredEntries(filtered);
+        ));
     };
 
     const handleProcess = (inwardEntry) => {
@@ -145,13 +123,9 @@ function TeamPortal() {
         e.preventDefault();
         try {
             await outwardAPI.create(formData);
-
-            // Save user email to localStorage for Messages access
             if (formData.teamMemberEmail) {
-                const user = { email: formData.teamMemberEmail.trim(), type: 'team' };
-                localStorage.setItem('teamUser', JSON.stringify(user));
+                localStorage.setItem('teamUser', JSON.stringify({ email: formData.teamMemberEmail.trim(), type: 'team' }));
             }
-
             alert('Outward entry created successfully!');
             setShowForm(false);
             resetForm();
@@ -163,9 +137,7 @@ function TeamPortal() {
     };
 
     const handleCloseCase = async (id) => {
-        if (!window.confirm('Are you sure you want to close this case? This will also mark the linked inward entry as completed.')) {
-            return;
-        }
+        if (!window.confirm('Are you sure you want to close this case?')) return;
         try {
             await outwardAPI.closeCase(id);
             alert('Case closed successfully!');
@@ -194,16 +166,14 @@ function TeamPortal() {
     const formatDate = (dateValue) => {
         if (!dateValue) return '-';
         try {
-            const date = dateValue._seconds
-                ? new Date(dateValue._seconds * 1000)
-                : new Date(dateValue);
-            return date.toLocaleDateString('en-IN', {
-                day: '2-digit', month: 'short', year: 'numeric'
-            });
-        } catch {
-            return '-';
-        }
+            const date = dateValue._seconds ? new Date(dateValue._seconds * 1000) : new Date(dateValue);
+            return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch { return '-'; }
     };
+
+    const formatHeaderDate = () => new Date().toLocaleDateString('en-US', {
+        weekday: 'long', day: 'numeric', month: 'short', year: 'numeric'
+    });
 
     const isOverdue = (dueDate) => {
         if (!dueDate) return false;
@@ -214,160 +184,291 @@ function TeamPortal() {
     const isDueSoon = (dueDate) => {
         if (!dueDate) return false;
         const due = dueDate._seconds ? new Date(dueDate._seconds * 1000) : new Date(dueDate);
-        const today = new Date();
-        const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil((due - new Date()) / (1000 * 60 * 60 * 24));
         return diffDays >= 0 && diffDays <= 3;
     };
 
-    const openDetailsModal = (entry) => {
-        setSelectedEntry(entry);
-        setShowDetailsModal(true);
+    const getFilteredPending = () => {
+        switch (pendingFilter) {
+            case 'overdue': return pendingInward.filter(e => isOverdue(e.dueDate));
+            case 'recent':  return [...pendingInward].slice(0, 5);
+            default:        return pendingInward;
+        }
     };
 
+    const overdueCount    = pendingInward.filter(e => isOverdue(e.dueDate)).length;
+    const displayedPending = getFilteredPending().slice(0, showLimit);
+    const totalFiltered   = getFilteredPending().length;
+    const completionRate  = teamStats?.totalAssigned > 0
+        ? ((teamStats.completed || 0) / teamStats.totalAssigned * 100).toFixed(1)
+        : '0.0';
+
+    const navItems = [
+        { id: 'dashboard', label: 'DASHBOARD', icon: <LayoutDashboard size={15} /> },
+        { id: 'pending',   label: 'PENDING',   icon: <Clock size={15} /> },
+        { id: 'completed', label: 'COMPLETED', icon: <CheckCircle2 size={15} /> },
+        { id: 'outward',   label: 'OUTWARD',   icon: <Send size={15} /> },
+        { id: 'history',   label: 'HISTORY',   icon: <History size={15} /> },
+        { id: 'profile',   label: 'PROFILE',   icon: <User size={15} /> },
+    ];
+
     return (
-        <div className="tp-page-wrapper">
-            {/* Top Navbar */}
-            <nav className="tp-top-nav">
-                <div className="tp-nav-left">
-                    <button className="tp-nav-back-btn" onClick={() => navigate('/team')} title="Back to team selection">
-                        <ArrowLeft size={18} />
-                    </button>
-                    <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '30px', height: '30px', borderRadius: '7px', objectFit: 'cover' }} />
-                    <span className="tp-nav-brand">SSSIHL</span>
-                    <span className="tp-nav-team-badge">{selectedTeam}</span>
-                </div>
-                <div className="tp-nav-right">
-                    <button className="btn btn-icon-only" onClick={() => { loadData(); loadEntries(); }} disabled={loading} title="Refresh">
-                        <RefreshCw size={16} className={loading ? 'spin' : ''} />
-                    </button>
-                    <button className="btn btn-primary tp-nav-action-btn" onClick={() => setShowForm(true)}>
-                        <Plus size={16} /> New Outward
-                    </button>
-                    <div className="tp-nav-divider" />
-                    <button className="tp-nav-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
-                        {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
-                    </button>
-                    <div className="tp-nav-user-pill">
-                        <span className="tp-nav-user-role">{selectedTeam} TEAM</span>
-                        <span className="tp-nav-user-status">Portal</span>
+        <div className={`tp-app${isDarkMode ? ' dark' : ''}`}>
+            {/* ── Sidebar ── */}
+            <aside className="tp-sidebar">
+                <div className="tp-sidebar-logo">
+                    <div className="tp-logo-grid"><span/><span/><span/><span/></div>
+                    <div>
+                        <div className="tp-logo-title">SSSIHL · IOSYS</div>
+                        <div className="tp-logo-sub">INWARD OUTWARD</div>
                     </div>
                 </div>
-            </nav>
+                <nav className="tp-sidebar-nav">
+                    {navItems.map(item => (
+                        <button
+                            key={item.id}
+                            className={`tp-nav-item${activePage === item.id ? ' active' : ''}`}
+                            onClick={() => setActivePage(item.id)}
+                        >
+                            {item.icon}
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
+                </nav>
+                <div className="tp-sidebar-footer" onClick={() => navigate('/team')} title="Back to team selection">
+                    {selectedTeam} TEAM
+                </div>
+            </aside>
 
-        <div className="team-portal animate-fade">
-
-            {/* Stats */}
-            <div className="tp-stats">
-                <div className="tp-stat tp-stat-blue">
-                    <ClipboardList size={18} />
-                    <div>
-                        <div className="tp-stat-num">{teamStats?.totalAssigned || 0}</div>
-                        <div className="tp-stat-lbl">Total Assigned</div>
+            {/* ── Main ── */}
+            <main className="tp-main">
+                {/* Header */}
+                <div className="tp-main-header">
+                    <div className="tp-main-header-left">
+                        <h1 className="tp-main-title">Dashboard</h1>
+                        <span className="tp-main-date">{formatHeaderDate()}</span>
                     </div>
-                </div>
-                <div className="tp-stat tp-stat-amber">
-                    <Hourglass size={18} />
-                    <div>
-                        <div className="tp-stat-num">{teamStats?.pending || 0}</div>
-                        <div className="tp-stat-lbl">Pending</div>
-                    </div>
-                </div>
-                <div className="tp-stat tp-stat-green">
-                    <CheckCircle size={18} />
-                    <div>
-                        <div className="tp-stat-num">{teamStats?.completed || 0}</div>
-                        <div className="tp-stat-lbl">Completed</div>
-                    </div>
-                </div>
-                <div className="tp-stat tp-stat-indigo">
-                    <ArrowUpFromLine size={18} />
-                    <div>
-                        <div className="tp-stat-num">{teamStats?.totalOutward || 0}</div>
-                        <div className="tp-stat-lbl">Outward Sent</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Pending Assignments */}
-            <div className="tp-section">
-                <div className="tp-section-header">
-                    <div className="tp-section-title">
-                        <Clock size={16} />
-                        Pending Assignments
-                        <span className="tp-count">{pendingInward.length}</span>
+                    <div className="tp-main-header-right">
+                        <button className="tp-export-btn"><Download size={14} /> Export</button>
+                        <button className="tp-new-outward-btn" onClick={() => setShowForm(true)}>
+                            <Plus size={15} /> + New Outward
+                        </button>
+                        <button className="tp-bell-btn" title="Notifications">
+                            <Bell size={17} />
+                            {overdueCount > 0 && <span className="tp-bell-dot" />}
+                        </button>
+                        <button className="tp-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                            {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                        </button>
                     </div>
                 </div>
 
-                {loading ? (
-                    <div className="tp-loading">
-                        <Loader2 size={32} className="spin" />
-                        <span>Loading...</span>
+                <div className="tp-content">
+                    {/* Stats */}
+                    <div className="tp-stats-row">
+                        <div className="tp-stat-card">
+                            <div className="tp-stat-lbl">TOTAL ASSIGNED</div>
+                            <div className="tp-stat-val">{teamStats?.totalAssigned || 0}</div>
+                            <div className="tp-stat-sub">All time total</div>
+                            <div className="tp-stat-bar"><div className="tp-bar-fill blue" style={{width:'70%'}}/></div>
+                        </div>
+                        <div className="tp-stat-card">
+                            <div className="tp-stat-lbl">PENDING</div>
+                            <div className="tp-stat-val orange">{teamStats?.pending || 0}</div>
+                            {overdueCount > 0
+                                ? <div className="tp-stat-sub warn"><AlertTriangle size={11}/> {overdueCount} overdue</div>
+                                : <div className="tp-stat-sub">Active tasks</div>}
+                            <div className="tp-stat-bar"><div className="tp-bar-fill orange" style={{width: teamStats?.totalAssigned ? `${(teamStats.pending/teamStats.totalAssigned)*100}%` : '0%'}}/></div>
+                        </div>
+                        <div className="tp-stat-card">
+                            <div className="tp-stat-lbl">COMPLETED</div>
+                            <div className="tp-stat-val green">{teamStats?.completed || 0}</div>
+                            <div className="tp-stat-sub green">{completionRate}% completion rate</div>
+                            <div className="tp-stat-bar"><div className="tp-bar-fill green" style={{width:`${completionRate}%`}}/></div>
+                        </div>
+                        <div className="tp-stat-card">
+                            <div className="tp-stat-lbl">OUTWARD SENT</div>
+                            <div className="tp-stat-val purple">{teamStats?.totalOutward || 0}</div>
+                            <div className="tp-stat-sub">This session activity</div>
+                            <div className="tp-stat-bar"><div className="tp-bar-fill purple" style={{width:'30%'}}/></div>
+                        </div>
                     </div>
-                ) : pendingInward.length === 0 ? (
-                    <div className="tp-empty">
-                        <CheckCircle size={40} />
-                        <p>All caught up! No pending assignments.</p>
-                    </div>
-                ) : (
-                    <div className="tp-assignments-wrap">
-                    <div className="tp-assignments">
-                        {pendingInward.map(entry => (
-                            <div key={entry.id} className={`tp-assignment-item ${isOverdue(entry.dueDate) ? 'overdue' : isDueSoon(entry.dueDate) ? 'due-soon' : ''}`}>
-                                <div className="tp-ai-top">
-                                    <div className="tp-ai-meta">
-                                        <span className="tp-ai-no">{entry.inwardNo}</span>
-                                        <span className="tp-badge-team">{entry.assignedTeam}</span>
-                                        {entry.dueDate && (
-                                            <span className={`tp-due ${isOverdue(entry.dueDate) ? 'overdue' : isDueSoon(entry.dueDate) ? 'soon' : ''}`}>
-                                                {isOverdue(entry.dueDate) ? <AlertTriangle size={12} /> : <Calendar size={12} />}
-                                                {isOverdue(entry.dueDate) ? 'Overdue: ' : 'Due: '}{formatDate(entry.dueDate)}
-                                            </span>
-                                        )}
-                                    </div>
+
+                    {/* Two-column: Pending + Quick Overview */}
+                    <div className="tp-two-col">
+                        <div className="tp-card">
+                            <div className="tp-card-header">
+                                <div className="tp-card-title-row">
+                                    <Clock size={16} className="tp-icon-muted"/>
+                                    <h3>Pending Assignments</h3>
+                                    <span className="tp-count-pill">{pendingInward.length}</span>
+                                    {overdueCount > 0 && <span className="tp-overdue-pill">{overdueCount} OVERDUE</span>}
                                 </div>
-                                <div className="tp-ai-body">
-                                    <h4 className="tp-ai-subject">{entry.subject}</h4>
-                                    <p className="tp-ai-from">From: {entry.particularsFromWhom}</p>
-                                    {entry.assignmentInstructions && (
-                                        <div className="tp-ai-note">
-                                            <FileText size={12} />
-                                            {entry.assignmentInstructions}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="tp-ai-actions">
-                                    <select className="tp-status-select" value={entry.assignmentStatus}
-                                        onChange={(e) => handleStatusUpdate(entry.id, e.target.value)}>
-                                        <option value="Pending">Pending</option>
-                                        <option value="In Progress">In Progress</option>
-                                    </select>
-                                    <button className="tp-process-btn" onClick={() => handleProcess(entry)}>
-                                        Process <ArrowRight size={13} />
-                                    </button>
+                                <div className="tp-filter-tabs">
+                                    {['all','overdue','recent'].map(f => (
+                                        <button key={f}
+                                            className={`tp-ftab${pendingFilter===f?' active':''}`}
+                                            onClick={() => { setPendingFilter(f); setShowLimit(5); }}>
+                                            {f.charAt(0).toUpperCase()+f.slice(1)}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                    </div>
-                )}
-            </div>
 
-            {/* Create Outward Form — Modal */}
+                            {loading ? (
+                                <div className="tp-center-state"><Loader2 size={24} className="spin"/></div>
+                            ) : displayedPending.length === 0 ? (
+                                <div className="tp-center-state">
+                                    <CheckCircle2 size={32} style={{opacity:0.3}}/>
+                                    <p>No {pendingFilter !== 'all' ? pendingFilter : 'pending'} assignments.</p>
+                                </div>
+                            ) : (
+                                <div className="tp-assign-list">
+                                    {displayedPending.map(entry => (
+                                        <div key={entry.id} className={`tp-assign-card${isOverdue(entry.dueDate)?' overdue':isDueSoon(entry.dueDate)?' due-soon':''}`}>
+                                            <div className="tp-ac-row">
+                                                <div className="tp-ac-badges">
+                                                    <span className="tp-inward-no">{entry.inwardNo}</span>
+                                                    <span className="tp-team-chip">{entry.assignedTeam}</span>
+                                                    {entry.dueDate && (
+                                                        <span className={`tp-due-chip${isOverdue(entry.dueDate)?' overdue':isDueSoon(entry.dueDate)?' soon':''}`}>
+                                                            {isOverdue(entry.dueDate) ? <AlertTriangle size={10}/> : <Calendar size={10}/>}
+                                                            {isOverdue(entry.dueDate) ? `Overdue · ${formatDate(entry.dueDate)}` : `Due Soon · ${formatDate(entry.dueDate)}`}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="tp-status-chip">{entry.assignmentStatus || 'PENDING'}</span>
+                                            </div>
+                                            <h4 className="tp-ac-subject">{entry.subject}</h4>
+                                            <p className="tp-ac-from">
+                                                From: <strong>{entry.particularsFromWhom}</strong>
+                                                {entry.assignmentInstructions && <> · <em>{entry.assignmentInstructions}</em></>}
+                                            </p>
+                                            <div className="tp-ac-actions">
+                                                <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
+                                                <button className="tp-ac-btn complete" onClick={() => handleStatusUpdate(entry.id, 'Completed')}>MARK COMPLETE</button>
+                                                <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>FORWARD</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {totalFiltered > showLimit && (
+                                        <button className="tp-load-more" onClick={() => setShowLimit(showLimit + 5)}>
+                                            Showing {showLimit} of {totalFiltered} — Load more
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Quick Overview */}
+                        <div className="tp-quick-overview">
+                            <h4 className="tp-qo-label">QUICK OVERVIEW</h4>
+                            <div className="tp-qo-img">
+                                <div className="tp-qo-img-text">
+                                    {overdueCount > 0 ? 'Campus Activity: High Volume' : 'Campus Activity: Normal'}
+                                </div>
+                            </div>
+                            <div className="tp-qo-row">
+                                <span className="tp-qo-key">Response Efficiency</span>
+                                <span className="tp-qo-val">{completionRate}%</span>
+                            </div>
+                            <div className="tp-qo-bar">
+                                <div className="tp-qo-fill" style={{width:`${Math.min(Number(completionRate),100)}%`}}/>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Outward History */}
+                    <div className="tp-card">
+                        <div className="tp-card-header">
+                            <div className="tp-card-title-row">
+                                <Send size={16} className="tp-icon-muted"/>
+                                <h3>Outward History</h3>
+                                <span className="tp-count-pill">{filteredEntries.length}</span>
+                            </div>
+                            <div className="tp-history-controls">
+                                <div className="tp-team-tabs">
+                                    {Object.entries(TEAM_MAP).filter(([,n]) => n !== selectedTeam).map(([slug, name]) => (
+                                        <button key={slug}
+                                            className={`tp-team-tab${viewTeam === name ? ' active' : ''}`}
+                                            onClick={() => setViewTeam(viewTeam === name ? selectedTeam : name)}>
+                                            {name}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="tp-search-wrap">
+                                    <Search size={13}/>
+                                    <input type="text" placeholder="Search history..."
+                                        value={searchTerm} onChange={e => setSearchTerm(e.target.value)}/>
+                                </div>
+                            </div>
+                        </div>
+
+                        {filteredEntries.length === 0 ? (
+                            <div className="tp-center-state">
+                                <ArrowUpFromLine size={28} style={{opacity:0.3}}/>
+                                <p>No outward entries yet.</p>
+                            </div>
+                        ) : (
+                            <div className="tp-table-wrap">
+                                <table className="tp-history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>OUTWARD NO</th>
+                                            <th>SUBJECT</th>
+                                            <th>RECIPIENT</th>
+                                            <th>TEAM</th>
+                                            <th>STATUS</th>
+                                            <th>DATE</th>
+                                            <th>ACTIONS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredEntries.map(entry => (
+                                            <tr key={entry.id}>
+                                                <td className="tp-outward-link">{entry.outwardNo}</td>
+                                                <td className="tp-subject-cell">{entry.subject?.length > 50 ? entry.subject.slice(0,50)+'...' : entry.subject}</td>
+                                                <td>{entry.toWhom}</td>
+                                                <td><span className="tp-team-chip">{entry.createdByTeam}</span></td>
+                                                <td>
+                                                    <div className="tp-status-tags">
+                                                        {entry.caseClosed
+                                                            ? <span className="tp-badge-closed">CLOSED</span>
+                                                            : <span className="tp-badge-open">OPEN</span>}
+                                                        {entry.linkedInwardId && <span className="tp-badge-linked">LINKED</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="tp-date-cell">{formatDate(entry.createdAt)}</td>
+                                                <td>
+                                                    <div className="tp-row-btns">
+                                                        <button onClick={() => { setSelectedEntry(entry); setShowDetailsModal(true); }} title="View"><Eye size={13}/></button>
+                                                        {!entry.caseClosed && viewTeam === selectedTeam && (
+                                                            <button onClick={() => handleCloseCase(entry.id)} title="Close" className="close-btn"><Lock size={13}/></button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                        <div className="tp-table-footer">Showing {filteredEntries.length} results of {entries.length}</div>
+                    </div>
+                </div>
+            </main>
+
+            {/* Create Outward Modal */}
             {showForm && (
                 <div className="modal-overlay drawer-overlay" onClick={() => { setShowForm(false); resetForm(); }}>
                     <div className="modal drawer" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3><Plus size={20} /> Create Outward Entry</h3>
-                            <button className="btn-close" onClick={() => { setShowForm(false); resetForm(); }}>
-                                <X size={20} />
-                            </button>
+                            <h3><Plus size={20}/> Create Outward Entry</h3>
+                            <button className="btn-close" onClick={() => { setShowForm(false); resetForm(); }}><X size={20}/></button>
                         </div>
                         <div className="modal-body">
                             {formData.linkedInwardId && (
-                                <div className="linked-notice">
-                                    <Link2 size={16} />
-                                    <span>Linked to inward entry — this will mark it as completed</span>
-                                </div>
+                                <div className="linked-notice"><Link2 size={16}/><span>Linked to inward entry — this will mark it as completed</span></div>
                             )}
                             <form onSubmit={handleSubmit}>
                                 <div className="grid-2">
@@ -382,20 +483,14 @@ function TeamPortal() {
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Your Email *</label>
-                                        <input type="email" name="teamMemberEmail" className="form-input"
-                                            value={formData.teamMemberEmail} onChange={handleChange} required
-                                            placeholder="your@email.com" />
+                                        <input type="email" name="teamMemberEmail" className="form-input" value={formData.teamMemberEmail} onChange={handleChange} required placeholder="your@email.com"/>
                                     </div>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Link to Inward Entry</label>
                                     <select name="linkedInwardId" className="form-select" value={formData.linkedInwardId} onChange={handleChange}>
                                         <option value="">No link - Independent outward</option>
-                                        {pendingInward.map(entry => (
-                                            <option key={entry.id} value={entry.id}>
-                                                {entry.inwardNo} - {entry.subject}
-                                            </option>
-                                        ))}
+                                        {pendingInward.map(e => <option key={e.id} value={e.id}>{e.inwardNo} - {e.subject}</option>)}
                                     </select>
                                 </div>
                                 <div className="grid-2">
@@ -411,48 +506,35 @@ function TeamPortal() {
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Date & Time *</label>
-                                        <input type="datetime-local" name="signReceiptDateTime" className="form-input"
-                                            value={formData.signReceiptDateTime} onChange={handleChange} required />
+                                        <input type="datetime-local" name="signReceiptDateTime" className="form-input" value={formData.signReceiptDateTime} onChange={handleChange} required/>
                                     </div>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">To Whom *</label>
-                                    <input type="text" name="toWhom" className="form-input"
-                                        value={formData.toWhom} onChange={handleChange} required
-                                        placeholder="Recipient name or organization" />
+                                    <input type="text" name="toWhom" className="form-input" value={formData.toWhom} onChange={handleChange} required placeholder="Recipient name or organization"/>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Subject *</label>
-                                    <input type="text" name="subject" className="form-input"
-                                        value={formData.subject} onChange={handleChange} required
-                                        placeholder="Subject of the correspondence" />
+                                    <input type="text" name="subject" className="form-input" value={formData.subject} onChange={handleChange} required placeholder="Subject"/>
                                 </div>
                                 <div className="grid-2">
                                     <div className="form-group">
                                         <label className="form-label">Sent By *</label>
-                                        <input type="text" name="sentBy" className="form-input"
-                                            value={formData.sentBy} onChange={handleChange} required
-                                            placeholder="Your name" />
+                                        <input type="text" name="sentBy" className="form-input" value={formData.sentBy} onChange={handleChange} required placeholder="Your name"/>
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">File Reference</label>
-                                        <input type="text" name="fileReference" className="form-input"
-                                            value={formData.fileReference} onChange={handleChange}
-                                            placeholder="Optional file reference" />
+                                        <input type="text" name="fileReference" className="form-input" value={formData.fileReference} onChange={handleChange} placeholder="Optional"/>
                                     </div>
                                 </div>
                                 <div className="grid-2">
                                     <div className="form-group">
                                         <label className="form-label">Postal Tariff (Rs.)</label>
-                                        <input type="number" name="postalTariff" className="form-input"
-                                            value={formData.postalTariff} onChange={handleChange}
-                                            placeholder="0" min="0" />
+                                        <input type="number" name="postalTariff" className="form-input" value={formData.postalTariff} onChange={handleChange} placeholder="0" min="0"/>
                                     </div>
                                     <div className="form-group checkbox-wrapper">
                                         <label className="checkbox-label">
-                                            <input type="checkbox" name="caseClosed"
-                                                checked={formData.caseClosed} onChange={handleChange} />
-                                            <span className="checkmark"></span>
+                                            <input type="checkbox" name="caseClosed" checked={formData.caseClosed} onChange={handleChange}/>
                                             Mark Case as Closed
                                         </label>
                                     </div>
@@ -460,36 +542,24 @@ function TeamPortal() {
                                 <div className="grid-2">
                                     <div className="form-group">
                                         <label className="form-label">Ack Rec</label>
-                                        <input type="text" name="ackRec" className="form-input"
-                                            value={formData.ackRec} onChange={handleChange}
-                                            placeholder="Acknowledgement received" />
+                                        <input type="text" name="ackRec" className="form-input" value={formData.ackRec} onChange={handleChange} placeholder="Acknowledgement received"/>
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Cross No.</label>
-                                        <input type="text" name="crossNo" className="form-input"
-                                            value={formData.crossNo} onChange={handleChange}
-                                            placeholder="Cross reference number" />
+                                        <input type="text" name="crossNo" className="form-input" value={formData.crossNo} onChange={handleChange} placeholder="Cross reference"/>
                                     </div>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Receipt No.</label>
-                                    <input type="text" name="receiptNo" className="form-input"
-                                        value={formData.receiptNo} onChange={handleChange}
-                                        placeholder="Receipt number" />
+                                    <input type="text" name="receiptNo" className="form-input" value={formData.receiptNo} onChange={handleChange} placeholder="Receipt number"/>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Remarks</label>
-                                    <textarea name="remarks" className="form-input"
-                                        value={formData.remarks} onChange={handleChange}
-                                        placeholder="Enter remarks..." rows="2" />
+                                    <textarea name="remarks" className="form-input" value={formData.remarks} onChange={handleChange} placeholder="Enter remarks..." rows="2"/>
                                 </div>
-                                <div className="modal-footer" style={{padding: '1rem 0 0', border: 'none'}}>
-                                    <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); }}>
-                                        Cancel
-                                    </button>
-                                    <button type="submit" className="btn btn-primary">
-                                        <Check size={18} /> Create Outward Entry
-                                    </button>
+                                <div className="modal-footer" style={{padding:'1rem 0 0',border:'none'}}>
+                                    <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</button>
+                                    <button type="submit" className="btn btn-primary"><Check size={18}/> Create Outward Entry</button>
                                 </div>
                             </form>
                         </div>
@@ -497,179 +567,64 @@ function TeamPortal() {
                 </div>
             )}
 
-            {/* Outward History */}
-            <div className="tp-section">
-                <div className="tp-section-header">
-                    <div className="tp-section-title">
-                        <ClipboardList size={16} />
-                        Outward History
-                        {viewTeam !== selectedTeam && <span className="tp-view-label"> — {viewTeam} Team</span>}
-                        <span className="tp-count">{filteredEntries.length}</span>
-                    </div>
-                    <div className="tp-view-tabs">
-                        <button
-                            className={`tp-view-tab${viewTeam === selectedTeam ? ' active' : ''}`}
-                            onClick={() => setViewTeam(selectedTeam)}
-                        >My Team</button>
-                        {Object.entries(TEAM_MAP)
-                            .filter(([, name]) => name !== selectedTeam)
-                            .map(([slug, name]) => (
-                                <button
-                                    key={slug}
-                                    className={`tp-view-tab${viewTeam === name ? ' active' : ''}`}
-                                    onClick={() => setViewTeam(name)}
-                                >{name}</button>
-                            ))
-                        }
-                    </div>
-                    <div className="tp-search">
-                        <Search size={14} />
-                        <input type="text" placeholder="Search..." value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)} />
-                    </div>
-                </div>
-
-                {loading ? (
-                    <div className="tp-loading">
-                        <Loader2 size={32} className="spin" />
-                        <span>Loading...</span>
-                    </div>
-                ) : filteredEntries.length === 0 ? (
-                    <div className="tp-empty">
-                        <ArrowUpFromLine size={40} />
-                        <p>No outward entries yet.</p>
-                    </div>
-                ) : (
-                    <div className="tp-table-wrap">
-                        <table className="tp-table">
-                            <thead>
-                                <tr>
-                                    <th>Outward No</th>
-                                    <th>Subject</th>
-                                    <th>To</th>
-                                    <th>Team</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredEntries.map(entry => (
-                                    <tr key={entry.id}>
-                                        <td className="tp-outward-no">{entry.outwardNo}</td>
-                                        <td className="tp-subject-cell">{entry.subject}</td>
-                                        <td>{entry.toWhom}</td>
-                                        <td><span className="tp-badge-team">{entry.createdByTeam}</span></td>
-                                        <td>
-                                            <div className="tp-status-cell">
-                                                {entry.caseClosed
-                                                    ? <span className="tp-badge-closed"><Lock size={10} /> Closed</span>
-                                                    : <span className="tp-badge-open">Open</span>}
-                                                {entry.linkedInwardId &&
-                                                    <span className="tp-badge-linked"><Link2 size={10} /> Linked</span>}
-                                            </div>
-                                        </td>
-                                        <td className="tp-date">{formatDate(entry.createdAt)}</td>
-                                        <td>
-                                            <div className="tp-row-actions">
-                                                <button onClick={() => openDetailsModal(entry)} title="View">
-                                                    <Eye size={14} />
-                                                </button>
-                                                {!entry.caseClosed && viewTeam === selectedTeam && (
-                                                    <button onClick={() => handleCloseCase(entry.id)} title="Close Case" className="close-btn">
-                                                        <Lock size={14} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-
-            {/* Details Modal */}
+            {/* Outward Details Modal */}
             {showDetailsModal && selectedEntry && (
                 <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3><FileText size={20} /> Outward Details</h3>
-                            <button className="btn-close" onClick={() => setShowDetailsModal(false)}>
-                                <X size={20} />
-                            </button>
+                            <h3><FileText size={20}/> Outward Details</h3>
+                            <button className="btn-close" onClick={() => setShowDetailsModal(false)}><X size={20}/></button>
                         </div>
                         <div className="modal-body">
                             <div className="detail-grid">
-                                <div className="detail-item">
-                                    <label>Outward No</label>
-                                    <span className="detail-value highlight">{selectedEntry.outwardNo}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <label>Team</label>
-                                    <span className="badge badge-team">{selectedEntry.createdByTeam}</span>
-                                </div>
-                                <div className="detail-item full">
-                                    <label>Subject</label>
-                                    <span>{selectedEntry.subject}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <label>To</label>
-                                    <span>{selectedEntry.toWhom}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <label>Sent By</label>
-                                    <span>{selectedEntry.sentBy}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <label>Means</label>
-                                    <span>{selectedEntry.means}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <label>Date</label>
-                                    <span>{formatDate(selectedEntry.signReceiptDateTime)}</span>
-                                </div>
-                                {selectedEntry.fileReference && (
-                                    <div className="detail-item">
-                                        <label>File Reference</label>
-                                        <span>{selectedEntry.fileReference}</span>
-                                    </div>
-                                )}
-                                {selectedEntry.postalTariff > 0 && (
-                                    <div className="detail-item">
-                                        <label>Postal Tariff</label>
-                                        <span>Rs. {selectedEntry.postalTariff}</span>
-                                    </div>
-                                )}
-                                <div className="detail-item">
-                                    <label>Linked Inward</label>
-                                    <span>{selectedEntry.linkedInwardId || 'None'}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <label>Case Closed</label>
-                                    <span>{selectedEntry.caseClosed ? 'Yes' : 'No'}</span>
-                                </div>
-                                {selectedEntry.remarks && (
-                                    <div className="detail-item full">
-                                        <label>Remarks</label>
-                                        <span>{selectedEntry.remarks}</span>
-                                    </div>
-                                )}
+                                <div className="detail-item"><label>Outward No</label><span className="detail-value highlight">{selectedEntry.outwardNo}</span></div>
+                                <div className="detail-item"><label>Team</label><span className="badge badge-team">{selectedEntry.createdByTeam}</span></div>
+                                <div className="detail-item full"><label>Subject</label><span>{selectedEntry.subject}</span></div>
+                                <div className="detail-item"><label>To</label><span>{selectedEntry.toWhom}</span></div>
+                                <div className="detail-item"><label>Sent By</label><span>{selectedEntry.sentBy}</span></div>
+                                <div className="detail-item"><label>Means</label><span>{selectedEntry.means}</span></div>
+                                <div className="detail-item"><label>Date</label><span>{formatDate(selectedEntry.signReceiptDateTime)}</span></div>
+                                {selectedEntry.postalTariff > 0 && <div className="detail-item"><label>Postal Tariff</label><span>Rs. {selectedEntry.postalTariff}</span></div>}
+                                <div className="detail-item"><label>Case Closed</label><span>{selectedEntry.caseClosed ? 'Yes' : 'No'}</span></div>
+                                {selectedEntry.remarks && <div className="detail-item full"><label>Remarks</label><span>{selectedEntry.remarks}</span></div>}
                             </div>
                         </div>
                         <div className="modal-footer">
                             {!selectedEntry.caseClosed && viewTeam === selectedTeam && (
-                                <button className="btn btn-primary" onClick={() => handleCloseCase(selectedEntry.id)}>
-                                    <Lock size={16} /> Close Case
-                                </button>
+                                <button className="btn btn-primary" onClick={() => handleCloseCase(selectedEntry.id)}><Lock size={16}/> Close Case</button>
                             )}
                             <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>Close</button>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+
+            {/* Inward Details Modal */}
+            {showInwardModal && selectedInwardEntry && (
+                <div className="modal-overlay" onClick={() => setShowInwardModal(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3><FileText size={20}/> Assignment Details</h3>
+                            <button className="btn-close" onClick={() => setShowInwardModal(false)}><X size={20}/></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="detail-grid">
+                                <div className="detail-item"><label>Inward No</label><span className="detail-value highlight">{selectedInwardEntry.inwardNo}</span></div>
+                                <div className="detail-item"><label>Team</label><span className="badge badge-team">{selectedInwardEntry.assignedTeam}</span></div>
+                                <div className="detail-item full"><label>Subject</label><span>{selectedInwardEntry.subject}</span></div>
+                                <div className="detail-item"><label>From</label><span>{selectedInwardEntry.particularsFromWhom}</span></div>
+                                <div className="detail-item"><label>Status</label><span>{selectedInwardEntry.assignmentStatus}</span></div>
+                                <div className="detail-item"><label>Due Date</label><span>{formatDate(selectedInwardEntry.dueDate)}</span></div>
+                                {selectedInwardEntry.assignmentInstructions && <div className="detail-item full"><label>Instructions</label><span>{selectedInwardEntry.assignmentInstructions}</span></div>}
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-primary" onClick={() => { setShowInwardModal(false); handleProcess(selectedInwardEntry); }}><ArrowRight size={16}/> Forward</button>
+                            <button className="btn btn-secondary" onClick={() => setShowInwardModal(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
