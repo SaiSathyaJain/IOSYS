@@ -110,7 +110,7 @@
     box-shadow: 0 0 4px rgba(16,185,129,0.6);
 }
 .ap-avatar-wrap { position: relative; display: flex; }
-.ap-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(var(--primary-rgb), 0.35); display: block; }
+.ap-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: none; display: block; }
 .ap-status-dot {
     position: absolute; bottom: 0; right: 0;
     width: 9px; height: 9px; border-radius: 50%;
