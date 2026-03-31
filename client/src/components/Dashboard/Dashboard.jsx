@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { dashboardAPI, inwardAPI, outwardAPI } from '../../services/api';
 import {
     BarChart3, Hourglass, CheckCircle2, ArrowDownToLine, ArrowUpFromLine,
     Users, ChevronRight, X, Clock, TrendingUp, Calendar, FileText,
-    RefreshCw, Loader2, ArrowLeft, AlertCircle
+    RefreshCw, Loader2, ArrowLeft, AlertCircle, Sun, Moon, Activity
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -11,6 +12,9 @@ import {
 import './Dashboard.css';
 
 function Dashboard() {
+    const navigate = useNavigate();
+    const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
+    const [userPhoto, setUserPhoto] = useState(null);
     const [stats, setStats] = useState(null);
     const [teamStats, setTeamStats] = useState([]);
     const [chartData, setChartData] = useState([]);
@@ -23,7 +27,16 @@ function Dashboard() {
 
     useEffect(() => {
         loadData();
+        const user = localStorage.getItem('adminUser');
+        if (user) {
+            try { setUserPhoto(JSON.parse(user).picture); } catch (e) {}
+        }
     }, []);
+
+    useEffect(() => {
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    }, [isDarkMode]);
 
     const loadData = async () => {
         setLoading(true);
@@ -111,12 +124,48 @@ function Dashboard() {
     }
 
     return (
+        <div className="ap-page-wrapper">
+            <nav className="ap-top-nav">
+                <div className="ap-nav-left">
+                    <button className="ap-back-btn" onClick={() => navigate('/')} title="Back to home">
+                        <ArrowLeft size={18} />
+                    </button>
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '30px', height: '30px', borderRadius: '7px', objectFit: 'cover' }} />
+                    <span className="ap-nav-brand">SSSIHL</span>
+                </div>
+
+                <div className="ap-nav-tabs">
+                    <button className="ap-nav-tab" onClick={() => navigate('/admin')}>
+                        Registers
+                    </button>
+                    <button className="ap-nav-tab active" onClick={() => navigate('/admin/dashboard')}>
+                        Intelligence
+                    </button>
+                </div>
+
+                <div className="ap-nav-right">
+                    <button className="btn btn-icon-only" onClick={loadData} disabled={loading} title="Refresh">
+                        <RefreshCw size={16} className={loading ? 'spin' : ''} />
+                    </button>
+                    <div className="ap-nav-divider" />
+                    <button className="ap-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                        {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
+                    </button>
+                    <div className="ap-user-pill">
+                        <div className="ap-user-info">
+                            <span className="ap-user-role">ADMIN</span>
+                            <span className="ap-user-status">Logged In</span>
+                        </div>
+                        <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=random"} alt="Profile" className="ap-avatar" />
+                    </div>
+                </div>
+            </nav>
+
         <div className="dashboard animate-fade">
-            <div className="page-header">
-                <h2 className="page-title"><BarChart3 className="icon-svg" /> Admin Dashboard</h2>
-                <button className="btn btn-icon-only" onClick={loadData} title="Refresh">
-                    <RefreshCw size={18} />
-                </button>
+            <div className="page-header" style={{ marginBottom: '2rem' }}>
+                <h2 className="page-title" style={{ fontSize: '1.75rem', backgroundImage: 'linear-gradient(to right, var(--primary), #8b5cf6)', WebkitBackgroundClip: 'text', color: 'transparent', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Activity color="var(--primary)" size={28} /> Correspondence Intelligence
+                </h2>
             </div>
 
             {/* Overall Stats */}
@@ -410,6 +459,7 @@ function Dashboard() {
                     </div>
                 </div>
             )}
+        </div>
         </div>
     );
 }

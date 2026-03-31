@@ -309,6 +309,16 @@ function AdminPortal() {
                     <img src="/sssihl-icon.jpg" alt="SSSIHL" style={{ width: '30px', height: '30px', borderRadius: '7px', objectFit: 'cover' }} />
                     <span className="ap-nav-brand">SSSIHL</span>
                 </div>
+
+                <div className="ap-nav-tabs">
+                    <button className="ap-nav-tab active" onClick={() => navigate('/admin')}>
+                        Registers
+                    </button>
+                    <button className="ap-nav-tab" onClick={() => navigate('/admin/dashboard')}>
+                        Intelligence
+                    </button>
+                </div>
+
                 <div className="ap-nav-right">
                     <button className="btn btn-secondary ap-nav-action-btn" onClick={downloadOutwardReport} title="Download Outward Expenditure Report">
                         <Download size={16} /> Export Report

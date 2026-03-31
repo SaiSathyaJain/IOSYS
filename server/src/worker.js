@@ -46,6 +46,16 @@ app.route('/api/inward', inwardRouter);
 app.route('/api/outward', outwardRouter);
 app.route('/api/dashboard', dashboardRouter);
 
+// Hidden trigger to bypass cron limitations for testing purposes
+app.get('/api/trigger-email', async (c) => {
+    try {
+        await sendWeeklyReport(c.env);
+        return c.json({ success: true, message: "Boss Email successfully triggered to " + (c.env.BOSS_EMAIL || 'no-email-set') });
+    } catch (e) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
 
 export default {
     fetch: app.fetch.bind(app),
