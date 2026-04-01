@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { inwardAPI, dashboardAPI, outwardAPI } from '../../services/api';
+import { inwardAPI, dashboardAPI, outwardAPI, notesAPI } from '../../services/api';
 import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
     Clock, CheckCircle2, AlertCircle, Calendar, Mail, User,
@@ -42,6 +42,11 @@ function AdminPortal() {
         assignmentInstructions: '',
         dueDate: ''
     });
+    const [notesEntries, setNotesEntries] = useState([]);
+    const [notesTab, setNotesTab] = useState('REGISTRAR');
+    const [showNotesForm, setShowNotesForm] = useState(false);
+    const [notesFormData, setNotesFormData] = useState({ slNo: '', outwardNo: '', date: '', description: '', remarks: '' });
+    const [notesLoading, setNotesLoading] = useState(false);
 
     const TEAM_EMAILS = {
         'UG': 'sathyajain9@gmail.com',
@@ -79,6 +84,12 @@ function AdminPortal() {
             console.error('Error loading data:', error);
         } finally {
             setLoading(false);
+        }
+        try {
+            const notesRes = await notesAPI.getAll();
+            setNotesEntries(notesRes.data.entries || []);
+        } catch (error) {
+            console.error('Error loading notes:', error);
         }
     };
 
@@ -295,6 +306,33 @@ function AdminPortal() {
             URL.revokeObjectURL(link.href);
         } catch (error) {
             alert('Error downloading report: ' + error.message);
+        }
+    };
+
+    const filteredNotes = notesEntries.filter(n => n.note_type === notesTab);
+
+    const handleNotesSubmit = async (e) => {
+        e.preventDefault();
+        setNotesLoading(true);
+        try {
+            await notesAPI.create({ noteType: notesTab, ...notesFormData });
+            setShowNotesForm(false);
+            setNotesFormData({ slNo: '', outwardNo: '', date: '', description: '', remarks: '' });
+            await loadData();
+        } catch (err) {
+            alert('Failed to save note: ' + err.message);
+        } finally {
+            setNotesLoading(false);
+        }
+    };
+
+    const handleNoteDelete = async (id) => {
+        if (!confirm('Delete this note?')) return;
+        try {
+            await notesAPI.remove(id);
+            await loadData();
+        } catch (err) {
+            alert('Failed to delete note: ' + err.message);
         }
     };
 
@@ -747,6 +785,124 @@ function AdminPortal() {
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowReassignModal(false)}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">
                                     <Check size={16} /> Reassign
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* Notes Register Card */}
+            <div className="card animate-fade" style={{ marginTop: '1.5rem' }}>
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <h3 className="card-title">
+                        <FileText size={20} /> Notes Register
+                    </h3>
+                    <button className="btn btn-primary" onClick={() => setShowNotesForm(true)}>
+                        <Plus size={16} /> Add Note
+                    </button>
+                </div>
+                <div className="notes-tab-bar">
+                    <button className={notesTab === 'REGISTRAR' ? 'active' : ''} onClick={() => setNotesTab('REGISTRAR')}>
+                        Notes to Registrar
+                    </button>
+                    <button className={notesTab === 'VC' ? 'active' : ''} onClick={() => setNotesTab('VC')}>
+                        Notes to Vice Chancellor
+                    </button>
+                </div>
+                {filteredNotes.length === 0 ? (
+                    <div className="empty-state">
+                        <FileText size={40} />
+                        <p>No notes yet</p>
+                    </div>
+                ) : (
+                    <div className="table-container">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Sl No.</th>
+                                    <th>Outward No.</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Remarks</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredNotes.map(n => (
+                                    <tr key={n.id}>
+                                        <td><strong>{n.sl_no}</strong></td>
+                                        <td>{n.outward_no}</td>
+                                        <td>{formatDate(n.date)}</td>
+                                        <td className="subject-cell"><div className="subject-text">{n.description}</div></td>
+                                        <td>{n.remarks || '-'}</td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button className="btn-icon" onClick={() => handleNoteDelete(n.id)} title="Delete">
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Notes Form Modal */}
+            {showNotesForm && (
+                <div className="modal-overlay" onClick={() => setShowNotesForm(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3><FileText size={20} /> Add Note — {notesTab === 'REGISTRAR' ? 'Registrar' : 'Vice Chancellor'}</h3>
+                            <button className="btn-close" onClick={() => setShowNotesForm(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleNotesSubmit}>
+                            <div className="modal-body">
+                                <div className="grid-2">
+                                    <div className="form-group">
+                                        <label className="form-label">Sl No. *</label>
+                                        <input className="form-input" required
+                                            value={notesFormData.slNo}
+                                            onChange={e => setNotesFormData(p => ({ ...p, slNo: e.target.value }))}
+                                            placeholder="e.g. 1" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Outward No. *</label>
+                                        <input className="form-input" required
+                                            value={notesFormData.outwardNo}
+                                            onChange={e => setNotesFormData(p => ({ ...p, outwardNo: e.target.value }))}
+                                            placeholder="e.g. OTW/2025/001" />
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Date *</label>
+                                    <input type="date" className="form-input" required
+                                        value={notesFormData.date}
+                                        onChange={e => setNotesFormData(p => ({ ...p, date: e.target.value }))} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Description *</label>
+                                    <textarea className="form-textarea" required rows={3}
+                                        value={notesFormData.description}
+                                        onChange={e => setNotesFormData(p => ({ ...p, description: e.target.value }))}
+                                        placeholder="Brief description of the note..." />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Remarks</label>
+                                    <textarea className="form-textarea" rows={2}
+                                        value={notesFormData.remarks}
+                                        onChange={e => setNotesFormData(p => ({ ...p, remarks: e.target.value }))}
+                                        placeholder="Any additional remarks..." />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowNotesForm(false)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" disabled={notesLoading}>
+                                    <Check size={16} /> {notesLoading ? 'Saving…' : 'Save Note'}
                                 </button>
                             </div>
                         </form>

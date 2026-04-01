@@ -33,6 +33,13 @@ export const dashboardAPI = {
     getChartData: () => api.get('/dashboard/chart-data')
 };
 
+// Notes API
+export const notesAPI = {
+    getAll: (type) => api.get('/notes', { params: type ? { type } : {} }),
+    create: (data) => api.post('/notes', data),
+    remove: (id) => api.delete(`/notes/${id}`),
+};
+
 // Notifications API
 export const notificationsAPI = {
     getAll: (email) => api.get(`/notifications?email=${encodeURIComponent(email)}`),
