@@ -1359,3 +1359,33 @@
     transition:background 0.15s, color 0.15s;
 }
 .notes-drawer-toggle button.active { background:var(--primary,#1d4ed8); color:#fff; font-weight:600; }
+
+/* ── Admin Login Screen ──────────────────────────────────────── */
+.ap-login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg-color, #f0f4f8);
+}
+[data-theme="dark"].ap-login-screen { background: #080d1a; }
+
+.ap-login-card {
+    background: var(--bg-card-elevated, #fff);
+    border: 1px solid var(--panel-border, #e2e8f0);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+    text-align: center;
+}
+[data-theme="dark"] .ap-login-card { background: #111827; border-color: rgba(255,255,255,0.08); box-shadow: 0 8px 40px rgba(0,0,0,0.4); }
+
+.ap-login-logo { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; margin-bottom: 0.5rem; }
+
+.ap-login-title { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+
+.ap-login-sub { font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.5; max-width: 280px; }
+
+.ap-login-btn-wrap { margin: 0.75rem 0; }
+
+.ap-login-hint { font-size: 0.75rem; color: var(--text-secondary); margin: 0; }
+.ap-login-hint strong { color: var(--text-primary); }

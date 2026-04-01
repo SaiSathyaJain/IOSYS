@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { GoogleLogin, googleLogout } from '@react-oauth/google';
 import { inwardAPI, dashboardAPI, outwardAPI, notesAPI } from '../../services/api';
 import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
@@ -11,9 +12,14 @@ import {
 } from 'lucide-react';
 import './AdminPortal.css';
 
+const ALLOWED_EMAIL = 'coeofficeinward@sssihl.edu.in';
+
 function AdminPortal() {
     const navigate = useNavigate();
     const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
+    const [adminUser, setAdminUser] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('adminUser')); } catch { return null; }
+    });
     const [userPhoto, setUserPhoto] = useState(null);
     const [entries, setEntries] = useState([]);
     const [filteredEntries, setFilteredEntries] = useState([]);
@@ -309,6 +315,50 @@ function AdminPortal() {
         }
     };
 
+    const handleGoogleSuccess = (credentialResponse) => {
+        try {
+            const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
+            if (payload.email !== ALLOWED_EMAIL) {
+                alert(`Access denied. Only ${ALLOWED_EMAIL} is authorised.`);
+                return;
+            }
+            const user = { email: payload.email, name: payload.name, picture: payload.picture };
+            localStorage.setItem('adminUser', JSON.stringify(user));
+            setAdminUser(user);
+        } catch {
+            alert('Login failed. Please try again.');
+        }
+    };
+
+    const handleLogout = () => {
+        googleLogout();
+        localStorage.removeItem('adminUser');
+        setAdminUser(null);
+    };
+
+    if (!adminUser) {
+        return (
+            <div className="ap-login-screen" data-theme={isDarkMode ? 'dark' : 'light'}>
+                <div className="ap-login-card">
+                    <img src="/sssihl-icon.jpg" alt="SSSIHL" className="ap-login-logo" />
+                    <h2 className="ap-login-title">Admin Portal</h2>
+                    <p className="ap-login-sub">Sign in with your authorised SSSIHL Google account to continue.</p>
+                    <div className="ap-login-btn-wrap">
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={() => alert('Google login failed. Please try again.')}
+                            theme={isDarkMode ? 'filled_black' : 'outline'}
+                            size="large"
+                            shape="rectangular"
+                            text="signin_with"
+                        />
+                    </div>
+                    <p className="ap-login-hint">Only <strong>{ALLOWED_EMAIL}</strong> has access.</p>
+                </div>
+            </div>
+        );
+    }
+
     const filteredNotes = notesEntries.filter(n => n.note_type === notesTab);
 
     const handleNotesSubmit = async (e) => {
@@ -371,16 +421,16 @@ function AdminPortal() {
                     <button className="ap-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
                         {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
                     </button>
-                    <div className="ap-user-pill">
+                    <div className="ap-user-pill" style={{ cursor: 'pointer' }} onClick={handleLogout} title="Sign out">
                         <div className="ap-user-info">
-                            <span className="ap-user-role">Admin</span>
+                            <span className="ap-user-role">{adminUser.name || 'Admin'}</span>
                             <span className="ap-user-status">
                                 <span className="ap-online-dot" />
-                                Online
+                                Sign out
                             </span>
                         </div>
                         <div className="ap-avatar-wrap">
-                            <img src={userPhoto || "https://ui-avatars.com/api/?name=Admin&background=475569&color=ffffff"} alt="Profile" className="ap-avatar" />
+                            <img src={adminUser.picture || "https://ui-avatars.com/api/?name=Admin&background=475569&color=ffffff"} alt="Profile" className="ap-avatar" />
                             <span className="ap-status-dot" />
                         </div>
                     </div>
