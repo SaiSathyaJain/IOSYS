@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS inward (
     assignment_status TEXT DEFAULT 'Unassigned',
     due_date TEXT,
     completion_date TEXT,
+    remarks TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );

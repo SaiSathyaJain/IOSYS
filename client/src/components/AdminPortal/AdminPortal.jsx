@@ -46,7 +46,8 @@ function AdminPortal() {
         assignedTeam: '',
         assignedToEmail: '',
         assignmentInstructions: '',
-        dueDate: ''
+        dueDate: '',
+        remarks: ''
     });
     const [notesEntries, setNotesEntries] = useState([]);
     const [notesTab, setNotesTab] = useState('REGISTRAR');
@@ -192,7 +193,7 @@ function AdminPortal() {
         setFormData({
             means: '', particularsFromWhom: '', subject: '',
             signReceiptDateTime: '', assignedTeam: '', assignedToEmail: '',
-            assignmentInstructions: '', dueDate: ''
+            assignmentInstructions: '', dueDate: '', remarks: ''
         });
     };
 
@@ -559,6 +560,13 @@ function AdminPortal() {
                                         placeholder="Brief description of the correspondence" />
                                 </div>
 
+                                <div className="form-group">
+                                    <label className="form-label">Remarks</label>
+                                    <textarea name="remarks" className="form-textarea"
+                                        value={formData.remarks} onChange={handleChange}
+                                        placeholder="Any remarks..." rows={2} />
+                                </div>
+
                                 <div className="section-block">
                                     <h4 className="section-title"><ClipboardList size={16} /> Team Assignment <span className="section-optional">(optional — can be done later)</span></h4>
 
@@ -645,23 +653,30 @@ function AdminPortal() {
                         <table className="table">
                             <thead>
                                 <tr>
-                                    <th>Inward No</th>
-                                    <th>Subject</th>
+                                    <th>Sl.No.</th>
+                                    <th>Date of Inward</th>
+                                    <th>Mode</th>
                                     <th>From</th>
-                                    <th>Team</th>
-                                    <th>Status</th>
-                                    <th>Due Date</th>
+                                    <th>Particulars</th>
+                                    <th>Assigned To</th>
+                                    <th>File Ref</th>
+                                    <th>Remarks</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredEntries.map(entry => (
+                                {filteredEntries.map((entry, index) => (
                                     <tr key={entry.id} className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''}>
-                                        <td><strong>{entry.inwardNo}</strong></td>
+                                        <td>{index + 1}</td>
+                                        <td>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDateTime)}</div>
+                                            <strong style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{entry.inwardNo}</strong>
+                                        </td>
+                                        <td>{entry.means || '-'}</td>
+                                        <td>{entry.particularsFromWhom}</td>
                                         <td className="subject-cell">
                                             <div className="subject-text">{entry.subject}</div>
                                         </td>
-                                        <td>{entry.particularsFromWhom}</td>
                                         <td>
                                             {entry.assignedTeam ? (
                                                 <span className="badge badge-team">{entry.assignedTeam}</span>
@@ -669,19 +684,8 @@ function AdminPortal() {
                                                 <span className="badge badge-none">-</span>
                                             )}
                                         </td>
-                                        <td>
-                                            <span className={`badge badge-${getStatusColor(entry.assignmentStatus)}`}>
-                                                {entry.assignmentStatus || 'Unassigned'}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {entry.dueDate ? (
-                                                <span className={`due-date ${isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue' : ''}`}>
-                                                    <Calendar size={14} />
-                                                    {formatDate(entry.dueDate)}
-                                                </span>
-                                            ) : '-'}
-                                        </td>
+                                        <td>{entry.fileReference || '-'}</td>
+                                        <td>{entry.remarks || '-'}</td>
                                         <td>
                                             <div className="action-buttons">
                                                 <button className="btn-icon" onClick={() => openDetailsModal(entry)} title="View Details">

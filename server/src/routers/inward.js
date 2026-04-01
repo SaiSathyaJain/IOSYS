@@ -38,17 +38,17 @@ inwardRouter.post('/', async (c) => {
         const {
             means, particularsFromWhom, subject,
             signReceiptDateTime, fileReference,
-            assignedTeam, assignedToEmail, assignmentInstructions, dueDate
+            assignedTeam, assignedToEmail, assignmentInstructions, dueDate, remarks
         } = body;
 
-        // Generate inward number
-        // Check count of entries for current year to generate ID
-        // Note: D1 doesn't support 'count' utility in same way, use SQL
-        const year = new Date().getFullYear();
-        const countResult = await c.env.DB.prepare("SELECT count(*) as count FROM inward WHERE inward_no LIKE ?").bind(`INW/${year}/%`).first();
-        const count = countResult.count;
-        const nextCount = count + 1;
-        const inwardNo = `INW/${year}/${nextCount.toString().padStart(3, '0')}`;
+        // Generate inward number: INW/DD/MM/YYYY-0000 (global sequential counter)
+        const entryDate = new Date(signReceiptDateTime);
+        const dd   = entryDate.getDate().toString().padStart(2, '0');
+        const mm   = (entryDate.getMonth() + 1).toString().padStart(2, '0');
+        const yyyy = entryDate.getFullYear();
+        const countResult = await c.env.DB.prepare('SELECT COUNT(*) as count FROM inward').first();
+        const nextCount = (countResult.count || 0) + 1;
+        const inwardNo = `INW/${dd}/${mm}/${yyyy}-${nextCount.toString().padStart(4, '0')}`;
 
         const assignmentStatus = assignedTeam ? 'Pending' : 'Unassigned';
         const assignmentDate = assignedTeam ? new Date().toISOString() : null;
@@ -58,13 +58,13 @@ inwardRouter.post('/', async (c) => {
                 inward_no, means, particulars_from_whom, subject,
                 sign_receipt_datetime, file_reference, assigned_team,
                 assigned_to_email, assignment_instructions, assignment_date,
-                assignment_status, due_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
+                assignment_status, due_date, remarks
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
         `).bind(
             inwardNo, means, particularsFromWhom, subject,
             signReceiptDateTime, fileReference || '', assignedTeam || null,
             assignedToEmail || null, assignmentInstructions || '', assignmentDate,
-            assignmentStatus, dueDate || null
+            assignmentStatus, dueDate || null, remarks || ''
         ).first();
 
         const insertedEntry = toCamelCase(result);
