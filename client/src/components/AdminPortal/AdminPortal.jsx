@@ -809,58 +809,52 @@ function AdminPortal() {
                         Notes to Vice Chancellor
                     </button>
                 </div>
-                {filteredNotes.length === 0 ? (
-                    <div className="empty-state">
-                        <FileText size={40} />
-                        <p>No notes yet</p>
-                    </div>
-                ) : (
-                    <div className="table-container">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Sl No.</th>
-                                    <th>Outward No.</th>
-                                    <th>Date</th>
-                                    <th>Description</th>
-                                    <th>Remarks</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredNotes.map(n => (
-                                    <tr key={n.id}>
-                                        <td><strong>{n.sl_no}</strong></td>
-                                        <td>{n.outward_no}</td>
-                                        <td>{formatDate(n.date)}</td>
-                                        <td className="subject-cell"><div className="subject-text">{n.description}</div></td>
-                                        <td>{n.remarks || '-'}</td>
-                                        <td>
-                                            <div className="action-buttons">
-                                                <button className="btn-icon" onClick={() => handleNoteDelete(n.id)} title="Delete">
-                                                    <X size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                <div className="notes-feed">
+                    {filteredNotes.length === 0 ? (
+                        <div className="empty-state">
+                            <FileText size={40} />
+                            <p>No notes yet</p>
+                        </div>
+                    ) : filteredNotes.map(n => (
+                        <div key={n.id} className={`note-strip note-strip--${n.note_type === 'REGISTRAR' ? 'reg' : 'vc'}`}>
+                            <div className="note-strip__left">
+                                <span className="note-strip__outward">{n.outward_no}</span>
+                                <span className="note-strip__sl">#{n.sl_no}</span>
+                            </div>
+                            <div className="note-strip__body">
+                                <div className="note-strip__desc">{n.description}</div>
+                                {n.remarks && <div className="note-strip__remarks">{n.remarks}</div>}
+                            </div>
+                            <div className="note-strip__right">
+                                <span className="note-strip__date">{formatDate(n.date)}</span>
+                                <button className="btn-icon" onClick={() => handleNoteDelete(n.id)} title="Delete">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            {/* Notes Form Modal */}
+            {/* Notes Drawer */}
             {showNotesForm && (
-                <div className="modal-overlay" onClick={() => setShowNotesForm(false)}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
+                <div className="modal-overlay ap-drawer-overlay" onClick={() => setShowNotesForm(false)}>
+                    <div className="ap-notes-drawer" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3><FileText size={20} /> Add Note — {notesTab === 'REGISTRAR' ? 'Registrar' : 'Vice Chancellor'}</h3>
+                            <h3><FileText size={18} /> Add Note</h3>
                             <button className="btn-close" onClick={() => setShowNotesForm(false)}>
                                 <X size={20} />
                             </button>
                         </div>
-                        <form onSubmit={handleNotesSubmit}>
+                        <div className="notes-drawer-toggle">
+                            <button type="button" className={notesTab === 'REGISTRAR' ? 'active' : ''} onClick={() => setNotesTab('REGISTRAR')}>
+                                Registrar
+                            </button>
+                            <button type="button" className={notesTab === 'VC' ? 'active' : ''} onClick={() => setNotesTab('VC')}>
+                                Vice Chancellor
+                            </button>
+                        </div>
+                        <form onSubmit={handleNotesSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                             <div className="modal-body">
                                 <div className="grid-2">
                                     <div className="form-group">
@@ -886,14 +880,14 @@ function AdminPortal() {
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Description *</label>
-                                    <textarea className="form-textarea" required rows={3}
+                                    <textarea className="form-textarea" required rows={4}
                                         value={notesFormData.description}
                                         onChange={e => setNotesFormData(p => ({ ...p, description: e.target.value }))}
                                         placeholder="Brief description of the note..." />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Remarks</label>
-                                    <textarea className="form-textarea" rows={2}
+                                    <textarea className="form-textarea" rows={3}
                                         value={notesFormData.remarks}
                                         onChange={e => setNotesFormData(p => ({ ...p, remarks: e.target.value }))}
                                         placeholder="Any additional remarks..." />
