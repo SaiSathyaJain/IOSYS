@@ -1,0 +1,103 @@
+{
+  "result": [
+    {
+      "id": "36ea4938-4a97-41ef-897b-10e6e4daa9dd",
+      "short_id": "36ea4938",
+      "project_id": "4fa845f3-5278-483a-b583-d1a99bf91ebf",
+      "project_name": "iosys",
+      "environment": "production",
+      "url": "https://36ea4938.iosys.pages.dev",
+      "created_on": "2026-04-01T06:20:50.777259Z",
+      "modified_on": "2026-04-01T06:21:41.380109Z",
+      "latest_stage": {
+        "name": "deploy",
+        "started_on": "2026-04-01T06:21:29.277372Z",
+        "ended_on": "2026-04-01T06:21:41.380109Z",
+        "status": "success"
+      },
+      "deployment_trigger": {
+        "type": "ad_hoc",
+        "metadata": {
+          "branch": "main",
+          "commit_hash": "4e4b3d29252b621358feab44e223e063cf94fe26",
+          "commit_message": "chore: migrate to new Cloudflare account\n\n- account_id updated to new account\n- database_id updated to new D1 instance\n- worker deployed at iosys.coeofficeinward.workers.dev\n\nCo-Authored-By: Claude Sonnet 4.6 \u003cnoreply@anthropic.com\u003e",
+          "commit_dirty": false
+        }
+      },
+      "stages": [
+        {
+          "name": "queued",
+          "started_on": "2026-04-01T06:20:51.420516Z",
+          "ended_on": "2026-04-01T06:20:51.496363Z",
+          "status": "success"
+        },
+        {
+          "name": "initialize",
+          "started_on": "2026-04-01T06:20:51.496363Z",
+          "ended_on": "2026-04-01T06:20:53.186366Z",
+          "status": "success"
+        },
+        {
+          "name": "clone_repo",
+          "started_on": "2026-04-01T06:20:53.186366Z",
+          "ended_on": "2026-04-01T06:20:54.247372Z",
+          "status": "success"
+        },
+        {
+          "name": "build",
+          "started_on": "2026-04-01T06:20:54.247372Z",
+          "ended_on": "2026-04-01T06:21:29.277372Z",
+          "status": "success"
+        },
+        {
+          "name": "deploy",
+          "started_on": "2026-04-01T06:21:29.277372Z",
+          "ended_on": "2026-04-01T06:21:41.380109Z",
+          "status": "success"
+        }
+      ],
+      "build_config": {
+        "build_command": "cd client \u0026\u0026 npm install \u0026\u0026 npm run build",
+        "destination_dir": "client/dist",
+        "build_caching": null,
+        "root_dir": "",
+        "web_analytics_tag": null,
+        "web_analytics_token": null
+      },
+      "source": {
+        "type": "github",
+        "config": {
+          "owner": "SaiSathyaJain",
+          "repo_name": "IOSYS",
+          "production_branch": "main",
+          "pr_comments_enabled": false
+        }
+      },
+      "env_vars": {
+        "VITE_API_URL": {
+          "type": "plain_text",
+          "value": "https://iosys.coeofficeinward.workers.dev/api"
+        }
+      },
+      "compatibility_date": "2026-04-01",
+      "compatibility_flags": [],
+      "build_image_major_version": 3,
+      "usage_model": null,
+      "aliases": null,
+      "is_skipped": false,
+      "production_branch": "main",
+      "uses_functions": false,
+      "framework": "react-router"
+    }
+  ],
+  "success": true,
+  "errors": [],
+  "messages": [],
+  "result_info": {
+    "page": 1,
+    "per_page": 1,
+    "count": 1,
+    "total_count": 1,
+    "total_pages": 1
+  }
+}
