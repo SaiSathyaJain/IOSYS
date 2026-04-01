@@ -398,7 +398,7 @@ function AdminPortal() {
     td { padding: 5px 8px; border-bottom: 1px solid #ddd; vertical-align: top; }
     tr:nth-child(even) td { background: #f8fafc; }
     .footer { margin-top: 14px; font-size: 9px; color: #999; text-align: right; }
-    @page { margin: 15mm; }
+    @page { size: landscape; margin: 15mm; }
   </style>
 </head>
 <body>
