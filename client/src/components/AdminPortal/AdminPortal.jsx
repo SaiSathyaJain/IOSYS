@@ -8,7 +8,7 @@ import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
     Clock, CheckCircle2, AlertCircle, Calendar, Mail, User,
     FileText, RefreshCw, Eye, Edit3, ArrowDownToLine, Loader2, Download,
-    Sun, Moon, ArrowLeft
+    Sun, Moon, ArrowLeft, Printer
 } from 'lucide-react';
 import './AdminPortal.css';
 
@@ -49,6 +49,7 @@ function AdminPortal() {
         dueDate: '',
         remarks: ''
     });
+    const [printDate, setPrintDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [notesEntries, setNotesEntries] = useState([]);
     const [notesTab, setNotesTab] = useState('REGISTRAR');
     const [showNotesForm, setShowNotesForm] = useState(false);
@@ -360,6 +361,78 @@ function AdminPortal() {
         );
     }
 
+    const handlePrint = () => {
+        const dayEntries = entries.filter(e => {
+            if (!e.signReceiptDateTime) return false;
+            return new Date(e.signReceiptDateTime).toISOString().split('T')[0] === printDate;
+        });
+
+        const [yyyy, mm, dd] = printDate.split('-');
+        const displayDate = `${dd}/${mm}/${yyyy}`;
+
+        const rows = dayEntries.map((e, i) => `
+            <tr>
+                <td>${i + 1}</td>
+                <td>${e.inwardNo || '-'}</td>
+                <td>${e.means || '-'}</td>
+                <td>${(e.particularsFromWhom || '-').replace(/</g, '&lt;')}</td>
+                <td>${(e.subject || '-').replace(/</g, '&lt;')}</td>
+                <td>${e.assignedTeam || '-'}</td>
+                <td>${(e.fileReference || '-').replace(/</g, '&lt;')}</td>
+                <td>${(e.remarks || '-').replace(/</g, '&lt;')}</td>
+            </tr>`).join('');
+
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Inward Register — ${displayDate}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; padding: 24px; color: #111; }
+    .header { text-align: center; margin-bottom: 16px; }
+    .header h2 { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; }
+    .header p { font-size: 11px; color: #555; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th { background: #1d4ed8; color: #fff; font-weight: 600; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 5px 8px; border-bottom: 1px solid #ddd; vertical-align: top; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .footer { margin-top: 14px; font-size: 9px; color: #999; text-align: right; }
+    @page { margin: 15mm; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>SSSIHL — Inward Register</h2>
+    <p>Date: <strong>${displayDate}</strong> &nbsp;|&nbsp; Total Entries: <strong>${dayEntries.length}</strong></p>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:4%">Sl.</th>
+        <th style="width:14%">Inward No.</th>
+        <th style="width:8%">Mode</th>
+        <th style="width:14%">From</th>
+        <th style="width:22%">Particulars</th>
+        <th style="width:10%">Assigned To</th>
+        <th style="width:12%">File Ref</th>
+        <th style="width:16%">Remarks</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows || '<tr><td colspan="8" style="text-align:center;padding:16px;color:#888;">No entries found for this date</td></tr>'}
+    </tbody>
+  </table>
+  <div class="footer">Printed on ${new Date().toLocaleString('en-IN')} &mdash; SSSIHL Inward/Outward System</div>
+</body>
+</html>`;
+
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+        win.onload = () => win.print();
+    };
+
     const filteredNotes = notesEntries.filter(n => n.note_type === notesTab);
 
     const handleNotesSubmit = async (e) => {
@@ -624,11 +697,23 @@ function AdminPortal() {
 
             {/* Entries Table */}
             <div className="card">
-                <div className="card-header">
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <h3 className="card-title">
                         <ClipboardList size={20} /> Inward Entries
                         <span className="entry-count">({filteredEntries.length})</span>
                     </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input
+                            type="date"
+                            className="form-input"
+                            value={printDate}
+                            onChange={e => setPrintDate(e.target.value)}
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.82rem', width: 'auto' }}
+                        />
+                        <button className="btn btn-secondary ap-nav-action-btn" onClick={handlePrint} title="Print entries for selected date">
+                            <Printer size={15} /> Print
+                        </button>
+                    </div>
                 </div>
 
                 {loading ? (
