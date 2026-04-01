@@ -198,7 +198,7 @@ export async function sendAssignmentNotification(entry, env) {
 
     await sendEmail({
         to:      assignedToEmail,
-        subject: `[IOSYS] New Assignment — ${inwardNo}: ${subject}`,
+        subject: `[IOSYS][${assignedTeam}] New Assignment — ${inwardNo}: ${subject}`,
         html,
         env,
     });
