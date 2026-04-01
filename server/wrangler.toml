@@ -1,13 +1,13 @@
 name = "iosys"
 main = "src/worker.js"
 compatibility_date = "2024-02-03"
-account_id = "1966c03f4aadbbe46523c450e7c71c51"
+account_id = "19c0d96e299540169a2b0b628c5084b0"
 
 # D1 Database Binding
 [[d1_databases]]
 binding = "DB"
 database_name = "inward-outward-db"
-database_id = "65cdca58-f391-42fd-b314-2bdf52aa6a19"
+database_id = "21c7aa21-b60a-49d6-a7dd-e6af1f670cbf"
 
 # Cron: Every Saturday at 11:00 AM IST (05:30 UTC)
 [triggers]
