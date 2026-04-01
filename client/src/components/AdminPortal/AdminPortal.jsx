@@ -49,9 +49,9 @@ function AdminPortal() {
     const [notesLoading, setNotesLoading] = useState(false);
 
     const TEAM_EMAILS = {
-        'UG': 'sathyajain9@gmail.com',
-        'PG/PRO': 'saisathyajain@sssihl.edu.in',
-        'PhD': 'results@sssihl.edu.in'
+        'UG': 'coeoffice@sssihl.edu.in',
+        'PG/PRO': 'coeoffice@sssihl.edu.in',
+        'PhD': 'coeoffice@sssihl.edu.in'
     };
 
     useEffect(() => {
