@@ -361,16 +361,29 @@ function AdminPortal() {
         );
     }
 
-    const handlePrint = () => {
-        const dayEntries = entries.filter(e => {
+    const handlePrint = async () => {
+        const [yyyy, mm, dd] = printDate.split('-');
+        const displayDate = `${dd}/${mm}/${yyyy}`;
+
+        let allEntries = entries;
+        try {
+            const res = await inwardAPI.getAll();
+            allEntries = res.data.entries || [];
+        } catch (e) {
+            console.warn('Using cached entries for print');
+        }
+
+        const dayEntries = allEntries.filter(e => {
             if (!e.signReceiptDateTime) return false;
             const d = new Date(e.signReceiptDateTime);
             const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             return localDate === printDate;
         });
 
-        const [yyyy, mm, dd] = printDate.split('-');
-        const displayDate = `${dd}/${mm}/${yyyy}`;
+        console.log('Print debug — printDate:', printDate, 'total entries:', allEntries.length, 'day entries:', dayEntries.length);
+        if (allEntries.length > 0) {
+            console.log('Sample signReceiptDateTime:', allEntries[0].signReceiptDateTime);
+        }
 
         const rows = dayEntries.map((e, i) => `
             <tr>
