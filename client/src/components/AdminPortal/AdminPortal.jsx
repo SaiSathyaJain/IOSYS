@@ -542,15 +542,18 @@ function AdminPortal() {
                                         </select>
                                     </div>
                                     <div className="form-group">
-                                        <label className="form-label">Date & Time *</label>
+                                        <label className="form-label">Date *</label>
                                         <DatePicker
                                             selected={formData.signReceiptDateTime ? new Date(formData.signReceiptDateTime) : null}
-                                            onChange={(date) => setFormData(prev => ({ ...prev, signReceiptDateTime: date ? date.toISOString() : '' }))}
-                                            showTimeSelect
-                                            timeFormat="HH:mm"
-                                            timeIntervals={15}
-                                            dateFormat="dd MMM yyyy, HH:mm"
-                                            placeholderText="Select date & time"
+                                            onChange={(date) => {
+                                                if (date) {
+                                                    const now = new Date();
+                                                    date.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+                                                }
+                                                setFormData(prev => ({ ...prev, signReceiptDateTime: date ? date.toISOString() : '' }));
+                                            }}
+                                            dateFormat="dd MMM yyyy"
+                                            placeholderText="Select date"
                                             className="form-input"
                                             calendarClassName="ap-calendar"
                                             required
