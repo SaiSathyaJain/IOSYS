@@ -42,7 +42,7 @@ function AdminPortal() {
         means: '',
         particularsFromWhom: '',
         subject: '',
-        signReceiptDateTime: '',
+        signReceiptDateTime: new Date().toISOString(),
         assignedTeam: '',
         assignedToEmail: '',
         assignmentInstructions: '',
@@ -193,7 +193,7 @@ function AdminPortal() {
     const resetForm = () => {
         setFormData({
             means: '', particularsFromWhom: '', subject: '',
-            signReceiptDateTime: '', assignedTeam: '', assignedToEmail: '',
+            signReceiptDateTime: new Date().toISOString(), assignedTeam: '', assignedToEmail: '',
             assignmentInstructions: '', dueDate: '', remarks: ''
         });
     };
