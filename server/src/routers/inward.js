@@ -6,7 +6,7 @@ export const inwardRouter = new Hono();
 // Get all inward entries
 inwardRouter.get('/', async (c) => {
     try {
-        const { results } = await c.env.DB.prepare('SELECT * FROM inward ORDER BY id DESC').all();
+        const { results } = await c.env.DB.prepare('SELECT * FROM inward ORDER BY id ASC').all();
         const entries = toCamelCase(results);
         return c.json({ success: true, entries });
     } catch (error) {
