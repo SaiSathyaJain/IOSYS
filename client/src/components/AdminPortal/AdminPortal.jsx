@@ -290,7 +290,7 @@ function AdminPortal() {
                 index + 1,
                 entry.ackRec || '',
                 entry.crossNo || '',
-                formatDate(entry.signReceiptDateTime),
+                formatDate(entry.signReceiptDatetime),
                 entry.fileReference || '',
                 entry.toWhom || '',
                 entry.subject || '',
@@ -373,17 +373,13 @@ function AdminPortal() {
             console.warn('Using cached entries for print');
         }
 
+        // Extract date from inwardNo (format: INW/DD/MM/YYYY-NNNN)
         const dayEntries = allEntries.filter(e => {
-            if (!e.signReceiptDateTime) return false;
-            const d = new Date(e.signReceiptDateTime);
-            const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            return localDate === printDate;
+            const match = (e.inwardNo || '').match(/^INW\/(\d{2})\/(\d{2})\/(\d{4})-/);
+            if (!match) return false;
+            const [, d, m, y] = match;
+            return `${y}-${m}-${d}` === printDate;
         });
-
-        console.log('Print debug — printDate:', printDate, 'total entries:', allEntries.length, 'day entries:', dayEntries.length);
-        if (allEntries.length > 0) {
-            console.log('Sample signReceiptDateTime:', allEntries[0].signReceiptDateTime);
-        }
 
         const rows = dayEntries.map((e, i) => `
             <tr>
@@ -696,7 +692,7 @@ function AdminPortal() {
                                     <tr key={entry.id} className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''}>
                                         <td>{index + 1}</td>
                                         <td>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDateTime)}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDatetime)}</div>
                                             <strong style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{entry.inwardNo}</strong>
                                         </td>
                                         <td>{entry.means || '-'}</td>

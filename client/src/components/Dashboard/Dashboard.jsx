@@ -283,7 +283,7 @@ function Dashboard() {
                                                     {filtered.map(e => (
                                                         <tr key={e.id}>
                                                             <td><strong style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{e.inwardNo}</strong></td>
-                                                            <td style={{ fontSize: '0.82rem' }}>{formatDate(e.signReceiptDateTime)}</td>
+                                                            <td style={{ fontSize: '0.82rem' }}>{formatDate(e.signReceiptDatetime)}</td>
                                                             <td>{e.particularsFromWhom}</td>
                                                             <td className="subject-cell"><div className="subject-text">{e.subject}</div></td>
                                                             <td>{e.assignedTeam ? <span className="badge badge-team">{e.assignedTeam}</span> : <span className="badge badge-none">-</span>}</td>
