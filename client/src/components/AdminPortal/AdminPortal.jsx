@@ -684,6 +684,7 @@ function AdminPortal() {
                                     <th>Assigned To</th>
                                     <th>File Ref</th>
                                     <th>Remarks</th>
+                                    <th>Signature</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
