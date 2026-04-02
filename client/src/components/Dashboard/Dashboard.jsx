@@ -4,7 +4,8 @@ import { dashboardAPI, inwardAPI, outwardAPI } from '../../services/api';
 import {
     Hourglass, CheckCircle2, ArrowDownToLine, ArrowUpFromLine,
     Users, ChevronRight, X, Clock, TrendingUp, FileText,
-    RefreshCw, Loader2, ArrowLeft, AlertCircle, Sun, Moon, Activity
+    RefreshCw, Loader2, ArrowLeft, AlertCircle, Sun, Moon, Activity,
+    Search, Filter
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -52,6 +53,10 @@ function Dashboard() {
     const [teamEntries, setTeamEntries] = useState([]);
     const [teamOutward, setTeamOutward] = useState([]);
     const [detailLoading, setDetailLoading] = useState(false);
+    const [allEntries, setAllEntries] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [teamFilter, setTeamFilter] = useState('all');
 
     useEffect(() => {
         loadData();
@@ -69,14 +74,16 @@ function Dashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [statsRes, teamsRes, chartRes] = await Promise.allSettled([
+            const [statsRes, teamsRes, chartRes, entriesRes] = await Promise.allSettled([
                 dashboardAPI.getStats(),
                 dashboardAPI.getAllTeams(),
-                dashboardAPI.getChartData()
+                dashboardAPI.getChartData(),
+                inwardAPI.getAll()
             ]);
             setStats(statsRes.status === 'fulfilled' ? statsRes.value.data.stats || {} : {});
             setTeamStats(teamsRes.status === 'fulfilled' ? teamsRes.value.data.teamStats || [] : []);
             setChartData(chartRes.status === 'fulfilled' ? chartRes.value.data.chartData || [] : []);
+            setAllEntries(entriesRes.status === 'fulfilled' ? entriesRes.value.data.entries || [] : []);
         } catch (error) {
             console.error('Error loading dashboard:', error);
         } finally {
@@ -204,6 +211,94 @@ function Dashboard() {
                         </div>
                     </div>
                 </div>
+
+                {/* Search & Filters */}
+                {(() => {
+                    const filtered = allEntries.filter(e => {
+                        const matchSearch = !searchTerm ||
+                            e.inwardNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            e.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            e.particularsFromWhom?.toLowerCase().includes(searchTerm.toLowerCase());
+                        const matchStatus = statusFilter === 'all' || e.assignmentStatus === statusFilter;
+                        const matchTeam = teamFilter === 'all' || e.assignedTeam === teamFilter;
+                        return matchSearch && matchStatus && matchTeam;
+                    });
+                    const isFiltering = searchTerm || statusFilter !== 'all' || teamFilter !== 'all';
+                    return (
+                        <>
+                            <div className="filters-bar">
+                                <div className="search-box">
+                                    <Search size={18} className="search-icon" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by inward no., subject, or sender..."
+                                        value={searchTerm}
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                        className="search-input"
+                                    />
+                                </div>
+                                <div className="filter-group">
+                                    <Filter size={18} />
+                                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="filter-select">
+                                        <option value="all">All Status</option>
+                                        <option value="Unassigned">Unassigned</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                    <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} className="filter-select">
+                                        <option value="all">All Teams</option>
+                                        <option value="UG">UG Team</option>
+                                        <option value="PG/PRO">PG/PRO Team</option>
+                                        <option value="PhD">PhD Team</option>
+                                    </select>
+                                    {isFiltering && (
+                                        <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => { setSearchTerm(''); setStatusFilter('all'); setTeamFilter('all'); }}>
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            {isFiltering && (
+                                <div className="card animate-fade" style={{ marginBottom: '1.5rem' }}>
+                                    <div className="card-header">
+                                        <h3 className="card-title"><FileText size={18} /> Search Results <span className="entry-count">({filtered.length})</span></h3>
+                                    </div>
+                                    {filtered.length === 0 ? (
+                                        <div className="empty-state"><FileText size={36} /><p>No entries match your search</p></div>
+                                    ) : (
+                                        <div className="table-container">
+                                            <table className="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Inward No.</th>
+                                                        <th>Date</th>
+                                                        <th>From</th>
+                                                        <th>Subject</th>
+                                                        <th>Team</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {filtered.map(e => (
+                                                        <tr key={e.id}>
+                                                            <td><strong style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{e.inwardNo}</strong></td>
+                                                            <td style={{ fontSize: '0.82rem' }}>{formatDate(e.signReceiptDateTime)}</td>
+                                                            <td>{e.particularsFromWhom}</td>
+                                                            <td className="subject-cell"><div className="subject-text">{e.subject}</div></td>
+                                                            <td>{e.assignedTeam ? <span className="badge badge-team">{e.assignedTeam}</span> : <span className="badge badge-none">-</span>}</td>
+                                                            <td><span className={`badge badge-${getStatusColor(e.assignmentStatus)}`}>{e.assignmentStatus || 'Unassigned'}</span></td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    );
+                })()}
 
                 {/* Stat Cards */}
                 <div className="stat-grid">

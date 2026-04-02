@@ -517,67 +517,6 @@ function AdminPortal() {
                 <h2 className="page-title"><Inbox className="icon-svg" /> Admin Portal</h2>
             </div>
 
-            {/* Stats Cards */}
-            <div className="stats-grid">
-                <div className="stat-card total">
-                    <div className="stat-icon"><ArrowDownToLine size={24} /></div>
-                    <div className="stat-content">
-                        <div className="stat-value">{stats?.totalInward || 0}</div>
-                        <div className="stat-label">Total Inward</div>
-                    </div>
-                </div>
-                <div className="stat-card pending">
-                    <div className="stat-icon"><Clock size={24} /></div>
-                    <div className="stat-content">
-                        <div className="stat-value">{stats?.pendingWork || 0}</div>
-                        <div className="stat-label">Pending</div>
-                    </div>
-                </div>
-                <div className="stat-card completed">
-                    <div className="stat-icon"><CheckCircle2 size={24} /></div>
-                    <div className="stat-content">
-                        <div className="stat-value">{stats?.completedWork || 0}</div>
-                        <div className="stat-label">Completed</div>
-                    </div>
-                </div>
-                <div className="stat-card unassigned">
-                    <div className="stat-icon"><AlertCircle size={24} /></div>
-                    <div className="stat-content">
-                        <div className="stat-value">{stats?.unassigned || 0}</div>
-                        <div className="stat-label">Unassigned</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Search & Filters */}
-            <div className="filters-bar">
-                <div className="search-box">
-                    <Search size={18} className="search-icon" />
-                    <input
-                        type="text"
-                        placeholder="Search by number, subject, or sender..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="search-input"
-                    />
-                </div>
-                <div className="filter-group">
-                    <Filter size={18} />
-                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
-                        <option value="all">All Status</option>
-                        <option value="Unassigned">Unassigned</option>
-                        <option value="Pending">Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                    </select>
-                    <select value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)} className="filter-select">
-                        <option value="all">All Teams</option>
-                        <option value="UG">UG Team</option>
-                        <option value="PG/PRO">PG/PRO Team</option>
-                        <option value="PhD">PhD Team</option>
-                    </select>
-                </div>
-            </div>
 
             {/* Create Entry Modal */}
             {showForm && (
@@ -700,7 +639,7 @@ function AdminPortal() {
                 <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <h3 className="card-title">
                         <ClipboardList size={20} /> Inward Entries
-                        <span className="entry-count">({filteredEntries.length})</span>
+                        <span className="entry-count">({entries.length})</span>
                     </h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <input
@@ -721,17 +660,10 @@ function AdminPortal() {
                         <Loader2 size={40} className="spin" />
                         <p>Loading entries...</p>
                     </div>
-                ) : filteredEntries.length === 0 ? (
+                ) : entries.length === 0 ? (
                     <div className="empty-state">
                         <Inbox size={48} />
                         <p>No entries found</p>
-                        {(searchTerm || statusFilter !== 'all' || teamFilter !== 'all') && (
-                            <button className="btn btn-secondary" onClick={() => {
-                                setSearchTerm('');
-                                setStatusFilter('all');
-                                setTeamFilter('all');
-                            }}>Clear Filters</button>
-                        )}
                     </div>
                 ) : (
                     <div className="table-container">
@@ -750,7 +682,7 @@ function AdminPortal() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredEntries.map((entry, index) => (
+                                {entries.map((entry, index) => (
                                     <tr key={entry.id} className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''}>
                                         <td>{index + 1}</td>
                                         <td>
