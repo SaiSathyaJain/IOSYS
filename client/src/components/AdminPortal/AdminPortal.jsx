@@ -592,15 +592,6 @@ function AdminPortal() {
                                                 <option value="PhD">PhD Team</option>
                                             </select>
                                         </div>
-                                        {formData.assignedTeam && (
-                                            <div className="form-group">
-                                                <label className="form-label">Team Leader Email {formData.assignedTeam ? '*' : ''}</label>
-                                                <input type="email" name="assignedToEmail" className="form-input"
-                                                    value={formData.assignedToEmail} onChange={handleChange}
-                                                    required={!!formData.assignedTeam}
-                                                    placeholder="Auto-filled based on team" />
-                                            </div>
-                                        )}
                                     </div>
 
                                     {formData.assignedTeam && (
@@ -829,12 +820,6 @@ function AdminPortal() {
                                         <option value="PG/PRO">PG/PRO Team</option>
                                         <option value="PhD">PhD Team</option>
                                     </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Team Leader Email *</label>
-                                    <input type="email" name="assignedToEmail" className="form-input"
-                                        value={reassignData.assignedToEmail} onChange={handleReassignChange} required />
                                 </div>
 
                                 <div className="form-group">
