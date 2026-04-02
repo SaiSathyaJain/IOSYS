@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { toCamelCase } from '../utils/caseConverter.js';
-import { sendAssignmentNotification } from '../services/notification.js';
 
 export const inwardRouter = new Hono();
 
@@ -70,27 +69,11 @@ inwardRouter.post('/', async (c) => {
         const insertedEntry = toCamelCase(result);
         const id = insertedEntry.id;
 
-        // Send notification if assigned
-        let emailStatus = 'skipped';
-        if (assignedTeam && assignedToEmail) {
-            try {
-                await sendAssignmentNotification({
-                    id, inwardNo, subject, particularsFromWhom,
-                    assignedTeam, assignedToEmail, assignmentInstructions, dueDate
-                }, c.env);
-                emailStatus = 'sent';
-            } catch (err) {
-                console.error('Notification error:', err.message);
-                emailStatus = 'failed: ' + err.message;
-            }
-        }
-
         return c.json({
             success: true,
             message: 'Inward entry created successfully',
             id,
-            inwardNo,
-            emailStatus
+            inwardNo
         });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);
@@ -123,30 +106,9 @@ inwardRouter.put('/:id/assign', async (c) => {
             assignmentDate, dueDate, updatedAt, id
         ).run();
 
-        // Send notification
-        let emailStatus = 'skipped';
-        try {
-            await sendAssignmentNotification({
-                ...toCamelCase(existing),
-                assignedTeam, assignedToEmail, assignmentInstructions, dueDate
-            }, c.env);
-            emailStatus = 'sent';
-        } catch (err) {
-            console.error('Notification error:', err.message);
-            emailStatus = 'failed: ' + err.message;
-        }
-
-        let responseMessage = `Entry assigned to ${assignedTeam} team.`;
-        if (emailStatus === 'sent') {
-            responseMessage += ` Notification sent to ${assignedToEmail}`;
-        } else if (emailStatus.startsWith('failed')) {
-            responseMessage += `\nWarning: Email failed - ${emailStatus}`;
-        }
-
         return c.json({
             success: true,
-            message: responseMessage,
-            emailStatus
+            message: `Entry assigned to ${assignedTeam} team.`
         });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);
