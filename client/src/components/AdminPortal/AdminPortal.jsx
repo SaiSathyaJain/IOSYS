@@ -364,7 +364,9 @@ function AdminPortal() {
     const handlePrint = () => {
         const dayEntries = entries.filter(e => {
             if (!e.signReceiptDateTime) return false;
-            return new Date(e.signReceiptDateTime).toISOString().split('T')[0] === printDate;
+            const d = new Date(e.signReceiptDateTime);
+            const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            return localDate === printDate;
         });
 
         const [yyyy, mm, dd] = printDate.split('-');
@@ -428,9 +430,10 @@ function AdminPortal() {
 </html>`;
 
         const win = window.open('', '_blank');
+        if (!win) { alert('Please allow pop-ups for this site and try again.'); return; }
         win.document.write(html);
         win.document.close();
-        win.onload = () => win.print();
+        setTimeout(() => { win.focus(); win.print(); }, 500);
     };
 
     const filteredNotes = notesEntries.filter(n => n.note_type === notesTab);
