@@ -391,6 +391,7 @@ function AdminPortal() {
                 <td>${e.assignedTeam || '-'}</td>
                 <td>${(e.fileReference || '-').replace(/</g, '&lt;')}</td>
                 <td>${(e.remarks || '-').replace(/</g, '&lt;')}</td>
+                <td></td>
             </tr>`).join('');
 
         const html = `<!DOCTYPE html>
@@ -421,13 +422,14 @@ function AdminPortal() {
     <thead>
       <tr>
         <th style="width:4%">Sl.</th>
-        <th style="width:14%">Inward No.</th>
-        <th style="width:8%">Mode</th>
-        <th style="width:14%">From</th>
-        <th style="width:22%">Particulars</th>
-        <th style="width:10%">Assigned To</th>
-        <th style="width:12%">File Ref</th>
-        <th style="width:16%">Remarks</th>
+        <th style="width:13%">Inward No.</th>
+        <th style="width:7%">Mode</th>
+        <th style="width:13%">From</th>
+        <th style="width:20%">Particulars</th>
+        <th style="width:9%">Assigned To</th>
+        <th style="width:10%">File Ref</th>
+        <th style="width:12%">Remarks</th>
+        <th style="width:12%">Signature</th>
       </tr>
     </thead>
     <tbody>
@@ -710,6 +712,7 @@ function AdminPortal() {
                                         </td>
                                         <td>{entry.fileReference || '-'}</td>
                                         <td>{entry.remarks || '-'}</td>
+                                        <td></td>
                                         <td>
                                             <div className="action-buttons">
                                                 <button className="btn-icon" onClick={() => openDetailsModal(entry)} title="View Details">
