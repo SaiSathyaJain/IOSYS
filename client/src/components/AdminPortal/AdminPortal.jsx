@@ -142,6 +142,16 @@ function AdminPortal() {
                 }
             }
 
+            const newId = response.data.id;
+            if (formData.assignedTeam && newId) {
+                await inwardAPI.assign(newId, {
+                    assignedTeam: formData.assignedTeam,
+                    assignedToEmail: formData.assignedToEmail,
+                    assignmentInstructions: formData.assignmentInstructions,
+                    dueDate: formData.dueDate
+                });
+            }
+
             alert(message);
             setShowForm(false);
             resetForm();
@@ -718,7 +728,7 @@ function AdminPortal() {
                                                 <button className="btn-icon" onClick={() => openDetailsModal(entry)} title="View Details">
                                                     <Eye size={16} />
                                                 </button>
-                                                <button className="btn-icon" onClick={() => openReassignModal(entry)} title="Reassign">
+                                                <button className="btn-icon" onClick={() => openReassignModal(entry)} title={entry.assignedTeam ? 'Reassign' : 'Assign'}>
                                                     <Edit3 size={16} />
                                                 </button>
                                             </div>
@@ -807,7 +817,7 @@ function AdminPortal() {
                                 setShowModal(false);
                                 openReassignModal(selectedEntry);
                             }}>
-                                <Edit3 size={16} /> Reassign
+                                <Edit3 size={16} /> {selectedEntry?.assignedTeam ? 'Reassign' : 'Assign'}
                             </button>
                         </div>
                     </div>
@@ -819,7 +829,7 @@ function AdminPortal() {
                 <div className="modal-overlay" onClick={() => setShowReassignModal(false)}>
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3><Edit3 size={20} /> Reassign Entry</h3>
+                            <h3><Edit3 size={20} /> {selectedEntry?.assignedTeam ? 'Reassign Entry' : 'Assign Entry'}</h3>
                             <button className="btn-close" onClick={() => setShowReassignModal(false)}>
                                 <X size={20} />
                             </button>
@@ -859,7 +869,7 @@ function AdminPortal() {
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowReassignModal(false)}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">
-                                    <Check size={16} /> Reassign
+                                    <Check size={16} /> {selectedEntry?.assignedTeam ? 'Reassign' : 'Assign'}
                                 </button>
                             </div>
                         </form>
