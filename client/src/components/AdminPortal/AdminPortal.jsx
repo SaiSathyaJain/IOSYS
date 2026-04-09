@@ -746,20 +746,27 @@ function AdminPortal() {
                                 ))}
                             </tbody>
                         </table>
-                        {entries.length > INWARD_PAGE_SIZE && (
-                            <div className="table-pagination">
-                                <span className="table-note">
-                                    Showing {(inwardPage - 1) * INWARD_PAGE_SIZE + 1}–{Math.min(inwardPage * INWARD_PAGE_SIZE, entries.length)} of {entries.length}
-                                </span>
-                                <div className="page-btns">
-                                    <button className="page-btn" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>
-                                    {Array.from({ length: Math.ceil(entries.length / INWARD_PAGE_SIZE) }, (_, i) => (
-                                        <button key={i} className={`page-btn ${inwardPage === i + 1 ? 'active' : ''}`} onClick={() => setInwardPage(i + 1)}>{i + 1}</button>
-                                    ))}
-                                    <button className="page-btn" disabled={inwardPage === Math.ceil(entries.length / INWARD_PAGE_SIZE)} onClick={() => setInwardPage(p => p + 1)}>›</button>
+                        {entries.length > INWARD_PAGE_SIZE && (() => {
+                            const totalPages = Math.ceil(entries.length / INWARD_PAGE_SIZE);
+                            return (
+                                <div className="table-pagination">
+                                    <span className="table-note">
+                                        Showing {(inwardPage - 1) * INWARD_PAGE_SIZE + 1}–{Math.min(inwardPage * INWARD_PAGE_SIZE, entries.length)} of {entries.length}
+                                    </span>
+                                    <div className="slider-pagination">
+                                        <button className="page-arrow" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>
+                                        <input
+                                            type="range"
+                                            className="page-slider"
+                                            min={1} max={totalPages} value={inwardPage}
+                                            onChange={e => setInwardPage(Number(e.target.value))}
+                                        />
+                                        <button className="page-arrow" disabled={inwardPage === totalPages} onClick={() => setInwardPage(p => p + 1)}>›</button>
+                                        <span className="page-label">Page {inwardPage} / {totalPages}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
                     </div>
                 )}
             </div>

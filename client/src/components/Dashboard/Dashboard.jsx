@@ -553,20 +553,22 @@ function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                            {teamEntries.length > PAGE_SIZE && (
-                                                <div className="table-pagination">
-                                                    <span className="table-note">
-                                                        Showing {(inwardPage - 1) * PAGE_SIZE + 1}–{Math.min(inwardPage * PAGE_SIZE, teamEntries.length)} of {teamEntries.length}
-                                                    </span>
-                                                    <div className="page-btns">
-                                                        <button className="page-btn" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>
-                                                        {Array.from({ length: Math.ceil(teamEntries.length / PAGE_SIZE) }, (_, i) => (
-                                                            <button key={i} className={`page-btn ${inwardPage === i + 1 ? 'active' : ''}`} onClick={() => setInwardPage(i + 1)}>{i + 1}</button>
-                                                        ))}
-                                                        <button className="page-btn" disabled={inwardPage === Math.ceil(teamEntries.length / PAGE_SIZE)} onClick={() => setInwardPage(p => p + 1)}>›</button>
+                                            {teamEntries.length > PAGE_SIZE && (() => {
+                                                const totalPages = Math.ceil(teamEntries.length / PAGE_SIZE);
+                                                return (
+                                                    <div className="table-pagination">
+                                                        <span className="table-note">
+                                                            Showing {(inwardPage - 1) * PAGE_SIZE + 1}–{Math.min(inwardPage * PAGE_SIZE, teamEntries.length)} of {teamEntries.length}
+                                                        </span>
+                                                        <div className="slider-pagination">
+                                                            <button className="page-arrow" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>
+                                                            <input type="range" className="page-slider" min={1} max={totalPages} value={inwardPage} onChange={e => setInwardPage(Number(e.target.value))} />
+                                                            <button className="page-arrow" disabled={inwardPage === totalPages} onClick={() => setInwardPage(p => p + 1)}>›</button>
+                                                            <span className="page-label">Page {inwardPage} / {totalPages}</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                 </div>
@@ -607,20 +609,22 @@ function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                            {teamOutward.length > PAGE_SIZE && (
-                                                <div className="table-pagination">
-                                                    <span className="table-note">
-                                                        Showing {(outwardPage - 1) * PAGE_SIZE + 1}–{Math.min(outwardPage * PAGE_SIZE, teamOutward.length)} of {teamOutward.length}
-                                                    </span>
-                                                    <div className="page-btns">
-                                                        <button className="page-btn" disabled={outwardPage === 1} onClick={() => setOutwardPage(p => p - 1)}>‹</button>
-                                                        {Array.from({ length: Math.ceil(teamOutward.length / PAGE_SIZE) }, (_, i) => (
-                                                            <button key={i} className={`page-btn ${outwardPage === i + 1 ? 'active' : ''}`} onClick={() => setOutwardPage(i + 1)}>{i + 1}</button>
-                                                        ))}
-                                                        <button className="page-btn" disabled={outwardPage === Math.ceil(teamOutward.length / PAGE_SIZE)} onClick={() => setOutwardPage(p => p + 1)}>›</button>
+                                            {teamOutward.length > PAGE_SIZE && (() => {
+                                                const totalPages = Math.ceil(teamOutward.length / PAGE_SIZE);
+                                                return (
+                                                    <div className="table-pagination">
+                                                        <span className="table-note">
+                                                            Showing {(outwardPage - 1) * PAGE_SIZE + 1}–{Math.min(outwardPage * PAGE_SIZE, teamOutward.length)} of {teamOutward.length}
+                                                        </span>
+                                                        <div className="slider-pagination">
+                                                            <button className="page-arrow" disabled={outwardPage === 1} onClick={() => setOutwardPage(p => p - 1)}>‹</button>
+                                                            <input type="range" className="page-slider" min={1} max={totalPages} value={outwardPage} onChange={e => setOutwardPage(Number(e.target.value))} />
+                                                            <button className="page-arrow" disabled={outwardPage === totalPages} onClick={() => setOutwardPage(p => p + 1)}>›</button>
+                                                            <span className="page-label">Page {outwardPage} / {totalPages}</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                 </div>
