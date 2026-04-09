@@ -710,7 +710,7 @@ function AdminPortal() {
                                         </td>
                                         <td>{entry.means || '-'}</td>
                                         <td>{entry.particularsFromWhom}</td>
-                                        <td className="subject-cell">
+                                        <td className="subject-cell" title={entry.subject}>
                                             <div className="subject-text">{entry.subject}</div>
                                         </td>
                                         <td>
