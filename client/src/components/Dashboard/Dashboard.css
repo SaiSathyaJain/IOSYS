@@ -606,7 +606,7 @@
     white-space: nowrap;
 }
 
-.table-show-more {
+.table-pagination {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -620,19 +620,41 @@
     margin: 0;
 }
 
-.btn-show-more {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.25rem 0.7rem;
-    font-size: 0.78rem;
-    color: var(--primary, #3b82f6);
-    cursor: pointer;
-    transition: background 0.15s;
+.page-btns {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
 }
 
-.btn-show-more:hover {
+.page-btn {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: none;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.page-btn:hover:not(:disabled):not(.active) {
     background: rgba(59,130,246,0.08);
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.page-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
+    font-weight: 600;
+}
+
+.page-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
 
 /* ── Badges ── */

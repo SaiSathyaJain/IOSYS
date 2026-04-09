@@ -53,8 +53,9 @@ function Dashboard() {
     const [teamEntries, setTeamEntries] = useState([]);
     const [teamOutward, setTeamOutward] = useState([]);
     const [detailLoading, setDetailLoading] = useState(false);
-    const [showAllInward, setShowAllInward] = useState(false);
-    const [showAllOutward, setShowAllOutward] = useState(false);
+    const [inwardPage, setInwardPage] = useState(1);
+    const [outwardPage, setOutwardPage] = useState(1);
+    const PAGE_SIZE = 10;
     const [allEntries, setAllEntries] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -96,8 +97,8 @@ function Dashboard() {
     const loadTeamDetail = async (teamName) => {
         setDetailLoading(true);
         setSelectedTeam(teamName);
-        setShowAllInward(false);
-        setShowAllOutward(false);
+        setInwardPage(1);
+        setOutwardPage(1);
         try {
             const [detailRes, inwardRes, outwardRes] = await Promise.all([
                 dashboardAPI.getTeamStats(teamName),
@@ -537,7 +538,7 @@ function Dashboard() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {(showAllInward ? teamEntries : teamEntries.slice(0, 10)).map(entry => (
+                                                    {teamEntries.slice((inwardPage - 1) * PAGE_SIZE, inwardPage * PAGE_SIZE).map(entry => (
                                                         <tr key={entry.id}>
                                                             <td><strong>{entry.inwardNo}</strong></td>
                                                             <td className="subject-cell">{entry.subject}</td>
@@ -552,14 +553,18 @@ function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                            {teamEntries.length > 10 && (
-                                                <div className="table-show-more">
+                                            {teamEntries.length > PAGE_SIZE && (
+                                                <div className="table-pagination">
                                                     <span className="table-note">
-                                                        Showing {showAllInward ? teamEntries.length : 10} of {teamEntries.length} entries
+                                                        Showing {(inwardPage - 1) * PAGE_SIZE + 1}–{Math.min(inwardPage * PAGE_SIZE, teamEntries.length)} of {teamEntries.length}
                                                     </span>
-                                                    <button className="btn-show-more" onClick={() => setShowAllInward(v => !v)}>
-                                                        {showAllInward ? 'Show less ↑' : `Show all ${teamEntries.length} ↓`}
-                                                    </button>
+                                                    <div className="page-btns">
+                                                        <button className="page-btn" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>
+                                                        {Array.from({ length: Math.ceil(teamEntries.length / PAGE_SIZE) }, (_, i) => (
+                                                            <button key={i} className={`page-btn ${inwardPage === i + 1 ? 'active' : ''}`} onClick={() => setInwardPage(i + 1)}>{i + 1}</button>
+                                                        ))}
+                                                        <button className="page-btn" disabled={inwardPage === Math.ceil(teamEntries.length / PAGE_SIZE)} onClick={() => setInwardPage(p => p + 1)}>›</button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -591,7 +596,7 @@ function Dashboard() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {(showAllOutward ? teamOutward : teamOutward.slice(0, 10)).map(entry => (
+                                                    {teamOutward.slice((outwardPage - 1) * PAGE_SIZE, outwardPage * PAGE_SIZE).map(entry => (
                                                         <tr key={entry.id}>
                                                             <td><strong>{entry.outwardNo}</strong></td>
                                                             <td className="subject-cell">{entry.subject}</td>
@@ -602,14 +607,18 @@ function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                            {teamOutward.length > 10 && (
-                                                <div className="table-show-more">
+                                            {teamOutward.length > PAGE_SIZE && (
+                                                <div className="table-pagination">
                                                     <span className="table-note">
-                                                        Showing {showAllOutward ? teamOutward.length : 10} of {teamOutward.length} entries
+                                                        Showing {(outwardPage - 1) * PAGE_SIZE + 1}–{Math.min(outwardPage * PAGE_SIZE, teamOutward.length)} of {teamOutward.length}
                                                     </span>
-                                                    <button className="btn-show-more" onClick={() => setShowAllOutward(v => !v)}>
-                                                        {showAllOutward ? 'Show less ↑' : `Show all ${teamOutward.length} ↓`}
-                                                    </button>
+                                                    <div className="page-btns">
+                                                        <button className="page-btn" disabled={outwardPage === 1} onClick={() => setOutwardPage(p => p - 1)}>‹</button>
+                                                        {Array.from({ length: Math.ceil(teamOutward.length / PAGE_SIZE) }, (_, i) => (
+                                                            <button key={i} className={`page-btn ${outwardPage === i + 1 ? 'active' : ''}`} onClick={() => setOutwardPage(i + 1)}>{i + 1}</button>
+                                                        ))}
+                                                        <button className="page-btn" disabled={outwardPage === Math.ceil(teamOutward.length / PAGE_SIZE)} onClick={() => setOutwardPage(p => p + 1)}>›</button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
