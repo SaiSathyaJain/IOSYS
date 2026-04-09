@@ -26,6 +26,7 @@ function AdminPortal() {
     const [stats, setStats] = useState(null);
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [tooltip, setTooltip] = useState({ text: '', x: 0, y: 0, visible: false });
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [teamFilter, setTeamFilter] = useState('all');
@@ -711,7 +712,12 @@ function AdminPortal() {
                                         <td>{entry.means || '-'}</td>
                                         <td>{entry.particularsFromWhom}</td>
                                         <td className="subject-cell">
-                                            <div className="subject-text" data-tooltip={entry.subject}>{entry.subject}</div>
+                                            <div
+                                                className="subject-text"
+                                                onMouseEnter={e => setTooltip({ text: entry.subject, x: e.clientX, y: e.clientY, visible: true })}
+                                                onMouseMove={e => setTooltip(t => ({ ...t, x: e.clientX, y: e.clientY }))}
+                                                onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
+                                            >{entry.subject}</div>
                                         </td>
                                         <td>
                                             {entry.assignedTeam ? (
@@ -986,6 +992,13 @@ function AdminPortal() {
                             </div>
                         </form>
                     </div>
+                </div>
+            )}
+
+            {/* Subject Tooltip */}
+            {tooltip.visible && (
+                <div className="subject-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}>
+                    {tooltip.text}
                 </div>
             )}
         </div>
