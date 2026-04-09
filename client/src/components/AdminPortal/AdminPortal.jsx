@@ -27,6 +27,8 @@ function AdminPortal() {
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(true);
     const [tooltip, setTooltip] = useState({ text: '', x: 0, y: 0, visible: false });
+    const [inwardPage, setInwardPage] = useState(1);
+    const INWARD_PAGE_SIZE = 10;
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [teamFilter, setTeamFilter] = useState('all');
@@ -89,6 +91,7 @@ function AdminPortal() {
             ]);
             setEntries(entriesRes.data.entries || []);
             setStats(statsRes.data.stats || {});
+            setInwardPage(1);
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -702,9 +705,9 @@ function AdminPortal() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {entries.map((entry, index) => (
+                                {entries.slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry, index) => (
                                     <tr key={entry.id} className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''}>
-                                        <td>{index + 1}</td>
+                                        <td>{(inwardPage - 1) * INWARD_PAGE_SIZE + index + 1}</td>
                                         <td>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDatetime)}</div>
                                             <strong style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{entry.inwardNo}</strong>
@@ -743,6 +746,20 @@ function AdminPortal() {
                                 ))}
                             </tbody>
                         </table>
+                        {entries.length > INWARD_PAGE_SIZE && (
+                            <div className="table-pagination">
+                                <span className="table-note">
+                                    Showing {(inwardPage - 1) * INWARD_PAGE_SIZE + 1}–{Math.min(inwardPage * INWARD_PAGE_SIZE, entries.length)} of {entries.length}
+                                </span>
+                                <div className="page-btns">
+                                    <button className="page-btn" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>
+                                    {Array.from({ length: Math.ceil(entries.length / INWARD_PAGE_SIZE) }, (_, i) => (
+                                        <button key={i} className={`page-btn ${inwardPage === i + 1 ? 'active' : ''}`} onClick={() => setInwardPage(i + 1)}>{i + 1}</button>
+                                    ))}
+                                    <button className="page-btn" disabled={inwardPage === Math.ceil(entries.length / INWARD_PAGE_SIZE)} onClick={() => setInwardPage(p => p + 1)}>›</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
