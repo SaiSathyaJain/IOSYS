@@ -593,11 +593,26 @@
 
 .data-table tbody tr:last-child td { border-bottom: none; }
 
-.data-table tbody tr:hover td {
-    background: rgba(var(--primary-rgb), 0.03);
+/* Row fade-in animation */
+@keyframes rowSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-[data-theme="light"] .data-table tbody tr:hover td { background: #F8FAFC; }
+.data-table tbody tr {
+    animation: rowSlideIn 0.25s ease both;
+    transition: background 0.15s ease;
+}
+
+.data-table tbody tr:hover td {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.data-table tbody tr:hover td:first-child {
+    box-shadow: inset 3px 0 0 #3b82f6;
+}
+
+[data-theme="light"] .data-table tbody tr:hover td { background: rgba(59, 130, 246, 0.04); }
 
 .subject-cell {
     max-width: 200px;

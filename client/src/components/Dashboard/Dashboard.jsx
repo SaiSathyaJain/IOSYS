@@ -538,8 +538,8 @@ function Dashboard() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {teamEntries.slice((inwardPage - 1) * PAGE_SIZE, inwardPage * PAGE_SIZE).map(entry => (
-                                                        <tr key={entry.id}>
+                                                    {teamEntries.slice((inwardPage - 1) * PAGE_SIZE, inwardPage * PAGE_SIZE).map((entry, i) => (
+                                                        <tr key={entry.id} style={{ animationDelay: `${i * 0.04}s` }}>
                                                             <td><strong>{entry.inwardNo}</strong></td>
                                                             <td className="subject-cell">{entry.subject}</td>
                                                             <td>{entry.particularsFromWhom}</td>
@@ -601,8 +601,8 @@ function Dashboard() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {teamOutward.slice((outwardPage - 1) * PAGE_SIZE, outwardPage * PAGE_SIZE).map(entry => (
-                                                        <tr key={entry.id}>
+                                                    {teamOutward.slice((outwardPage - 1) * PAGE_SIZE, outwardPage * PAGE_SIZE).map((entry, i) => (
+                                                        <tr key={entry.id} style={{ animationDelay: `${i * 0.04}s` }}>
                                                             <td><strong>{entry.outwardNo}</strong></td>
                                                             <td className="subject-cell">{entry.subject}</td>
                                                             <td>{entry.toWhom}</td>

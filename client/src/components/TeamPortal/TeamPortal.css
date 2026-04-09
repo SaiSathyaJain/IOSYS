@@ -571,8 +571,19 @@
 
 .tp-app.dark .tp-history-table td { border-bottom-color: rgba(255,255,255,0.04); color: #f0f6fc; }
 .tp-history-table tbody tr:last-child td { border-bottom: none; }
-.tp-history-table tbody tr:hover td { background: #fafbfc; }
-.tp-app.dark .tp-history-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+@keyframes rowSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.tp-history-table tbody tr {
+    animation: rowSlideIn 0.25s ease both;
+    transition: background 0.15s ease;
+}
+
+.tp-history-table tbody tr:hover td { background: rgba(59, 130, 246, 0.05); }
+.tp-history-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 #3b82f6; }
+.tp-app.dark .tp-history-table tbody tr:hover td { background: rgba(59, 130, 246, 0.08); }
 
 .tp-outward-link { color: #2f81f7; font-weight: 600; }
 .tp-subject-cell { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -719,7 +730,8 @@
     transition: all 100ms; border: none; white-space: nowrap;
 }
 
-.btn:active { transform: scale(0.98); }
+.btn { transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease; }
+.btn:active { transform: scale(0.95); box-shadow: none !important; }
 .btn-primary { background: #2f81f7; color: #fff; }
 .btn-primary:hover { background: #3b8cf8; }
 .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #dde3ec; }
