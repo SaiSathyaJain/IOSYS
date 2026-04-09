@@ -748,6 +748,7 @@ function AdminPortal() {
                         </table>
                         {entries.length > INWARD_PAGE_SIZE && (() => {
                             const totalPages = Math.ceil(entries.length / INWARD_PAGE_SIZE);
+                            const pct = totalPages > 1 ? ((inwardPage - 1) / (totalPages - 1)) * 100 : 0;
                             return (
                                 <div className="table-pagination">
                                     <span className="table-note">
@@ -755,14 +756,17 @@ function AdminPortal() {
                                     </span>
                                     <div className="slider-pagination">
                                         <button className="page-arrow" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>
-                                        <input
-                                            type="range"
-                                            className="page-slider"
-                                            min={1} max={totalPages} value={inwardPage}
-                                            onChange={e => setInwardPage(Number(e.target.value))}
-                                        />
+                                        <div className="slider-wrap">
+                                            <input
+                                                type="range"
+                                                className="page-slider"
+                                                min={1} max={totalPages} value={inwardPage}
+                                                style={{ '--pct': `${pct}%` }}
+                                                onChange={e => setInwardPage(Number(e.target.value))}
+                                            />
+                                        </div>
                                         <button className="page-arrow" disabled={inwardPage === totalPages} onClick={() => setInwardPage(p => p + 1)}>›</button>
-                                        <span className="page-label">Page {inwardPage} / {totalPages}</span>
+                                        <span className="page-badge">{inwardPage} <span className="page-of">/ {totalPages}</span></span>
                                     </div>
                                 </div>
                             );

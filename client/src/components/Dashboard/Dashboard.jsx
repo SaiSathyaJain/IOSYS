@@ -555,6 +555,7 @@ function Dashboard() {
                                             </table>
                                             {teamEntries.length > PAGE_SIZE && (() => {
                                                 const totalPages = Math.ceil(teamEntries.length / PAGE_SIZE);
+                                                const pct = totalPages > 1 ? ((inwardPage - 1) / (totalPages - 1)) * 100 : 0;
                                                 return (
                                                     <div className="table-pagination">
                                                         <span className="table-note">
@@ -562,9 +563,11 @@ function Dashboard() {
                                                         </span>
                                                         <div className="slider-pagination">
                                                             <button className="page-arrow" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>
-                                                            <input type="range" className="page-slider" min={1} max={totalPages} value={inwardPage} onChange={e => setInwardPage(Number(e.target.value))} />
+                                                            <div className="slider-wrap">
+                                                                <input type="range" className="page-slider" min={1} max={totalPages} value={inwardPage} style={{ '--pct': `${pct}%` }} onChange={e => setInwardPage(Number(e.target.value))} />
+                                                            </div>
                                                             <button className="page-arrow" disabled={inwardPage === totalPages} onClick={() => setInwardPage(p => p + 1)}>›</button>
-                                                            <span className="page-label">Page {inwardPage} / {totalPages}</span>
+                                                            <span className="page-badge">{inwardPage} <span className="page-of">/ {totalPages}</span></span>
                                                         </div>
                                                     </div>
                                                 );
@@ -611,6 +614,7 @@ function Dashboard() {
                                             </table>
                                             {teamOutward.length > PAGE_SIZE && (() => {
                                                 const totalPages = Math.ceil(teamOutward.length / PAGE_SIZE);
+                                                const pct = totalPages > 1 ? ((outwardPage - 1) / (totalPages - 1)) * 100 : 0;
                                                 return (
                                                     <div className="table-pagination">
                                                         <span className="table-note">
@@ -618,9 +622,11 @@ function Dashboard() {
                                                         </span>
                                                         <div className="slider-pagination">
                                                             <button className="page-arrow" disabled={outwardPage === 1} onClick={() => setOutwardPage(p => p - 1)}>‹</button>
-                                                            <input type="range" className="page-slider" min={1} max={totalPages} value={outwardPage} onChange={e => setOutwardPage(Number(e.target.value))} />
+                                                            <div className="slider-wrap">
+                                                                <input type="range" className="page-slider" min={1} max={totalPages} value={outwardPage} style={{ '--pct': `${pct}%` }} onChange={e => setOutwardPage(Number(e.target.value))} />
+                                                            </div>
                                                             <button className="page-arrow" disabled={outwardPage === totalPages} onClick={() => setOutwardPage(p => p + 1)}>›</button>
-                                                            <span className="page-label">Page {outwardPage} / {totalPages}</span>
+                                                            <span className="page-badge">{outwardPage} <span className="page-of">/ {totalPages}</span></span>
                                                         </div>
                                                     </div>
                                                 );
