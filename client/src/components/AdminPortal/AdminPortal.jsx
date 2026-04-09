@@ -710,8 +710,8 @@ function AdminPortal() {
                                         </td>
                                         <td>{entry.means || '-'}</td>
                                         <td>{entry.particularsFromWhom}</td>
-                                        <td className="subject-cell" title={entry.subject}>
-                                            <div className="subject-text">{entry.subject}</div>
+                                        <td className="subject-cell">
+                                            <div className="subject-text" title={entry.subject}>{entry.subject}</div>
                                         </td>
                                         <td>
                                             {entry.assignedTeam ? (
