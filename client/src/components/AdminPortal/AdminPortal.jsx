@@ -35,6 +35,12 @@ function AdminPortal() {
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showReassignModal, setShowReassignModal] = useState(false);
+    const [closingModal, setClosingModal] = useState(null); // 'details' | 'reassign' | 'form' | 'notes'
+
+    const closeWithAnimation = (which, fn) => {
+        setClosingModal(which);
+        setTimeout(() => { setClosingModal(null); fn(); }, 190);
+    };
     const [reassignData, setReassignData] = useState({
         assignedTeam: '',
         assignedToEmail: '',
@@ -548,11 +554,11 @@ function AdminPortal() {
 
             {/* Create Entry Modal */}
             {showForm && (
-                <div className="modal-overlay" onClick={() => { setShowForm(false); resetForm(); }}>
+                <div className={`modal-overlay${closingModal === 'form' ? ' closing' : ''}`} onClick={() => closeWithAnimation('form', () => { setShowForm(false); resetForm(); })}>
                     <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3><Plus size={20} /> Create New Inward Entry</h3>
-                            <button className="btn-close" onClick={() => { setShowForm(false); resetForm(); }}>
+                            <button className="btn-close" onClick={() => closeWithAnimation('form', () => { setShowForm(false); resetForm(); })}>
                                 <X size={20} />
                             </button>
                         </div>
@@ -646,7 +652,7 @@ function AdminPortal() {
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</button>
+                                <button type="button" className="btn btn-secondary" onClick={() => closeWithAnimation('form', () => { setShowForm(false); resetForm(); })}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">
                                     <Check size={18} /> Create Entry
                                 </button>
@@ -777,11 +783,11 @@ function AdminPortal() {
 
             {/* Details Modal */}
             {showModal && selectedEntry && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                <div className={`modal-overlay${closingModal === 'details' ? ' closing' : ''}`} onClick={() => closeWithAnimation('details', () => setShowModal(false))}>
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3><FileText size={20} /> Entry Details</h3>
-                            <button className="btn-close" onClick={() => setShowModal(false)}>
+                            <button className="btn-close" onClick={() => closeWithAnimation('details', () => setShowModal(false))}>
                                 <X size={20} />
                             </button>
                         </div>
@@ -846,10 +852,9 @@ function AdminPortal() {
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
+                            <button className="btn btn-secondary" onClick={() => closeWithAnimation('details', () => setShowModal(false))}>Close</button>
                             <button className="btn btn-primary" onClick={() => {
-                                setShowModal(false);
-                                openReassignModal(selectedEntry);
+                                closeWithAnimation('details', () => { setShowModal(false); openReassignModal(selectedEntry); });
                             }}>
                                 <Edit3 size={16} /> {selectedEntry?.assignedTeam ? 'Reassign' : 'Assign'}
                             </button>
@@ -860,11 +865,11 @@ function AdminPortal() {
 
             {/* Reassign Modal */}
             {showReassignModal && selectedEntry && (
-                <div className="modal-overlay" onClick={() => setShowReassignModal(false)}>
+                <div className={`modal-overlay${closingModal === 'reassign' ? ' closing' : ''}`} onClick={() => closeWithAnimation('reassign', () => setShowReassignModal(false))}>
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3><Edit3 size={20} /> {selectedEntry?.assignedTeam ? 'Reassign Entry' : 'Assign Entry'}</h3>
-                            <button className="btn-close" onClick={() => setShowReassignModal(false)}>
+                            <button className="btn-close" onClick={() => closeWithAnimation('reassign', () => setShowReassignModal(false))}>
                                 <X size={20} />
                             </button>
                         </div>
@@ -901,7 +906,7 @@ function AdminPortal() {
 
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowReassignModal(false)}>Cancel</button>
+                                <button type="button" className="btn btn-secondary" onClick={() => closeWithAnimation('reassign', () => setShowReassignModal(false))}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">
                                     <Check size={16} /> {selectedEntry?.assignedTeam ? 'Reassign' : 'Assign'}
                                 </button>
@@ -957,11 +962,11 @@ function AdminPortal() {
 
             {/* Notes Drawer */}
             {showNotesForm && (
-                <div className="modal-overlay ap-drawer-overlay" onClick={() => setShowNotesForm(false)}>
+                <div className={`modal-overlay ap-drawer-overlay${closingModal === 'notes' ? ' closing' : ''}`} onClick={() => closeWithAnimation('notes', () => setShowNotesForm(false))}>
                     <div className="ap-notes-drawer" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3><FileText size={18} /> Add Note</h3>
-                            <button className="btn-close" onClick={() => setShowNotesForm(false)}>
+                            <button className="btn-close" onClick={() => closeWithAnimation('notes', () => setShowNotesForm(false))}>
                                 <X size={20} />
                             </button>
                         </div>
@@ -1013,7 +1018,7 @@ function AdminPortal() {
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowNotesForm(false)}>Cancel</button>
+                                <button type="button" className="btn btn-secondary" onClick={() => closeWithAnimation('notes', () => setShowNotesForm(false))}>Cancel</button>
                                 <button type="submit" className="btn btn-primary" disabled={notesLoading}>
                                     <Check size={16} /> {notesLoading ? 'Saving…' : 'Save Note'}
                                 </button>
