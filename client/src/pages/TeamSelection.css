@@ -121,6 +121,15 @@
     transition: transform 0.3s;
 }
 
+.team-card.glass-card.interactive:hover {
+    animation-play-state: paused;
+    transform: translateY(-8px) scale(1.02);
+    box-shadow:
+        0 0 0 1.5px var(--team-color),
+        0 0 32px 8px color-mix(in srgb, var(--team-color) 40%, transparent),
+        0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
 .team-card:hover .team-icon-container {
     transform: scale(1.1);
 }

@@ -53,7 +53,7 @@ const TeamSelection = () => {
                         <div
                             key={team.id}
                             className="team-card glass-card interactive animate-stagger-3"
-                            style={{ animationDelay: `${(idx * 0.1) + 0.2}s` }}
+                            style={{ animationDelay: `${(idx * 0.1) + 0.2}s`, '--team-color': team.color }}
                             onClick={() => navigate(`/team/${team.id}`)}
                         >
                             <div
