@@ -606,13 +606,33 @@
     white-space: nowrap;
 }
 
+.table-show-more {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--border);
+}
+
 .table-note {
-    text-align: center;
     font-size: 0.8rem;
     color: var(--text-secondary);
-    padding: 0.875rem;
     margin: 0;
-    border-top: 1px solid var(--border);
+}
+
+.btn-show-more {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.78rem;
+    color: var(--primary, #3b82f6);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-show-more:hover {
+    background: rgba(59,130,246,0.08);
 }
 
 /* ── Badges ── */

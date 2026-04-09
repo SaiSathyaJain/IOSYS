@@ -53,6 +53,8 @@ function Dashboard() {
     const [teamEntries, setTeamEntries] = useState([]);
     const [teamOutward, setTeamOutward] = useState([]);
     const [detailLoading, setDetailLoading] = useState(false);
+    const [showAllInward, setShowAllInward] = useState(false);
+    const [showAllOutward, setShowAllOutward] = useState(false);
     const [allEntries, setAllEntries] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -94,6 +96,8 @@ function Dashboard() {
     const loadTeamDetail = async (teamName) => {
         setDetailLoading(true);
         setSelectedTeam(teamName);
+        setShowAllInward(false);
+        setShowAllOutward(false);
         try {
             const [detailRes, inwardRes, outwardRes] = await Promise.all([
                 dashboardAPI.getTeamStats(teamName),
@@ -533,7 +537,7 @@ function Dashboard() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {teamEntries.slice(0, 10).map(entry => (
+                                                    {(showAllInward ? teamEntries : teamEntries.slice(0, 10)).map(entry => (
                                                         <tr key={entry.id}>
                                                             <td><strong>{entry.inwardNo}</strong></td>
                                                             <td className="subject-cell">{entry.subject}</td>
@@ -549,7 +553,14 @@ function Dashboard() {
                                                 </tbody>
                                             </table>
                                             {teamEntries.length > 10 && (
-                                                <p className="table-note">Showing 10 of {teamEntries.length} entries</p>
+                                                <div className="table-show-more">
+                                                    <span className="table-note">
+                                                        Showing {showAllInward ? teamEntries.length : 10} of {teamEntries.length} entries
+                                                    </span>
+                                                    <button className="btn-show-more" onClick={() => setShowAllInward(v => !v)}>
+                                                        {showAllInward ? 'Show less ↑' : `Show all ${teamEntries.length} ↓`}
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     )}
@@ -580,7 +591,7 @@ function Dashboard() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {teamOutward.slice(0, 10).map(entry => (
+                                                    {(showAllOutward ? teamOutward : teamOutward.slice(0, 10)).map(entry => (
                                                         <tr key={entry.id}>
                                                             <td><strong>{entry.outwardNo}</strong></td>
                                                             <td className="subject-cell">{entry.subject}</td>
@@ -592,7 +603,14 @@ function Dashboard() {
                                                 </tbody>
                                             </table>
                                             {teamOutward.length > 10 && (
-                                                <p className="table-note">Showing 10 of {teamOutward.length} entries</p>
+                                                <div className="table-show-more">
+                                                    <span className="table-note">
+                                                        Showing {showAllOutward ? teamOutward.length : 10} of {teamOutward.length} entries
+                                                    </span>
+                                                    <button className="btn-show-more" onClick={() => setShowAllOutward(v => !v)}>
+                                                        {showAllOutward ? 'Show less ↑' : `Show all ${teamOutward.length} ↓`}
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     )}
