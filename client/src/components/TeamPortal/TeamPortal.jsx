@@ -759,12 +759,12 @@ function TeamPortal() {
                                         </div>
                                     </div>
                                     <div className="form-group">
-                                        <label className="form-label">To Whom *</label>
-                                        <input type="text" name="toWhom" className="form-input" value={formData.toWhom} onChange={handleChange} required placeholder="Recipient name or organization"/>
+                                        <label className="form-label">To Whom</label>
+                                        <input type="text" name="toWhom" className="form-input" value={formData.toWhom} onChange={handleChange} placeholder="Recipient name or organization"/>
                                     </div>
                                     <div className="form-group">
-                                        <label className="form-label">Subject *</label>
-                                        <input type="text" name="subject" className="form-input" value={formData.subject} onChange={handleChange} required placeholder="Subject"/>
+                                        <label className="form-label">Subject</label>
+                                        <input type="text" name="subject" className="form-input" value={formData.subject} onChange={handleChange} placeholder="Subject"/>
                                     </div>
                                     <div className="grid-2">
                                         <div className="form-group">
@@ -772,8 +772,8 @@ function TeamPortal() {
                                             <input type="text" name="sentBy" className="form-input" value={formData.sentBy} onChange={handleChange} required placeholder="Your name"/>
                                         </div>
                                         <div className="form-group">
-                                            <label className="form-label">File Reference</label>
-                                            <input type="text" name="fileReference" className="form-input" value={formData.fileReference} onChange={handleChange} placeholder="Optional"/>
+                                            <label className="form-label">File Reference *</label>
+                                            <input type="text" name="fileReference" className="form-input" value={formData.fileReference} onChange={handleChange} required placeholder="e.g. F/2024/001"/>
                                         </div>
                                     </div>
                                     <div className="grid-2">
