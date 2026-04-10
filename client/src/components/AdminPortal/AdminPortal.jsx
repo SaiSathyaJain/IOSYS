@@ -35,7 +35,8 @@ function AdminPortal() {
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showReassignModal, setShowReassignModal] = useState(false);
-    const [closingModal, setClosingModal] = useState(null); // 'details' | 'reassign' | 'form' | 'notes'
+    const [closingModal, setClosingModal] = useState(null); // 'details' | 'reassign' | 'form' | 'notes' | 'assignSuccess'
+    const [assignSuccess, setAssignSuccess] = useState(null); // { inwardNo, team, email, subject }
 
     const closeWithAnimation = (which, fn) => {
         setClosingModal(which);
@@ -160,9 +161,15 @@ function AdminPortal() {
                     assignmentInstructions: formData.assignmentInstructions,
                     dueDate: formData.dueDate
                 });
+                setAssignSuccess({
+                    inwardNo: response.data.inwardNo,
+                    team: formData.assignedTeam,
+                    email: formData.assignedToEmail,
+                    subject: formData.subject,
+                });
+            } else {
+                alert(message);
             }
-
-            alert(message);
             setShowForm(false);
             resetForm();
             loadData();
@@ -196,11 +203,12 @@ function AdminPortal() {
                 }
             }
 
-            if (response.data.emailStatus && response.data.emailStatus.startsWith('failed')) {
-                alert(message);
-            } else {
-                alert(response.data.message || message);
-            }
+            setAssignSuccess({
+                inwardNo: selectedEntry.inwardNo,
+                team: reassignData.assignedTeam,
+                email: reassignData.assignedToEmail,
+                subject: selectedEntry.subject,
+            });
             setShowReassignModal(false);
             setSelectedEntry(null);
             loadData();
@@ -780,6 +788,47 @@ function AdminPortal() {
                     </div>
                 )}
             </div>
+
+            {/* Assignment Success Modal */}
+            {assignSuccess && (
+                <div className={`modal-overlay${closingModal === 'assignSuccess' ? ' closing' : ''}`}
+                    onClick={() => closeWithAnimation('assignSuccess', () => setAssignSuccess(null))}>
+                    <div className="modal" style={{maxWidth: 460}} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header" style={{borderBottom: '1px solid var(--border-color)'}}>
+                            <h2 className="modal-title" style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                                <span style={{color:'#22c55e',display:'flex'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+                                Entry Assigned Successfully
+                            </h2>
+                            <button className="btn-close" onClick={() => closeWithAnimation('assignSuccess', () => setAssignSuccess(null))}>×</button>
+                        </div>
+                        <div className="modal-body">
+                            <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+                                <div className="detail-item">
+                                    <label>Inward No.</label>
+                                    <span style={{fontFamily:'monospace',fontWeight:700,color:'var(--primary)'}}>{assignSuccess.inwardNo}</span>
+                                </div>
+                                <div className="detail-item">
+                                    <label>Subject</label>
+                                    <span>{assignSuccess.subject}</span>
+                                </div>
+                                <div className="detail-item">
+                                    <label>Assigned To</label>
+                                    <span className="badge badge-team">{assignSuccess.team}</span>
+                                </div>
+                                {assignSuccess.email && (
+                                    <div className="detail-item">
+                                        <label>Email Notified</label>
+                                        <span>{assignSuccess.email}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-primary" onClick={() => closeWithAnimation('assignSuccess', () => setAssignSuccess(null))}>Done</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Details Modal */}
             {showModal && selectedEntry && (
