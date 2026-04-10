@@ -457,6 +457,7 @@
 .tp-ac-btn:hover { opacity: 0.65; }
 .tp-ac-btn.view     { color: #5a6478; }
 .tp-ac-btn.complete { color: #10B981; }
+.tp-ac-btn.remarks  { color: #f59e0b; }
 .tp-ac-btn.forward  { color: #5a6478; }
 
 .tp-load-more {

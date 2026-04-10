@@ -115,6 +115,20 @@ inwardRouter.put('/:id/assign', async (c) => {
     }
 });
 
+// Update remarks
+inwardRouter.put('/:id/remarks', async (c) => {
+    try {
+        const id = c.req.param('id');
+        const { remarks } = await c.req.json();
+        const updatedAt = new Date().toISOString();
+        await c.env.DB.prepare('UPDATE inward SET remarks = ?, updated_at = ? WHERE id = ?')
+            .bind(remarks, updatedAt, id).run();
+        return c.json({ success: true, message: 'Remarks updated successfully' });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
 // Update status
 inwardRouter.put('/:id/status', async (c) => {
     try {

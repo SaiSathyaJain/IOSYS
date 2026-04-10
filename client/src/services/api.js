@@ -14,7 +14,8 @@ export const inwardAPI = {
     getAll: () => api.get('/inward'),
     create: (data) => api.post('/inward', data),
     assign: (id, data) => api.put(`/inward/${id}/assign`, data),
-    updateStatus: (id, status, fileReference) => api.put(`/inward/${id}/status`, { assignmentStatus: status, ...(fileReference ? { fileReference } : {}) })
+    updateStatus: (id, status, fileReference) => api.put(`/inward/${id}/status`, { assignmentStatus: status, ...(fileReference ? { fileReference } : {}) }),
+    updateRemarks: (id, remarks) => api.put(`/inward/${id}/remarks`, { remarks })
 };
 
 // Outward API

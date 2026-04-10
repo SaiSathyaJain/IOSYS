@@ -35,6 +35,8 @@ function TeamPortal() {
     const [showInwardModal, setShowInwardModal] = useState(false);
     const [completeModal, setCompleteModal] = useState(null); // holds entry id
     const [completeFileRef, setCompleteFileRef] = useState('');
+    const [remarksModal, setRemarksModal] = useState(null); // holds entry
+    const [remarksText, setRemarksText] = useState('');
     const [selectedInwardEntry, setSelectedInwardEntry] = useState(null);
     const [completedInward, setCompletedInward] = useState([]);
     const [formData, setFormData] = useState({
@@ -140,6 +142,22 @@ function TeamPortal() {
             loadData();
         } catch (error) {
             alert('Error marking complete: ' + error.message);
+        }
+    };
+
+    const openRemarksModal = (entry) => {
+        setRemarksText(entry.remarks || '');
+        setRemarksModal(entry);
+    };
+
+    const submitRemarks = async (e) => {
+        e.preventDefault();
+        try {
+            await inwardAPI.updateRemarks(remarksModal.id, remarksText);
+            setRemarksModal(null);
+            loadData();
+        } catch (error) {
+            alert('Error saving remarks: ' + error.message);
         }
     };
 
@@ -413,6 +431,7 @@ function TeamPortal() {
                                         <div className="tp-ac-actions">
                                             <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
                                             <button className="tp-ac-btn complete" onClick={() => handleMarkComplete(entry.id)}>MARK COMPLETE</button>
+                                            <button className="tp-ac-btn remarks" onClick={() => openRemarksModal(entry)}>REMARKS</button>
                                             <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>FORWARD</button>
                                         </div>
                                     </div>
@@ -864,6 +883,40 @@ function TeamPortal() {
                             )}
                             <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>Close</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Remarks Modal */}
+            {remarksModal && (
+                <div className="modal-overlay" onClick={() => setRemarksModal(null)}>
+                    <div className="modal" style={{maxWidth: 460}} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Remarks — {remarksModal.inwardNo}</h2>
+                            <button className="modal-close" onClick={() => setRemarksModal(null)}><X size={18}/></button>
+                        </div>
+                        <form onSubmit={submitRemarks}>
+                            <div style={{padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+                                <p style={{margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)'}}>
+                                    {remarksModal.subject}
+                                </p>
+                                <div className="form-group" style={{margin: 0}}>
+                                    <label className="form-label">Remarks</label>
+                                    <textarea
+                                        className="form-textarea"
+                                        rows={5}
+                                        placeholder="Add your remarks here..."
+                                        value={remarksText}
+                                        onChange={e => setRemarksText(e.target.value)}
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setRemarksModal(null)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Save Remarks</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
