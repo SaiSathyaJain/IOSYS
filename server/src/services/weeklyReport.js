@@ -177,22 +177,17 @@ export async function sendWeeklyReport(env) {
         return;
     }
 
-    // Fetch only NEW inward entries not yet reported to boss
+    // Fetch pending inward entries (not completed)
     const { results: inwardRows } = await db.prepare(
-        `SELECT id, inward_no, subject, particulars_from_whom, sign_receipt_datetime, assigned_team, assignment_status
-         FROM inward WHERE boss_notified = 0 AND assignment_status != 'Completed' ORDER BY id ASC`
+        `SELECT inward_no, subject, particulars_from_whom, sign_receipt_datetime, assigned_team, assignment_status
+         FROM inward WHERE assignment_status != 'Completed' ORDER BY id ASC`
     ).all();
 
-    // Fetch only NEW outward entries not yet reported to boss
+    // Fetch open outward entries
     const { results: outwardRows } = await db.prepare(
-        `SELECT id, outward_no, subject, to_whom, sign_receipt_datetime, due_date, remarks
-         FROM outward WHERE boss_notified = 0 AND case_closed = 0 ORDER BY id ASC`
+        `SELECT outward_no, subject, to_whom, sign_receipt_datetime, due_date, remarks
+         FROM outward WHERE case_closed = 0 ORDER BY id ASC`
     ).all();
-
-    if (inwardRows.length === 0 && outwardRows.length === 0) {
-        console.log('No new entries to report — skipping boss email');
-        return;
-    }
 
     const generatedDate = new Date().toLocaleDateString('en-IN', {
         weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
@@ -207,15 +202,5 @@ export async function sendWeeklyReport(env) {
         env
     });
 
-    // Mark all included entries as notified so they don't appear in future reports
-    if (inwardRows.length > 0) {
-        const inwardIds = inwardRows.map(r => r.id).join(',');
-        await db.prepare(`UPDATE inward SET boss_notified = 1 WHERE id IN (${inwardIds})`).run();
-    }
-    if (outwardRows.length > 0) {
-        const outwardIds = outwardRows.map(r => r.id).join(',');
-        await db.prepare(`UPDATE outward SET boss_notified = 1 WHERE id IN (${outwardIds})`).run();
-    }
-
-    console.log(`Weekly report sent to ${bossEmail} — ${inwardRows.length} inward, ${outwardRows.length} outward new entries`);
+    console.log(`Weekly report sent to ${bossEmail} — ${inwardRows.length} inward, ${outwardRows.length} outward entries`);
 }

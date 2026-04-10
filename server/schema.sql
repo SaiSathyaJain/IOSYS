@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS inward (
     due_date TEXT,
     completion_date TEXT,
     remarks TEXT,
-    boss_notified INTEGER DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -37,7 +36,6 @@ CREATE TABLE IF NOT EXISTS outward (
     created_by_team TEXT,
     team_member_email TEXT,
     remarks TEXT,
-    boss_notified INTEGER DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (linked_inward_id) REFERENCES inward(id)
