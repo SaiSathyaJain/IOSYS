@@ -37,6 +37,7 @@ function AdminPortal() {
     const [showReassignModal, setShowReassignModal] = useState(false);
     const [closingModal, setClosingModal] = useState(null); // 'details' | 'reassign' | 'form' | 'notes' | 'assignSuccess'
     const [assignSuccess, setAssignSuccess] = useState(null); // { inwardNo, team, email, subject }
+    const [createSuccess, setCreateSuccess] = useState(null); // { inwardNo, subject } — no team assigned
 
     const closeWithAnimation = (which, fn) => {
         setClosingModal(which);
@@ -168,7 +169,10 @@ function AdminPortal() {
                     subject: formData.subject,
                 });
             } else {
-                alert(message);
+                setCreateSuccess({
+                    inwardNo: response.data.inwardNo,
+                    subject: formData.subject,
+                });
             }
             setShowForm(false);
             resetForm();
@@ -788,6 +792,41 @@ function AdminPortal() {
                     </div>
                 )}
             </div>
+
+            {/* Create Success Modal (no team assigned) */}
+            {createSuccess && (
+                <div className={`modal-overlay${closingModal === 'createSuccess' ? ' closing' : ''}`}
+                    onClick={() => closeWithAnimation('createSuccess', () => setCreateSuccess(null))}>
+                    <div className="modal" style={{maxWidth: 420}} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title" style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                                <span style={{color:'#22c55e',display:'flex'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+                                Entry Created Successfully
+                            </h2>
+                            <button className="btn-close" onClick={() => closeWithAnimation('createSuccess', () => setCreateSuccess(null))}>×</button>
+                        </div>
+                        <div className="modal-body">
+                            <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+                                <div className="detail-item">
+                                    <label>Inward No.</label>
+                                    <span style={{fontFamily:'monospace',fontWeight:700,color:'var(--primary)'}}>{createSuccess.inwardNo}</span>
+                                </div>
+                                <div className="detail-item">
+                                    <label>Subject</label>
+                                    <span>{createSuccess.subject}</span>
+                                </div>
+                                <div className="detail-item">
+                                    <label>Assignment</label>
+                                    <span style={{color:'var(--text-secondary)'}}>Not assigned — use the Assign button to assign a team later.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-primary" onClick={() => closeWithAnimation('createSuccess', () => setCreateSuccess(null))}>Done</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Assignment Success Modal */}
             {assignSuccess && (
