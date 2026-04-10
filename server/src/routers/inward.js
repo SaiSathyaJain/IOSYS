@@ -119,14 +119,18 @@ inwardRouter.put('/:id/assign', async (c) => {
 inwardRouter.put('/:id/status', async (c) => {
     try {
         const id = c.req.param('id');
-        const { assignmentStatus } = await c.req.json();
+        const { assignmentStatus, fileReference } = await c.req.json();
         const updatedAt = new Date().toISOString();
-        let completionDate = null;
 
         if (assignmentStatus === 'Completed') {
-            completionDate = new Date().toISOString();
-            await c.env.DB.prepare('UPDATE inward SET assignment_status = ?, completion_date = ?, updated_at = ? WHERE id = ?')
-                .bind(assignmentStatus, completionDate, updatedAt, id).run();
+            const completionDate = new Date().toISOString();
+            if (fileReference) {
+                await c.env.DB.prepare('UPDATE inward SET assignment_status = ?, completion_date = ?, file_reference = ?, updated_at = ? WHERE id = ?')
+                    .bind(assignmentStatus, completionDate, fileReference, updatedAt, id).run();
+            } else {
+                await c.env.DB.prepare('UPDATE inward SET assignment_status = ?, completion_date = ?, updated_at = ? WHERE id = ?')
+                    .bind(assignmentStatus, completionDate, updatedAt, id).run();
+            }
         } else {
             await c.env.DB.prepare('UPDATE inward SET assignment_status = ?, updated_at = ? WHERE id = ?')
                 .bind(assignmentStatus, updatedAt, id).run();

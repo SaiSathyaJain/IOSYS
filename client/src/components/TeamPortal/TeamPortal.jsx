@@ -33,6 +33,8 @@ function TeamPortal() {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [showInwardModal, setShowInwardModal] = useState(false);
+    const [completeModal, setCompleteModal] = useState(null); // holds entry id
+    const [completeFileRef, setCompleteFileRef] = useState('');
     const [selectedInwardEntry, setSelectedInwardEntry] = useState(null);
     const [completedInward, setCompletedInward] = useState([]);
     const [formData, setFormData] = useState({
@@ -122,6 +124,22 @@ function TeamPortal() {
             loadData();
         } catch (error) {
             alert('Error updating status: ' + error.message);
+        }
+    };
+
+    const handleMarkComplete = (id) => {
+        setCompleteFileRef('');
+        setCompleteModal(id);
+    };
+
+    const submitMarkComplete = async (e) => {
+        e.preventDefault();
+        try {
+            await inwardAPI.updateStatus(completeModal, 'Completed', completeFileRef);
+            setCompleteModal(null);
+            loadData();
+        } catch (error) {
+            alert('Error marking complete: ' + error.message);
         }
     };
 
@@ -394,7 +412,7 @@ function TeamPortal() {
                                         <p className="tp-ac-from">From: <strong>{entry.particularsFromWhom}</strong>{entry.assignmentInstructions && <> · <em>{entry.assignmentInstructions}</em></>}</p>
                                         <div className="tp-ac-actions">
                                             <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
-                                            <button className="tp-ac-btn complete" onClick={() => handleStatusUpdate(entry.id, 'Completed')}>MARK COMPLETE</button>
+                                            <button className="tp-ac-btn complete" onClick={() => handleMarkComplete(entry.id)}>MARK COMPLETE</button>
                                             <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>FORWARD</button>
                                         </div>
                                     </div>
@@ -566,7 +584,7 @@ function TeamPortal() {
                                             </p>
                                             <div className="tp-ac-actions">
                                                 <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
-                                                <button className="tp-ac-btn complete" onClick={() => handleStatusUpdate(entry.id, 'Completed')}>MARK COMPLETE</button>
+                                                <button className="tp-ac-btn complete" onClick={() => handleMarkComplete(entry.id)}>MARK COMPLETE</button>
                                                 <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>FORWARD</button>
                                             </div>
                                         </div>
@@ -846,6 +864,41 @@ function TeamPortal() {
                             )}
                             <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>Close</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Mark Complete — File Reference Modal */}
+            {completeModal && (
+                <div className="modal-overlay" onClick={() => setCompleteModal(null)}>
+                    <div className="modal" style={{maxWidth: 420}} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title"><CheckCircle2 size={16}/> Mark as Complete</h2>
+                            <button className="modal-close" onClick={() => setCompleteModal(null)}><X size={18}/></button>
+                        </div>
+                        <form onSubmit={submitMarkComplete}>
+                            <div style={{padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                                <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}>
+                                    Please enter the file reference before marking this entry as complete.
+                                </p>
+                                <div className="form-group" style={{margin: 0}}>
+                                    <label className="form-label">File Reference *</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        placeholder="e.g. F/2024/001"
+                                        value={completeFileRef}
+                                        onChange={e => setCompleteFileRef(e.target.value)}
+                                        required
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setCompleteModal(null)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Mark Complete</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
