@@ -28,6 +28,8 @@ function TeamPortal() {
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [pendingSearch, setPendingSearch] = useState('');
+    const [completedSearch, setCompletedSearch] = useState('');
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [showInwardModal, setShowInwardModal] = useState(false);
@@ -192,13 +194,27 @@ function TeamPortal() {
         return diffDays >= 0 && diffDays <= 3;
     };
 
-    const getFilteredPending = () => {
-        switch (pendingFilter) {
-            case 'overdue': return pendingInward.filter(e => isOverdue(e.dueDate));
-            case 'recent':  return [...pendingInward].slice(0, 5);
-            default:        return pendingInward;
-        }
+    const applyInwardSearch = (list, term) => {
+        if (!term) return list;
+        const t = term.toLowerCase();
+        return list.filter(e =>
+            e.inwardNo?.toLowerCase().includes(t) ||
+            e.subject?.toLowerCase().includes(t) ||
+            e.particularsFromWhom?.toLowerCase().includes(t)
+        );
     };
+
+    const getFilteredPending = () => {
+        let base;
+        switch (pendingFilter) {
+            case 'overdue': base = pendingInward.filter(e => isOverdue(e.dueDate)); break;
+            case 'recent':  base = [...pendingInward].slice(0, 5); break;
+            default:        base = pendingInward;
+        }
+        return applyInwardSearch(base, pendingSearch);
+    };
+
+    const getFilteredCompleted = () => applyInwardSearch(completedInward, completedSearch);
 
     const overdueCount     = pendingInward.filter(e => isOverdue(e.dueDate)).length;
     const displayedPending = getFilteredPending().slice(0, showLimit);
@@ -294,14 +310,19 @@ function TeamPortal() {
                                 <h3>Completed Assignments</h3>
                                 <span className="tp-count-pill">{completedInward.length}</span>
                             </div>
+                            <div className="tp-search-wrap">
+                                <Search size={13}/>
+                                <input type="text" placeholder="Search completed..."
+                                    value={completedSearch} onChange={e => setCompletedSearch(e.target.value)}/>
+                            </div>
                         </div>
                         {loading ? (
                             <div className="tp-center-state"><Loader2 size={24} className="spin"/></div>
-                        ) : completedInward.length === 0 ? (
-                            <div className="tp-center-state"><CheckCircle2 size={32} style={{opacity:0.3}}/><p>No completed assignments yet.</p></div>
+                        ) : getFilteredCompleted().length === 0 ? (
+                            <div className="tp-center-state"><CheckCircle2 size={32} style={{opacity:0.3}}/><p>{completedSearch ? 'No matches found.' : 'No completed assignments yet.'}</p></div>
                         ) : (
                             <div className="tp-assign-list">
-                                {completedInward.map(entry => (
+                                {getFilteredCompleted().map(entry => (
                                     <div key={entry.id} className="tp-assign-card">
                                         <div className="tp-ac-row">
                                             <div className="tp-ac-badges">
@@ -332,19 +353,26 @@ function TeamPortal() {
                                 <span className="tp-count-pill">{pendingInward.length}</span>
                                 {overdueCount > 0 && <span className="tp-overdue-pill">{overdueCount} OVERDUE</span>}
                             </div>
-                            <div className="tp-filter-tabs">
-                                {['all','overdue','recent'].map(f => (
-                                    <button key={f} className={`tp-ftab${pendingFilter===f?' active':''}`}
-                                        onClick={() => { setPendingFilter(f); setShowLimit(5); }}>
-                                        {f.charAt(0).toUpperCase()+f.slice(1)}
-                                    </button>
-                                ))}
+                            <div className="tp-history-controls">
+                                <div className="tp-filter-tabs">
+                                    {['all','overdue','recent'].map(f => (
+                                        <button key={f} className={`tp-ftab${pendingFilter===f?' active':''}`}
+                                            onClick={() => { setPendingFilter(f); setShowLimit(5); }}>
+                                            {f.charAt(0).toUpperCase()+f.slice(1)}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="tp-search-wrap">
+                                    <Search size={13}/>
+                                    <input type="text" placeholder="Search pending..."
+                                        value={pendingSearch} onChange={e => setPendingSearch(e.target.value)}/>
+                                </div>
                             </div>
                         </div>
                         {loading ? (
                             <div className="tp-center-state"><Loader2 size={24} className="spin"/></div>
                         ) : displayedPending.length === 0 ? (
-                            <div className="tp-center-state"><CheckCircle2 size={32} style={{opacity:0.3}}/><p>No {pendingFilter !== 'all' ? pendingFilter : 'pending'} assignments.</p></div>
+                            <div className="tp-center-state"><CheckCircle2 size={32} style={{opacity:0.3}}/><p>{pendingSearch ? 'No matches found.' : `No ${pendingFilter !== 'all' ? pendingFilter : 'pending'} assignments.`}</p></div>
                         ) : (
                             <div className="tp-assign-list">
                                 {displayedPending.map(entry => (
@@ -489,14 +517,21 @@ function TeamPortal() {
                                     <span className="tp-count-pill">{pendingInward.length}</span>
                                     {overdueCount > 0 && <span className="tp-overdue-pill">{overdueCount} OVERDUE</span>}
                                 </div>
-                                <div className="tp-filter-tabs">
-                                    {['all','overdue','recent'].map(f => (
-                                        <button key={f}
-                                            className={`tp-ftab${pendingFilter===f?' active':''}`}
-                                            onClick={() => { setPendingFilter(f); setShowLimit(5); }}>
-                                            {f.charAt(0).toUpperCase()+f.slice(1)}
-                                        </button>
-                                    ))}
+                                <div className="tp-history-controls">
+                                    <div className="tp-filter-tabs">
+                                        {['all','overdue','recent'].map(f => (
+                                            <button key={f}
+                                                className={`tp-ftab${pendingFilter===f?' active':''}`}
+                                                onClick={() => { setPendingFilter(f); setShowLimit(5); }}>
+                                                {f.charAt(0).toUpperCase()+f.slice(1)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="tp-search-wrap">
+                                        <Search size={13}/>
+                                        <input type="text" placeholder="Search pending..."
+                                            value={pendingSearch} onChange={e => setPendingSearch(e.target.value)}/>
+                                    </div>
                                 </div>
                             </div>
 
@@ -505,7 +540,7 @@ function TeamPortal() {
                             ) : displayedPending.length === 0 ? (
                                 <div className="tp-center-state">
                                     <CheckCircle2 size={32} style={{opacity:0.3}}/>
-                                    <p>No {pendingFilter !== 'all' ? pendingFilter : 'pending'} assignments.</p>
+                                    <p>{pendingSearch ? 'No matches found.' : `No ${pendingFilter !== 'all' ? pendingFilter : 'pending'} assignments.`}</p>
                                 </div>
                             ) : (
                                 <div className="tp-assign-list">
