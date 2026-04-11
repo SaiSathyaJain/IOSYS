@@ -74,9 +74,15 @@ function EntryCard({ entry }) {
             </div>
             <div className="chatbot-entry-fields">
                 {fields.map(({ key, label }) => (
-                    <div key={key} className="chatbot-entry-field">
+                    <div key={key} className={`chatbot-entry-field${key === 'subject' ? ' chatbot-entry-field--full' : ''}`}>
                         <span className="chatbot-field-key">{label}</span>
-                        <span className="chatbot-field-val" title={entry[key]}>{entry[key]}</span>
+                        <span
+                            className="chatbot-field-val"
+                            title={entry[key]}
+                            style={key === 'subject' ? { whiteSpace: 'normal', wordBreak: 'break-word' } : {}}
+                        >
+                            {entry[key]}
+                        </span>
                     </div>
                 ))}
             </div>
