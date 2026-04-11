@@ -238,7 +238,7 @@ function ChatBot() {
                             <div className="chatbot-title">IOSYS Assistant</div>
                             <div className="chatbot-subtitle">
                                 <span className="chatbot-live-dot" />
-                                Llama 3.3 · Live data
+                                Nemotron 3 Super · Live data
                             </div>
                         </div>
                     </div>

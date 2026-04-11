@@ -9,8 +9,8 @@ aiRouter.post('/extract', async (c) => {
         if (!text || typeof text !== 'string' || text.trim().length < 5) {
             return c.json({ success: false, message: 'text is required' }, 400);
         }
-        if (!c.env.GROQ_API_KEY) {
-            return c.json({ success: false, message: 'GROQ_API_KEY not configured' }, 500);
+        if (!c.env.OPENROUTER_API_KEY) {
+            return c.json({ success: false, message: 'OPENROUTER_API_KEY not configured' }, 500);
         }
 
         const today = new Date().toISOString().split('T')[0];
@@ -32,14 +32,16 @@ ${text.slice(0, 2000)}
 
 Return ONLY the JSON object:`;
 
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const groqRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${c.env.GROQ_API_KEY}`,
+                'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
                 'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
+                'X-Title': 'IOSYS Assistant',
             },
             body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
+                model: 'nvidia/nemotron-3-super-120b-a12b:free',
                 messages: [{ role: 'user', content: prompt }],
                 max_tokens: 300,
                 temperature: 0.1,
@@ -81,8 +83,8 @@ aiRouter.post('/chat', async (c) => {
             return c.json({ success: false, message: 'messages array required' }, 400);
         }
 
-        if (!c.env.GROQ_API_KEY) {
-            return c.json({ success: false, message: 'GROQ_API_KEY not configured' }, 500);
+        if (!c.env.OPENROUTER_API_KEY) {
+            return c.json({ success: false, message: 'OPENROUTER_API_KEY not configured' }, 500);
         }
 
         // Fetch live context from DB in parallel (reduced limits to save tokens)
@@ -218,14 +220,16 @@ END_ENTRIES_JSON
 
 Rules: valid JSON array, double quotes, no trailing commas, "" for missing values, boolean for "closed", ONE block per reply max.`;
 
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const groqRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${c.env.GROQ_API_KEY}`,
+                'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
                 'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
+                'X-Title': 'IOSYS Assistant',
             },
             body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
+                model: 'nvidia/nemotron-3-super-120b-a12b:free',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     ...messages

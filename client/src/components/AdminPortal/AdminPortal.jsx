@@ -13,7 +13,9 @@ import {
 import ChatBot from '../ChatBot/ChatBot';
 import './AdminPortal.css';
 
-const ALLOWED_EMAIL = 'coeofficeinward@sssihl.edu.in';
+const ADMIN_EMAIL = 'coeofficeinward@sssihl.edu.in';
+const BOSS_EMAIL  = 'controller@sssihl.edu.in';
+const ALLOWED_EMAILS = [ADMIN_EMAIL, BOSS_EMAIL];
 
 function AdminPortal() {
     const navigate = useNavigate();
@@ -407,11 +409,16 @@ function AdminPortal() {
     const handleGoogleSuccess = (credentialResponse) => {
         try {
             const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
-            if (payload.email !== ALLOWED_EMAIL) {
-                alert(`Access denied. Only ${ALLOWED_EMAIL} is authorised.`);
+            if (!ALLOWED_EMAILS.includes(payload.email)) {
+                alert(`Access denied. This portal is restricted to authorised SSSIHL accounts.`);
                 return;
             }
-            const user = { email: payload.email, name: payload.name, picture: payload.picture };
+            const user = {
+                email: payload.email,
+                name: payload.name,
+                picture: payload.picture,
+                role: payload.email === BOSS_EMAIL ? 'boss' : 'admin',
+            };
             localStorage.setItem('adminUser', JSON.stringify(user));
             setAdminUser(user);
         } catch {
@@ -442,11 +449,13 @@ function AdminPortal() {
                             text="signin_with"
                         />
                     </div>
-                    <p className="ap-login-hint">Only <strong>{ALLOWED_EMAIL}</strong> has access.</p>
+                    <p className="ap-login-hint">Restricted to authorised SSSIHL accounts.</p>
                 </div>
             </div>
         );
     }
+
+    const isAdmin = adminUser?.role === 'admin' || adminUser?.email === ADMIN_EMAIL;
 
     const handlePrint = async () => {
         const [yyyy, mm, dd] = printDate.split('-');
@@ -607,16 +616,18 @@ function AdminPortal() {
                     <button className="btn btn-icon-only" onClick={loadData} disabled={loading} title="Refresh">
                         <RefreshCw size={16} className={loading ? 'spin' : ''} />
                     </button>
-                    <button className="btn btn-primary ap-nav-action-btn" onClick={() => setShowForm(true)}>
-                        <Plus size={16} /> New Entry
-                    </button>
+                    {isAdmin && (
+                        <button className="btn btn-primary ap-nav-action-btn" onClick={() => setShowForm(true)}>
+                            <Plus size={16} /> New Entry
+                        </button>
+                    )}
                     <div className="ap-nav-divider" />
                     <button className="ap-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
                         {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
                     </button>
                     <div className="ap-user-pill" style={{ cursor: 'pointer' }} onClick={handleLogout} title="Sign out">
                         <div className="ap-user-info">
-                            <span className="ap-user-role">{adminUser.name || 'Admin'}</span>
+                            <span className="ap-user-role">{adminUser.name || (isAdmin ? 'Admin' : 'Controller')}</span>
                             <span className="ap-user-status">
                                 <span className="ap-online-dot" />
                                 Sign out
@@ -885,9 +896,11 @@ function AdminPortal() {
                                                 <button className="btn-icon" onClick={() => openDetailsModal(entry)} title="View Details">
                                                     <Eye size={16} />
                                                 </button>
-                                                <button className="btn-icon" onClick={() => openReassignModal(entry)} title={entry.assignedTeam ? 'Reassign' : 'Assign'}>
-                                                    <Edit3 size={16} />
-                                                </button>
+                                                {isAdmin && (
+                                                    <button className="btn-icon" onClick={() => openReassignModal(entry)} title={entry.assignedTeam ? 'Reassign' : 'Assign'}>
+                                                        <Edit3 size={16} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -1071,11 +1084,13 @@ function AdminPortal() {
                         </div>
                         <div className="modal-footer">
                             <button className="btn btn-secondary" onClick={() => closeWithAnimation('details', () => setShowModal(false))}>Close</button>
-                            <button className="btn btn-primary" onClick={() => {
-                                closeWithAnimation('details', () => { setShowModal(false); openReassignModal(selectedEntry); });
-                            }}>
-                                <Edit3 size={16} /> {selectedEntry?.assignedTeam ? 'Reassign' : 'Assign'}
-                            </button>
+                            {isAdmin && (
+                                <button className="btn btn-primary" onClick={() => {
+                                    closeWithAnimation('details', () => { setShowModal(false); openReassignModal(selectedEntry); });
+                                }}>
+                                    <Edit3 size={16} /> {selectedEntry?.assignedTeam ? 'Reassign' : 'Assign'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1139,9 +1154,11 @@ function AdminPortal() {
                     <h3 className="card-title">
                         <FileText size={20} /> Notes Register
                     </h3>
-                    <button className="btn btn-primary" onClick={() => setShowNotesForm(true)}>
-                        <Plus size={16} /> Add Note
-                    </button>
+                    {isAdmin && (
+                        <button className="btn btn-primary" onClick={() => setShowNotesForm(true)}>
+                            <Plus size={16} /> Add Note
+                        </button>
+                    )}
                 </div>
                 <div className="notes-tab-bar">
                     <button className={notesTab === 'REGISTRAR' ? 'active' : ''} onClick={() => setNotesTab('REGISTRAR')}>
@@ -1169,9 +1186,11 @@ function AdminPortal() {
                             </div>
                             <div className="note-strip__right">
                                 <span className="note-strip__date">{formatDate(n.date)}</span>
-                                <button className="btn-icon" onClick={() => handleNoteDelete(n.id)} title="Delete">
-                                    <X size={14} />
-                                </button>
+                                {isAdmin && (
+                                    <button className="btn-icon" onClick={() => handleNoteDelete(n.id)} title="Delete">
+                                        <X size={14} />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
