@@ -252,6 +252,7 @@
 }
 .chatbot-entry-badge--outward { background: #ede8ff; color: #7c5de8; }
 .chatbot-entry-badge--inward  { background: #eef2ff; color: #5b45d4; }
+.chatbot-entry-badge--closed  { background: #dcfce7; color: #16a34a; }
 
 .chatbot-entry-fields {
     display: grid;

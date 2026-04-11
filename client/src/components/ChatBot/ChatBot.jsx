@@ -14,19 +14,33 @@ const QUICK_ACTIONS = [
 
 const INITIAL_MESSAGE = {
     role: 'assistant',
-    content: "Hi! I'm your IOSYS Assistant powered by Llama 3.3. I have live access to your entries, team workloads, and activity. What would you like to know?",
+    content: "Sai Ram! I'm your IOSYS Assistant. I have live access to your entries, team workloads, and activity. What would you like to know?",
 };
 
 // Parse a line like: [OTW/2026/001] 12 Apr 2026 | To: Dean | Subject: ... | Sent by: X | Team: UG
+// Normalize key names so display is consistent regardless of AI casing
+const KEY_ALIASES = {
+    'sent by': 'Sent By', 'sentby': 'Sent By',
+    'from': 'From', 'to': 'To', 'subject': 'Subject',
+    'date': 'Date', 'team': 'Team', 'status': 'Status',
+    'due': 'Due', 'mode': 'Mode', 'file': 'File',
+    'postal': 'Amount', 'amount': 'Amount', 'postal tariff': 'Amount',
+    'file reference': 'File', 'file ref': 'File',
+    'remarks': 'Remarks',
+};
+
 function parseEntryLine(line) {
-    const match = line.match(/^\s*\[?((?:OTW|INW)\/[^\]\s]+)\]?\s*(.*)/);
+    const match = line.match(/^\s*\[?((?:OTW|INW)\/[^\]\s|]+)\]?\s*(.*)/);
     if (!match) return null;
 
     const no = match[1].trim();
     const rest = match[2].trim();
     const type = no.startsWith('OTW') ? 'outward' : 'inward';
-    const parts = rest.split(' | ');
+
+    // Split on pipe — allow spaces around it
+    const parts = rest.split(/\s*\|\s*/);
     const fields = [];
+    let caseClosed = false;
 
     // First part may be a bare date (no colon)
     if (parts[0] && !parts[0].includes(':')) {
@@ -35,15 +49,20 @@ function parseEntryLine(line) {
     }
 
     for (const part of parts) {
-        const colon = part.indexOf(':');
+        const trimmed = part.trim();
+        if (!trimmed) continue;
+        if (/^case\s+closed$/i.test(trimmed)) { caseClosed = true; continue; }
+
+        const colon = trimmed.indexOf(':');
         if (colon > -1) {
-            const key = part.substring(0, colon).trim();
-            const val = part.substring(colon + 1).trim();
+            const rawKey = trimmed.substring(0, colon).trim().toLowerCase();
+            const val = trimmed.substring(colon + 1).trim();
+            const key = KEY_ALIASES[rawKey] || (rawKey.charAt(0).toUpperCase() + rawKey.slice(1));
             if (val) fields.push({ key, val });
         }
     }
 
-    return { no, type, fields };
+    return { no, type, fields, caseClosed };
 }
 
 // Render one assistant message — plain text OR structured entry cards
@@ -87,26 +106,33 @@ function MessageContent({ content }) {
                         </p>
                     );
                 }
-                const { no, type, fields } = seg.entry;
-                // Pick important display fields (max 5)
-                const displayFields = fields.filter(f =>
-                    ['Date', 'To', 'From', 'Subject', 'Amount', 'Postal', 'Sent by', 'Sent By',
-                     'Team', 'Status', 'Due', 'Mode', 'File'].includes(f.key)
-                ).slice(0, 5);
+                const { no, type, fields, caseClosed } = seg.entry;
+                const PRIORITY = ['Date', 'From', 'To', 'Subject', 'Sent By', 'Team', 'Status', 'Due', 'Mode', 'File', 'Amount'];
+                const displayFields = [
+                    ...PRIORITY.map(k => fields.find(f => f.key === k)).filter(Boolean),
+                    ...fields.filter(f => !PRIORITY.includes(f.key))
+                ].slice(0, 6);
 
                 return (
                     <div key={i} className={`chatbot-entry-card chatbot-entry-card--${type}`}>
                         <div className="chatbot-entry-header">
                             <span className="chatbot-entry-no">{no}</span>
-                            <span className={`chatbot-entry-badge chatbot-entry-badge--${type}`}>
-                                {type === 'outward' ? 'Outward' : 'Inward'}
-                            </span>
+                            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                {caseClosed && (
+                                    <span className="chatbot-entry-badge chatbot-entry-badge--closed">
+                                        Closed
+                                    </span>
+                                )}
+                                <span className={`chatbot-entry-badge chatbot-entry-badge--${type}`}>
+                                    {type === 'outward' ? 'Outward' : 'Inward'}
+                                </span>
+                            </div>
                         </div>
                         <div className="chatbot-entry-fields">
                             {displayFields.map(({ key, val }) => (
                                 <div key={key} className="chatbot-entry-field">
                                     <span className="chatbot-field-key">{key}</span>
-                                    <span className="chatbot-field-val">{val}</span>
+                                    <span className="chatbot-field-val" title={val}>{val}</span>
                                 </div>
                             ))}
                         </div>

@@ -118,9 +118,21 @@ ${logSummary}
 - You have COMPLETE data above — use it to answer accurately
 - Look up specific entry numbers (INW/... or OTW/...) directly in the lists above
 - For questions about outward, search the OUTWARD ENTRIES section
-- Be concise — bullet points preferred
 - You CANNOT modify the database — read-only assistance only
-- Never say "I don't have access" if the data is in the snapshot above`;
+- Never say "I don't have access" if the data is in the snapshot above
+
+=== STRICT ENTRY FORMAT (follow exactly when listing entries) ===
+When showing inward entries, output EACH entry on its own line like this:
+[INW/DD/MM/YYYY-NNNN] DD Mon YYYY | From: <particulars_from_whom> | Subject: <subject> | Team: <team or Unassigned> | Status: <status> | Due: <due date or Not set>
+
+When showing outward entries, output EACH entry on its own line like this:
+[OTW/YYYY/NNN] DD Mon YYYY | To: <to_whom> | Subject: <subject> | Sent by: <sent_by> | Team: <team> | Mode: <mode>
+
+RULES:
+- NEVER use bullet points, dashes, or numbered lists for entry rows
+- NEVER reformat or restructure the entry lines — use the pipe (|) separator exactly
+- You MAY write a short sentence before or after the entry lines (summary, count, etc.)
+- For outward with case closed, append | Case CLOSED at the end of that line`;
 
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
