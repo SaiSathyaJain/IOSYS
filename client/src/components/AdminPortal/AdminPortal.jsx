@@ -38,6 +38,8 @@ function AdminPortal() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [teamFilter, setTeamFilter] = useState('all');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showReassignModal, setShowReassignModal] = useState(false);
@@ -94,7 +96,7 @@ function AdminPortal() {
 
     useEffect(() => {
         filterEntries();
-    }, [entries, searchTerm, statusFilter, teamFilter]);
+    }, [entries, searchTerm, statusFilter, teamFilter, dateFrom, dateTo]);
 
     const loadData = async () => {
         setLoading(true);
@@ -139,7 +141,25 @@ function AdminPortal() {
             filtered = filtered.filter(e => e.assignedTeam === teamFilter);
         }
 
+        if (dateFrom) {
+            const from = new Date(dateFrom);
+            filtered = filtered.filter(e => {
+                const d = e.signReceiptDatetime ? new Date(e.signReceiptDatetime) : null;
+                return d && d >= from;
+            });
+        }
+
+        if (dateTo) {
+            const to = new Date(dateTo);
+            to.setHours(23, 59, 59, 999);
+            filtered = filtered.filter(e => {
+                const d = e.signReceiptDatetime ? new Date(e.signReceiptDatetime) : null;
+                return d && d <= to;
+            });
+        }
+
         setFilteredEntries(filtered);
+        setInwardPage(1);
     };
 
     const handleSubmit = async (e) => {
@@ -701,12 +721,41 @@ function AdminPortal() {
             {adminPage === 'registers' && <>
             {/* Entries Table */}
             <div className="card">
-                <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <h3 className="card-title">
                         <ClipboardList size={20} /> Inward Entries
-                        <span className="entry-count">({entries.length})</span>
+                        <span className="entry-count">({filteredEntries.length}{filteredEntries.length !== entries.length ? ` of ${entries.length}` : ''})</span>
                     </h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>From</span>
+                            <input
+                                type="date"
+                                className="form-input"
+                                value={dateFrom}
+                                onChange={e => setDateFrom(e.target.value)}
+                                style={{ padding: '0.35rem 0.5rem', fontSize: '0.82rem', width: 'auto' }}
+                            />
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>To</span>
+                            <input
+                                type="date"
+                                className="form-input"
+                                value={dateTo}
+                                onChange={e => setDateTo(e.target.value)}
+                                style={{ padding: '0.35rem 0.5rem', fontSize: '0.82rem', width: 'auto' }}
+                            />
+                            {(dateFrom || dateTo) && (
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                    style={{ padding: '0.3rem 0.6rem', fontSize: '0.78rem' }}
+                                    title="Clear date filter"
+                                >
+                                    <X size={13} />
+                                </button>
+                            )}
+                        </div>
+                        <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.1rem' }} />
                         <input
                             type="date"
                             className="form-input"
@@ -730,6 +779,12 @@ function AdminPortal() {
                         <Inbox size={48} />
                         <p>No entries found</p>
                     </div>
+                ) : filteredEntries.length === 0 ? (
+                    <div className="empty-state">
+                        <Filter size={36} />
+                        <p>No entries match the selected date range</p>
+                        <button className="btn btn-secondary" style={{ marginTop: '0.5rem' }} onClick={() => { setDateFrom(''); setDateTo(''); }}>Clear Filter</button>
+                    </div>
                 ) : (
                     <div className="table-container">
                         <table className="table">
@@ -748,7 +803,7 @@ function AdminPortal() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {entries.slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry, index) => (
+                                {filteredEntries.slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry, index) => (
                                     <tr key={entry.id} className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''} style={{ animationDelay: `${index * 0.04}s` }}>
                                         <td>{(inwardPage - 1) * INWARD_PAGE_SIZE + index + 1}</td>
                                         <td>
@@ -789,13 +844,13 @@ function AdminPortal() {
                                 ))}
                             </tbody>
                         </table>
-                        {entries.length > INWARD_PAGE_SIZE && (() => {
-                            const totalPages = Math.ceil(entries.length / INWARD_PAGE_SIZE);
+                        {filteredEntries.length > INWARD_PAGE_SIZE && (() => {
+                            const totalPages = Math.ceil(filteredEntries.length / INWARD_PAGE_SIZE);
                             const pct = totalPages > 1 ? ((inwardPage - 1) / (totalPages - 1)) * 100 : 0;
                             return (
                                 <div className="table-pagination">
                                     <span className="table-note">
-                                        Showing {(inwardPage - 1) * INWARD_PAGE_SIZE + 1}–{Math.min(inwardPage * INWARD_PAGE_SIZE, entries.length)} of {entries.length}
+                                        Showing {(inwardPage - 1) * INWARD_PAGE_SIZE + 1}–{Math.min(inwardPage * INWARD_PAGE_SIZE, filteredEntries.length)} of {filteredEntries.length}
                                     </span>
                                     <div className="slider-pagination">
                                         <button className="page-arrow" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { dashboardAPI, inwardAPI, outwardAPI } from '../../services/api';
+import { dashboardAPI, inwardAPI, outwardAPI, auditAPI } from '../../services/api';
 import {
     Hourglass, CheckCircle2, ArrowDownToLine, ArrowUpFromLine,
     Users, ChevronRight, X, Clock, TrendingUp, FileText,
@@ -57,6 +57,7 @@ function Dashboard() {
     const [outwardPage, setOutwardPage] = useState(1);
     const PAGE_SIZE = 10;
     const [allEntries, setAllEntries] = useState([]);
+    const [recentLogs, setRecentLogs] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [teamFilter, setTeamFilter] = useState('all');
@@ -77,16 +78,18 @@ function Dashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [statsRes, teamsRes, chartRes, entriesRes] = await Promise.allSettled([
+            const [statsRes, teamsRes, chartRes, entriesRes, auditRes] = await Promise.allSettled([
                 dashboardAPI.getStats(),
                 dashboardAPI.getAllTeams(),
                 dashboardAPI.getChartData(),
-                inwardAPI.getAll()
+                inwardAPI.getAll(),
+                auditAPI.getLogs(1)
             ]);
             setStats(statsRes.status === 'fulfilled' ? statsRes.value.data.stats || {} : {});
             setTeamStats(teamsRes.status === 'fulfilled' ? teamsRes.value.data.teamStats || [] : []);
             setChartData(chartRes.status === 'fulfilled' ? chartRes.value.data.chartData || [] : []);
             setAllEntries(entriesRes.status === 'fulfilled' ? entriesRes.value.data.entries || [] : []);
+            setRecentLogs(auditRes.status === 'fulfilled' ? (auditRes.value.data.logs || []).slice(0, 10) : []);
         } catch (error) {
             console.error('Error loading dashboard:', error);
         } finally {
@@ -437,6 +440,43 @@ function Dashboard() {
                             </div>
                         ))}
                     </div>
+                </div>
+
+                {/* Recent Activity Feed */}
+                <div className="dash-card">
+                    <div className="dash-card-header">
+                        <div className="dash-card-title">
+                            <Activity size={18} />
+                            <span>Recent Activity</span>
+                        </div>
+                        <span className="dash-card-hint">Last 10 actions</span>
+                    </div>
+                    {recentLogs.length === 0 ? (
+                        <div className="chart-empty">No activity recorded yet</div>
+                    ) : (
+                        <div className="activity-feed">
+                            {recentLogs.map(log => (
+                                <div key={log.id} className="activity-item">
+                                    <div className={`activity-dot activity-dot--${
+                                        log.action === 'ENTRY_CREATED' ? 'created' :
+                                        log.action === 'ENTRY_ASSIGNED' ? 'assigned' :
+                                        log.action === 'STATUS_CHANGED' ? 'status' :
+                                        log.action === 'OUTWARD_CREATED' ? 'outward' : 'other'
+                                    }`} />
+                                    <div className="activity-body">
+                                        <div className="activity-desc">{log.description}</div>
+                                        <div className="activity-meta">
+                                            <span className="activity-actor">{log.actor}</span>
+                                            {log.inward_no && <span className="activity-ref">{log.inward_no}</span>}
+                                            <span className="activity-time">
+                                                {new Date(log.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Team Detail Panel */}
