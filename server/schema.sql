@@ -53,6 +53,16 @@ CREATE TABLE IF NOT EXISTS notes (
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Push Subscriptions Table
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    endpoint    TEXT UNIQUE NOT NULL,
+    p256dh      TEXT NOT NULL,
+    auth        TEXT NOT NULL,
+    team        TEXT,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Audit Log Table
 CREATE TABLE IF NOT EXISTS audit_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,

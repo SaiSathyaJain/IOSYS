@@ -1,5 +1,9 @@
 import { Hono } from 'hono';
 import { toCamelCase } from '../utils/caseConverter.js';
+import { sendAssignmentNotification } from '../services/notification.js';
+import { sendTeamPushNotifications } from '../services/webPush.js';
+
+const TEAM_SLUG = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'PhD': 'phd' };
 
 export const inwardRouter = new Hono();
 
@@ -115,6 +119,27 @@ inwardRouter.put('/:id/assign', async (c) => {
         await c.env.DB.prepare(
             'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
         ).bind('ENTRY_ASSIGNED', 'Admin', `Admin assigned ${existing.inward_no} to ${assignedTeam} Team`, existing.inward_no).run();
+
+        // Send email + push notifications (non-blocking)
+        c.executionCtx.waitUntil((async () => {
+            await Promise.allSettled([
+                sendAssignmentNotification({
+                    inwardNo: existing.inward_no,
+                    subject: existing.subject,
+                    particularsFromWhom: existing.particulars_from_whom,
+                    assignedTeam,
+                    assignedToEmail,
+                    assignmentInstructions,
+                    dueDate
+                }, c.env).catch(err => console.error('Email notification failed:', err)),
+
+                sendTeamPushNotifications(c.env, c.env.DB, assignedTeam, {
+                    title: `New Assignment — ${assignedTeam} Team`,
+                    body: `${existing.inward_no}: ${(existing.subject || '').slice(0, 60)}`,
+                    url: `https://iosys.pages.dev/team/${TEAM_SLUG[assignedTeam] || 'ug'}`
+                }).catch(err => console.error('Push notification failed:', err))
+            ]);
+        })());
 
         return c.json({
             success: true,

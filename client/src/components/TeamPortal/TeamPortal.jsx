@@ -57,6 +57,7 @@ function TeamPortal() {
     useEffect(() => { loadData(); }, [selectedTeam]);
     useEffect(() => { loadEntries(); }, [viewTeam]);
     useEffect(() => { filterEntries(); }, [entries, searchTerm]);
+    useEffect(() => { if (selectedTeam) registerPush(selectedTeam); }, [selectedTeam]);
 
     const loadData = async () => {
         setLoading(true);
@@ -190,6 +191,39 @@ function TeamPortal() {
             setShowDetailsModal(false);
         } catch (error) {
             alert('Error closing case: ' + error.message);
+        }
+    };
+
+    const registerPush = async (team) => {
+        try {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+            const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+            if (!vapidKey) return;
+
+            const reg = await navigator.serviceWorker.register('/sw.js');
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') return;
+
+            // Convert base64url VAPID public key to Uint8Array
+            const keyBytes = Uint8Array.from(
+                atob(vapidKey.replace(/-/g, '+').replace(/_/g, '/')),
+                c => c.charCodeAt(0)
+            );
+
+            const subscription = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: keyBytes
+            });
+
+            const sub = subscription.toJSON();
+            await fetch(`${import.meta.env.VITE_API_URL || '/api'}/push/subscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.keys, team })
+            });
+        } catch (err) {
+            // Push not supported or denied — silent fail
+            console.warn('Push registration skipped:', err.message);
         }
     };
 
