@@ -57,7 +57,10 @@ function TeamPortal() {
     useEffect(() => { loadData(); }, [selectedTeam]);
     useEffect(() => { loadEntries(); }, [viewTeam]);
     useEffect(() => { filterEntries(); }, [entries, searchTerm]);
-    useEffect(() => { if (selectedTeam) registerPush(selectedTeam); }, [selectedTeam]);
+    const [pushEnabled, setPushEnabled] = useState(false);
+    useEffect(() => {
+        if (selectedTeam) checkPushStatus();
+    }, [selectedTeam]);
 
     const loadData = async () => {
         setLoading(true);
@@ -194,17 +197,28 @@ function TeamPortal() {
         }
     };
 
-    const registerPush = async (team) => {
+    const checkPushStatus = async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (Notification.permission === 'granted') {
+            const reg = await navigator.serviceWorker.register('/sw.js');
+            const existing = await reg.pushManager.getSubscription();
+            if (existing) setPushEnabled(true);
+        }
+    };
+
+    const registerPush = async () => {
         try {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                alert('Push notifications are not supported in this browser.');
+                return;
+            }
             const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-            if (!vapidKey) return;
+            if (!vapidKey) { console.error('VAPID public key not configured'); return; }
+
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') { alert('Notification permission denied.'); return; }
 
             const reg = await navigator.serviceWorker.register('/sw.js');
-            const permission = await Notification.requestPermission();
-            if (permission !== 'granted') return;
-
-            // Convert base64url VAPID public key to Uint8Array
             const keyBytes = Uint8Array.from(
                 atob(vapidKey.replace(/-/g, '+').replace(/_/g, '/')),
                 c => c.charCodeAt(0)
@@ -219,11 +233,12 @@ function TeamPortal() {
             await fetch(`${import.meta.env.VITE_API_URL || '/api'}/push/subscribe`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.keys, team })
+                body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.keys, team: selectedTeam })
             });
+            setPushEnabled(true);
         } catch (err) {
-            // Push not supported or denied — silent fail
-            console.warn('Push registration skipped:', err.message);
+            console.error('Push registration failed:', err.message);
+            alert('Could not enable notifications: ' + err.message);
         }
     };
 
@@ -345,6 +360,11 @@ function TeamPortal() {
                     </div>
                     <div className="tp-main-header-right">
                         <button className="tp-export-btn"><Download size={14} /> Export</button>
+                        {!pushEnabled && 'Notification' in window && Notification.permission !== 'denied' && (
+                            <button className="tp-export-btn" onClick={registerPush} title="Enable push notifications" style={{ gap: '0.35rem' }}>
+                                🔔 Enable Notifications
+                            </button>
+                        )}
                         <button className="tp-new-outward-btn" onClick={() => setShowForm(true)}>
                             <Plus size={15} /> + New Outward
                         </button>

@@ -19,7 +19,7 @@ npm-debug.log*
 # Environment secrets
 .dev.vars
 .env.local
-.env.production
+# .env.production is committed — contains only public keys (VAPID public, Google Client ID)
 
 # OS
 .DS_Store
