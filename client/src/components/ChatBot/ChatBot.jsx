@@ -1,20 +1,121 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, RotateCcw } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight } from 'lucide-react';
 import './ChatBot.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-const SUGGESTIONS = [
-    'How many pending entries are there?',
-    'Which team has the most workload?',
-    'Are there any overdue entries?',
-    'Summarize recent activity',
+const QUICK_ACTIONS = [
+    { label: 'Outward entries', query: 'List all outward entries' },
+    { label: 'Team workload', query: 'Show team workload breakdown' },
+    { label: 'Pending entries', query: 'How many pending inward entries are there?' },
+    { label: 'Recent activity', query: 'Summarize recent activity' },
+    { label: 'Overdue', query: 'Are there any overdue entries?' },
 ];
 
 const INITIAL_MESSAGE = {
     role: 'assistant',
     content: "Hi! I'm your IOSYS Assistant powered by Llama 3.3. I have live access to your entries, team workloads, and activity. What would you like to know?",
 };
+
+// Parse a line like: [OTW/2026/001] 12 Apr 2026 | To: Dean | Subject: ... | Sent by: X | Team: UG
+function parseEntryLine(line) {
+    const match = line.match(/^\s*\[?((?:OTW|INW)\/[^\]\s]+)\]?\s*(.*)/);
+    if (!match) return null;
+
+    const no = match[1].trim();
+    const rest = match[2].trim();
+    const type = no.startsWith('OTW') ? 'outward' : 'inward';
+    const parts = rest.split(' | ');
+    const fields = [];
+
+    // First part may be a bare date (no colon)
+    if (parts[0] && !parts[0].includes(':')) {
+        fields.push({ key: 'Date', val: parts[0].trim() });
+        parts.shift();
+    }
+
+    for (const part of parts) {
+        const colon = part.indexOf(':');
+        if (colon > -1) {
+            const key = part.substring(0, colon).trim();
+            const val = part.substring(colon + 1).trim();
+            if (val) fields.push({ key, val });
+        }
+    }
+
+    return { no, type, fields };
+}
+
+// Render one assistant message — plain text OR structured entry cards
+function MessageContent({ content }) {
+    const lines = content.split('\n');
+    const segments = [];
+    let textBuffer = [];
+
+    const flushText = () => {
+        if (textBuffer.length > 0) {
+            segments.push({ kind: 'text', lines: [...textBuffer] });
+            textBuffer = [];
+        }
+    };
+
+    for (const line of lines) {
+        const entry = parseEntryLine(line);
+        if (entry) {
+            flushText();
+            segments.push({ kind: 'entry', entry });
+        } else {
+            textBuffer.push(line);
+        }
+    }
+    flushText();
+
+    return (
+        <div className="chatbot-message-content">
+            {segments.map((seg, i) => {
+                if (seg.kind === 'text') {
+                    const text = seg.lines.join('\n').trim();
+                    if (!text) return null;
+                    return (
+                        <p key={i} className="chatbot-text-segment">
+                            {seg.lines.map((line, j) => (
+                                <span key={j}>
+                                    {line}
+                                    {j < seg.lines.length - 1 && <br />}
+                                </span>
+                            ))}
+                        </p>
+                    );
+                }
+                const { no, type, fields } = seg.entry;
+                // Pick important display fields (max 5)
+                const displayFields = fields.filter(f =>
+                    ['Date', 'To', 'From', 'Subject', 'Amount', 'Postal', 'Sent by', 'Sent By',
+                     'Team', 'Status', 'Due', 'Mode', 'File'].includes(f.key)
+                ).slice(0, 5);
+
+                return (
+                    <div key={i} className={`chatbot-entry-card chatbot-entry-card--${type}`}>
+                        <div className="chatbot-entry-header">
+                            <span className="chatbot-entry-no">{no}</span>
+                            <span className={`chatbot-entry-badge chatbot-entry-badge--${type}`}>
+                                {type === 'outward' ? 'Outward' : 'Inward'}
+                            </span>
+                        </div>
+                        <div className="chatbot-entry-fields">
+                            {displayFields.map(({ key, val }) => (
+                                <div key={key} className="chatbot-entry-field">
+                                    <span className="chatbot-field-key">{key}</span>
+                                    <span className="chatbot-field-val">{val}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 function ChatBot() {
     const [open, setOpen] = useState(false);
@@ -43,7 +144,6 @@ function ChatBot() {
         setLoading(true);
 
         try {
-            // Send only role/content pairs (exclude initial greeting from history sent to API)
             const apiMessages = updatedMessages
                 .filter((_, i) => i > 0)
                 .map(({ role, content }) => ({ role, content }));
@@ -75,8 +175,6 @@ function ChatBot() {
         setInput('');
     };
 
-    const showSuggestions = messages.length === 1 && !loading;
-
     return (
         <>
             {/* Floating Action Button */}
@@ -85,29 +183,34 @@ function ChatBot() {
                 onClick={() => setOpen(true)}
                 title="Ask AI Assistant"
             >
-                <Sparkles size={18} />
+                <Sparkles size={16} />
                 <span>Ask AI</span>
+                <span className="chatbot-fab-dot" />
             </button>
 
             {/* Chat Panel */}
             <div className={`chatbot-panel${open ? ' chatbot-panel--open' : ''}`}>
+
                 {/* Header */}
                 <div className="chatbot-header">
                     <div className="chatbot-header-left">
                         <div className="chatbot-avatar">
-                            <Sparkles size={14} />
+                            <Sparkles size={13} />
                         </div>
                         <div>
                             <div className="chatbot-title">IOSYS Assistant</div>
-                            <div className="chatbot-subtitle">Llama 3.3 · Live data</div>
+                            <div className="chatbot-subtitle">
+                                <span className="chatbot-live-dot" />
+                                Llama 3.3 · Live data
+                            </div>
                         </div>
                     </div>
                     <div className="chatbot-header-actions">
                         <button className="chatbot-icon-btn" onClick={resetChat} title="Clear chat">
-                            <RotateCcw size={15} />
+                            <RotateCcw size={13} />
                         </button>
                         <button className="chatbot-icon-btn" onClick={() => setOpen(false)} title="Close">
-                            <X size={16} />
+                            <X size={15} />
                         </button>
                     </div>
                 </div>
@@ -118,17 +221,18 @@ function ChatBot() {
                         <div key={i} className={`chatbot-msg chatbot-msg--${msg.role}`}>
                             {msg.role === 'assistant' && (
                                 <div className="chatbot-msg-avatar">
-                                    <Sparkles size={11} />
+                                    <Sparkles size={10} />
                                 </div>
                             )}
-                            <div className="chatbot-bubble">
-                                {msg.content.split('\n').map((line, j) => (
-                                    <span key={j}>
-                                        {line}
-                                        {j < msg.content.split('\n').length - 1 && <br />}
-                                    </span>
-                                ))}
-                            </div>
+                            {msg.role === 'assistant' ? (
+                                <div className="chatbot-bubble chatbot-bubble--assistant">
+                                    <MessageContent content={msg.content} />
+                                </div>
+                            ) : (
+                                <div className="chatbot-bubble chatbot-bubble--user">
+                                    {msg.content}
+                                </div>
+                            )}
                         </div>
                     ))}
 
@@ -136,9 +240,9 @@ function ChatBot() {
                     {loading && (
                         <div className="chatbot-msg chatbot-msg--assistant">
                             <div className="chatbot-msg-avatar">
-                                <Sparkles size={11} />
+                                <Sparkles size={10} />
                             </div>
-                            <div className="chatbot-bubble chatbot-bubble--typing">
+                            <div className="chatbot-bubble chatbot-bubble--assistant chatbot-bubble--typing">
                                 <span /><span /><span />
                             </div>
                         </div>
@@ -146,30 +250,35 @@ function ChatBot() {
                     <div ref={bottomRef} />
                 </div>
 
-                {/* Suggestion chips */}
-                {showSuggestions && (
-                    <div className="chatbot-suggestions">
-                        {SUGGESTIONS.map(s => (
-                            <button
-                                key={s}
-                                className="chatbot-chip"
-                                onClick={() => sendMessage(s)}
-                            >
-                                {s}
-                            </button>
-                        ))}
-                    </div>
-                )}
+                {/* Quick-action chips — always visible */}
+                <div className="chatbot-quick-actions">
+                    {QUICK_ACTIONS.map(({ label, query }) => (
+                        <button
+                            key={label}
+                            className="chatbot-qa-chip"
+                            onClick={() => sendMessage(query)}
+                            disabled={loading}
+                        >
+                            {label}
+                            <ArrowUpRight size={11} />
+                        </button>
+                    ))}
+                </div>
 
                 {/* Input row */}
                 <div className="chatbot-input-row">
                     <input
                         ref={inputRef}
                         className="chatbot-input"
-                        placeholder="Ask about entries, teams, activity..."
+                        placeholder="Ask anything about your data..."
                         value={input}
                         onChange={e => setInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                sendMessage();
+                            }
+                        }}
                         disabled={loading}
                     />
                     <button
@@ -177,7 +286,10 @@ function ChatBot() {
                         onClick={() => sendMessage()}
                         disabled={!input.trim() || loading}
                     >
-                        {loading ? <Loader2 size={16} className="chatbot-spin" /> : <Send size={16} />}
+                        {loading
+                            ? <Loader2 size={15} className="chatbot-spin" />
+                            : <Send size={15} />
+                        }
                     </button>
                 </div>
             </div>
