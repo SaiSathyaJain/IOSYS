@@ -240,7 +240,7 @@ function MessageContent({ content, onSend }) {
     return (
         <div className="chatbot-message-content">
             {text && <MarkdownBlock text={text} />}
-            {entries.map((entry, i) => (
+            {entries.filter(e => e.no || e.subject || e.from || e.to).map((entry, i) => (
                 <EntryCard key={i} entry={entry} />
             ))}
             {hasMore && (

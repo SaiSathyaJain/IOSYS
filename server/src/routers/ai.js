@@ -279,9 +279,11 @@ ${keywordSearchResults}
 - For overdue: entries where status != Completed and due date is past today
 - For trend analysis: group by month using date in inward_no (INW/DD/MM/YYYY-NNNN)
 
-=== ENTRY OUTPUT FORMAT (use whenever showing entries) ===
-Write your text answer first, then one ENTRIES_JSON block (max 10 entries). If more exist, say "Showing X of Y" in your text.
+=== OUTPUT FORMAT RULES ===
+1. For aggregated/grouped/counted data (top senders, team stats, counts, trends, SLA, comparisons): use a markdown table. Do NOT include ENTRIES_JSON for these queries.
+2. For listing actual entries (pending list, overdue list, recent entries, search results): write your text first, then one ENTRIES_JSON block (max 10 entries). If more exist, say "Showing X of Y" in your text.
 
+ENTRIES_JSON format (only for #2 above):
 ENTRIES_JSON
 [
   {"no":"INW/...","type":"inward","date":"1 Apr 2026","from":"Sender","subject":"Subject text","team":"UG","status":"Pending","due":"2026-04-15"},
@@ -289,7 +291,8 @@ ENTRIES_JSON
 ]
 END_ENTRIES_JSON
 
-Rules: valid JSON array, double quotes, no trailing commas, "" for missing values, boolean for "closed", ONE block per reply max.`;
+Rules: valid JSON array, double quotes, no trailing commas, "" for missing values, boolean for "closed", ONE block per reply max.
+Never include ENTRIES_JSON for summary tables, counts, statistics, or grouped data — use a markdown table instead.`;
 
         const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
