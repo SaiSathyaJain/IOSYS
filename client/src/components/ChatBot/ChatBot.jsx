@@ -5,11 +5,24 @@ import './ChatBot.css';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const QUICK_ACTIONS = [
-    { label: 'Outward entries', query: 'List all outward entries' },
-    { label: 'Team workload', query: 'Show team workload breakdown' },
-    { label: 'Pending entries', query: 'How many pending inward entries are there?' },
-    { label: 'Recent activity', query: 'Summarize recent activity' },
-    { label: 'Overdue', query: 'Are there any overdue entries?' },
+    // Overview
+    { label: '📋 Daily briefing',        query: 'Give me today\'s briefing — new entries today, overdue items, and team with most load' },
+    { label: '📊 Team workload',          query: 'Show team workload breakdown and compare UG, PG/PRO and PhD performance' },
+    { label: '⚠️ Overdue entries',        query: 'Show all overdue entries sorted by how long they have been pending' },
+    { label: '📥 Unassigned entries',     query: 'List all inward entries that have not been assigned to any team yet' },
+    // Entry lists
+    { label: '📤 Outward entries',        query: 'List all outward entries' },
+    { label: '⏳ Pending entries',        query: 'List all pending inward entries' },
+    // Analysis
+    { label: '📈 Inward trend',           query: 'Is our inward volume increasing or decreasing? Which period had the most entries?' },
+    { label: '👤 Top senders',            query: 'Who sends us the most correspondence? Group entries by sender and show counts' },
+    { label: '🏎️ Bottlenecks',            query: 'Which entries have been pending the longest? Show the top 10 oldest unresolved entries' },
+    { label: '⏱️ SLA analysis',           query: 'How long does each team typically take to complete entries? Calculate average turnaround time' },
+    { label: '🗂️ Entry categories',       query: 'Classify inward entries by subject category (exam, certificate, attendance, etc.) and show counts' },
+    // Productivity
+    { label: '📝 Status report',          query: 'Generate a formal status report I can share with the COE — total entries, team breakdown, overdue count' },
+    { label: '🔍 Recent activity',        query: 'Summarize the last 15 actions from the audit log' },
+    { label: '⚖️ Compare teams',          query: 'Compare UG vs PG/PRO vs PhD — which team has the best completion rate and least overdue?' },
 ];
 
 const INITIAL_MESSAGE = {
