@@ -1585,62 +1585,42 @@
 .ap-login-hint strong { color: var(--text-primary); }
 
 /* ── Smart Fill ─────────────────────────────────────────────── */
-.smart-fill-block {
-    border: 1px dashed rgba(91, 69, 212, 0.35);
-    border-radius: 10px;
-    margin-bottom: 1.25rem;
-    overflow: hidden;
-    background: rgba(91, 69, 212, 0.04);
-}
-[data-theme="light"] .smart-fill-block {
-    background: rgba(91, 69, 212, 0.03);
-    border-color: rgba(91, 69, 212, 0.25);
-}
-
-.smart-fill-toggle {
-    width: 100%;
+.smart-fill-input-wrap {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.65rem 0.9rem;
-    background: none;
+}
+
+.smart-fill-input-wrap .form-input {
+    padding-right: 2.5rem;
+}
+
+.smart-fill-btn {
+    position: absolute;
+    right: 0.4rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
     border: none;
-    cursor: pointer;
-    font-size: 0.82rem;
-    font-weight: 500;
+    background: rgba(91, 69, 212, 0.12);
     color: #7c6ae8;
-    text-align: left;
-}
-.smart-fill-toggle:hover { color: #9c8af0; }
-.smart-fill-toggle span { flex: 1; }
-
-.smart-fill-body {
-    padding: 0 0.9rem 0.9rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-}
-
-.smart-fill-textarea {
-    width: 100%;
-    font-size: 0.8rem;
-    resize: vertical;
-    min-height: 90px;
-}
-
-.smart-fill-actions {
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
 }
-
-.btn-sm {
-    padding: 0.35rem 0.8rem !important;
-    font-size: 0.8rem !important;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
+.smart-fill-btn:hover:not(:disabled) {
+    background: rgba(91, 69, 212, 0.25);
+    color: #9c8af0;
+}
+.smart-fill-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.smart-fill-btn.loading {
+    background: rgba(91, 69, 212, 0.18);
 }
 
 .spin-icon {
@@ -1652,7 +1632,7 @@
 }
 
 .smart-fill-result {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: #22c55e;
     font-weight: 500;
 }

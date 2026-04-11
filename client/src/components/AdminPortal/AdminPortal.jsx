@@ -8,7 +8,7 @@ import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
     Clock, CheckCircle2, AlertCircle, Calendar, Mail, User,
     FileText, RefreshCw, Eye, Edit3, ArrowDownToLine, Loader2, Download,
-    Sun, Moon, ArrowLeft, Printer, Sparkles, ChevronDown, ChevronUp
+    Sun, Moon, ArrowLeft, Printer, Sparkles
 } from 'lucide-react';
 import ChatBot from '../ChatBot/ChatBot';
 import './AdminPortal.css';
@@ -69,10 +69,8 @@ function AdminPortal() {
         dueDate: '',
         remarks: ''
     });
-    const [smartFillOpen, setSmartFillOpen] = useState(false);
-    const [smartFillText, setSmartFillText] = useState('');
     const [smartFillLoading, setSmartFillLoading] = useState(false);
-    const [smartFillResult, setSmartFillResult] = useState(null); // filled fields summary
+    const [smartFillResult, setSmartFillResult] = useState(null);
     const [printDate, setPrintDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [notesEntries, setNotesEntries] = useState([]);
     const [notesTab, setNotesTab] = useState('REGISTRAR');
@@ -259,30 +257,27 @@ function AdminPortal() {
             signReceiptDateTime: new Date().toISOString(), assignedTeam: '', assignedToEmail: '',
             assignmentInstructions: '', dueDate: '', remarks: ''
         });
-        setSmartFillOpen(false);
-        setSmartFillText('');
         setSmartFillResult(null);
     };
 
     const handleSmartFill = async () => {
-        if (!smartFillText.trim()) return;
+        const subject = formData.subject.trim();
+        if (!subject) return;
         setSmartFillLoading(true);
         setSmartFillResult(null);
         try {
-            const res = await aiAPI.extract(smartFillText);
+            const res = await aiAPI.extract(subject);
             const fields = res.data.fields || {};
             const filled = [];
             setFormData(prev => {
                 const next = { ...prev };
-                if (fields.particularsFromWhom) { next.particularsFromWhom = fields.particularsFromWhom; filled.push('From'); }
-                if (fields.subject)             { next.subject = fields.subject;                         filled.push('Subject'); }
-                if (fields.means)               { next.means = fields.means;                             filled.push('Mode'); }
-                if (fields.assignedTeam)        { next.assignedTeam = fields.assignedTeam; next.assignedToEmail = TEAM_EMAILS[fields.assignedTeam] || ''; filled.push('Team'); }
-                if (fields.dueDate)             { next.dueDate = fields.dueDate;                         filled.push('Due Date'); }
-                if (fields.remarks)             { next.remarks = fields.remarks;                         filled.push('Remarks'); }
+                // Don't overwrite subject — user already typed it
+                if (fields.assignedTeam) { next.assignedTeam = fields.assignedTeam; next.assignedToEmail = TEAM_EMAILS[fields.assignedTeam] || ''; filled.push('Team'); }
+                if (fields.dueDate)      { next.dueDate = fields.dueDate;            filled.push('Due Date'); }
+                if (fields.remarks)      { next.remarks = fields.remarks;            filled.push('Remarks'); }
                 return next;
             });
-            setSmartFillResult(filled.length > 0 ? `Filled: ${filled.join(', ')}` : 'No fields could be extracted. Try pasting more of the letter.');
+            setSmartFillResult(filled.length > 0 ? `✓ Filled: ${filled.join(', ')}` : 'Could not determine team or due date from subject.');
         } catch (err) {
             setSmartFillResult('Error: ' + (err.response?.data?.message || err.message));
         } finally {
@@ -654,50 +649,6 @@ function AdminPortal() {
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className="modal-body">
-
-                                {/* Smart Fill */}
-                                <div className="smart-fill-block">
-                                    <button
-                                        type="button"
-                                        className="smart-fill-toggle"
-                                        onClick={() => { setSmartFillOpen(o => !o); setSmartFillResult(null); }}
-                                    >
-                                        <Sparkles size={14} />
-                                        <span>Smart Fill — paste letter text to auto-fill fields</span>
-                                        {smartFillOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                    </button>
-
-                                    {smartFillOpen && (
-                                        <div className="smart-fill-body">
-                                            <textarea
-                                                className="form-textarea smart-fill-textarea"
-                                                placeholder="Paste the full letter or email text here…"
-                                                rows={5}
-                                                value={smartFillText}
-                                                onChange={e => setSmartFillText(e.target.value)}
-                                            />
-                                            <div className="smart-fill-actions">
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-primary btn-sm"
-                                                    onClick={handleSmartFill}
-                                                    disabled={smartFillLoading || !smartFillText.trim()}
-                                                >
-                                                    {smartFillLoading
-                                                        ? <><Loader2 size={13} className="spin-icon" /> Extracting…</>
-                                                        : <><Sparkles size={13} /> Extract & Fill</>
-                                                    }
-                                                </button>
-                                                {smartFillResult && (
-                                                    <span className={`smart-fill-result${smartFillResult.startsWith('Error') ? ' smart-fill-result--error' : ''}`}>
-                                                        {smartFillResult}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
                                 <div className="grid-2">
                                     <div className="form-group">
                                         <label className="form-label">Means *</label>
@@ -737,10 +688,31 @@ function AdminPortal() {
                                 </div>
 
                                 <div className="form-group">
-                                    <label className="form-label">Subject *</label>
-                                    <input type="text" name="subject" className="form-input"
-                                        value={formData.subject} onChange={handleChange} required
-                                        placeholder="Brief description of the correspondence" />
+                                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <span>Subject *</span>
+                                        {smartFillResult && (
+                                            <span className={`smart-fill-result${smartFillResult.startsWith('Error') ? ' smart-fill-result--error' : ''}`}>
+                                                {smartFillResult}
+                                            </span>
+                                        )}
+                                    </label>
+                                    <div className="smart-fill-input-wrap">
+                                        <input type="text" name="subject" className="form-input"
+                                            value={formData.subject} onChange={e => { handleChange(e); setSmartFillResult(null); }} required
+                                            placeholder="Type subject then click ✦ to auto-fill team, due date & remarks" />
+                                        <button
+                                            type="button"
+                                            className={`smart-fill-btn${smartFillLoading ? ' loading' : ''}`}
+                                            onClick={handleSmartFill}
+                                            disabled={smartFillLoading || !formData.subject.trim()}
+                                            title="Auto-fill from subject"
+                                        >
+                                            {smartFillLoading
+                                                ? <Loader2 size={14} className="spin-icon" />
+                                                : <Sparkles size={14} />
+                                            }
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="form-group">
