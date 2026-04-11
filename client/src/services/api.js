@@ -46,6 +46,11 @@ export const auditAPI = {
     getLogs: (page = 1) => api.get(`/audit?page=${page}`)
 };
 
+// AI API
+export const aiAPI = {
+    extract: (text) => api.post('/ai/extract', { text }),
+};
+
 // Notifications API
 export const notificationsAPI = {
     getAll: (email) => api.get(`/notifications?email=${encodeURIComponent(email)}`),

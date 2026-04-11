@@ -1583,3 +1583,79 @@
 
 .ap-login-hint { font-size: 0.75rem; color: var(--text-secondary); margin: 0; }
 .ap-login-hint strong { color: var(--text-primary); }
+
+/* ── Smart Fill ─────────────────────────────────────────────── */
+.smart-fill-block {
+    border: 1px dashed rgba(91, 69, 212, 0.35);
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    background: rgba(91, 69, 212, 0.04);
+}
+[data-theme="light"] .smart-fill-block {
+    background: rgba(91, 69, 212, 0.03);
+    border-color: rgba(91, 69, 212, 0.25);
+}
+
+.smart-fill-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0.9rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #7c6ae8;
+    text-align: left;
+}
+.smart-fill-toggle:hover { color: #9c8af0; }
+.smart-fill-toggle span { flex: 1; }
+
+.smart-fill-body {
+    padding: 0 0.9rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.smart-fill-textarea {
+    width: 100%;
+    font-size: 0.8rem;
+    resize: vertical;
+    min-height: 90px;
+}
+
+.smart-fill-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.btn-sm {
+    padding: 0.35rem 0.8rem !important;
+    font-size: 0.8rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.spin-icon {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.smart-fill-result {
+    font-size: 0.78rem;
+    color: #22c55e;
+    font-weight: 500;
+}
+.smart-fill-result--error {
+    color: #ef4444;
+}

@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
-import { inwardAPI, dashboardAPI, outwardAPI, notesAPI, auditAPI } from '../../services/api';
+import { inwardAPI, dashboardAPI, outwardAPI, notesAPI, auditAPI, aiAPI } from '../../services/api';
 import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
     Clock, CheckCircle2, AlertCircle, Calendar, Mail, User,
     FileText, RefreshCw, Eye, Edit3, ArrowDownToLine, Loader2, Download,
-    Sun, Moon, ArrowLeft, Printer
+    Sun, Moon, ArrowLeft, Printer, Sparkles, ChevronDown, ChevronUp
 } from 'lucide-react';
 import ChatBot from '../ChatBot/ChatBot';
 import './AdminPortal.css';
@@ -69,6 +69,10 @@ function AdminPortal() {
         dueDate: '',
         remarks: ''
     });
+    const [smartFillOpen, setSmartFillOpen] = useState(false);
+    const [smartFillText, setSmartFillText] = useState('');
+    const [smartFillLoading, setSmartFillLoading] = useState(false);
+    const [smartFillResult, setSmartFillResult] = useState(null); // filled fields summary
     const [printDate, setPrintDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [notesEntries, setNotesEntries] = useState([]);
     const [notesTab, setNotesTab] = useState('REGISTRAR');
@@ -255,6 +259,35 @@ function AdminPortal() {
             signReceiptDateTime: new Date().toISOString(), assignedTeam: '', assignedToEmail: '',
             assignmentInstructions: '', dueDate: '', remarks: ''
         });
+        setSmartFillOpen(false);
+        setSmartFillText('');
+        setSmartFillResult(null);
+    };
+
+    const handleSmartFill = async () => {
+        if (!smartFillText.trim()) return;
+        setSmartFillLoading(true);
+        setSmartFillResult(null);
+        try {
+            const res = await aiAPI.extract(smartFillText);
+            const fields = res.data.fields || {};
+            const filled = [];
+            setFormData(prev => {
+                const next = { ...prev };
+                if (fields.particularsFromWhom) { next.particularsFromWhom = fields.particularsFromWhom; filled.push('From'); }
+                if (fields.subject)             { next.subject = fields.subject;                         filled.push('Subject'); }
+                if (fields.means)               { next.means = fields.means;                             filled.push('Mode'); }
+                if (fields.assignedTeam)        { next.assignedTeam = fields.assignedTeam; next.assignedToEmail = TEAM_EMAILS[fields.assignedTeam] || ''; filled.push('Team'); }
+                if (fields.dueDate)             { next.dueDate = fields.dueDate;                         filled.push('Due Date'); }
+                if (fields.remarks)             { next.remarks = fields.remarks;                         filled.push('Remarks'); }
+                return next;
+            });
+            setSmartFillResult(filled.length > 0 ? `Filled: ${filled.join(', ')}` : 'No fields could be extracted. Try pasting more of the letter.');
+        } catch (err) {
+            setSmartFillResult('Error: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setSmartFillLoading(false);
+        }
     };
 
     const handleChange = (e) => {
@@ -621,6 +654,50 @@ function AdminPortal() {
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className="modal-body">
+
+                                {/* Smart Fill */}
+                                <div className="smart-fill-block">
+                                    <button
+                                        type="button"
+                                        className="smart-fill-toggle"
+                                        onClick={() => { setSmartFillOpen(o => !o); setSmartFillResult(null); }}
+                                    >
+                                        <Sparkles size={14} />
+                                        <span>Smart Fill — paste letter text to auto-fill fields</span>
+                                        {smartFillOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                    </button>
+
+                                    {smartFillOpen && (
+                                        <div className="smart-fill-body">
+                                            <textarea
+                                                className="form-textarea smart-fill-textarea"
+                                                placeholder="Paste the full letter or email text here…"
+                                                rows={5}
+                                                value={smartFillText}
+                                                onChange={e => setSmartFillText(e.target.value)}
+                                            />
+                                            <div className="smart-fill-actions">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-primary btn-sm"
+                                                    onClick={handleSmartFill}
+                                                    disabled={smartFillLoading || !smartFillText.trim()}
+                                                >
+                                                    {smartFillLoading
+                                                        ? <><Loader2 size={13} className="spin-icon" /> Extracting…</>
+                                                        : <><Sparkles size={13} /> Extract & Fill</>
+                                                    }
+                                                </button>
+                                                {smartFillResult && (
+                                                    <span className={`smart-fill-result${smartFillResult.startsWith('Error') ? ' smart-fill-result--error' : ''}`}>
+                                                        {smartFillResult}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div className="grid-2">
                                     <div className="form-group">
                                         <label className="form-label">Means *</label>

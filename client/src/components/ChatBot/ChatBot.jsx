@@ -194,7 +194,7 @@ function ChatBot() {
             const data = await res.json();
             const reply = data.success
                 ? data.reply
-                : 'Sorry, something went wrong. Please try again.';
+                : `Sorry, something went wrong: ${data.message || 'Please try again.'}`;
 
             setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
         } catch {

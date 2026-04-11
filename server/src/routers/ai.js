@@ -2,6 +2,76 @@ import { Hono } from 'hono';
 
 export const aiRouter = new Hono();
 
+// POST /api/ai/extract  — Smart Form Fill: extract fields from raw letter text
+aiRouter.post('/extract', async (c) => {
+    try {
+        const { text } = await c.req.json();
+        if (!text || typeof text !== 'string' || text.trim().length < 5) {
+            return c.json({ success: false, message: 'text is required' }, 400);
+        }
+        if (!c.env.GROQ_API_KEY) {
+            return c.json({ success: false, message: 'GROQ_API_KEY not configured' }, 500);
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+
+        const prompt = `Extract fields from this letter/document and return ONLY a valid JSON object — no explanation, no markdown.
+
+Fields to extract:
+- "particularsFromWhom": sender name or organization (string)
+- "subject": concise subject line, max 120 chars (string)
+- "means": delivery mode — one of "Post" | "Email" | "Hand Delivery" | "Courier" | "" (string)
+- "assignedTeam": which team should handle it — "UG" (undergraduate), "PG/PRO" (postgraduate/professional), "PhD" (doctoral), or "" if unclear (string)
+- "dueDate": suggested deadline as YYYY-MM-DD — use 7 days from ${today} if urgent, 14 days if normal, "" if not applicable (string)
+- "remarks": one short sentence capturing the key ask or action needed, or "" (string)
+
+Letter text:
+"""
+${text.slice(0, 2000)}
+"""
+
+Return ONLY the JSON object:`;
+
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${c.env.GROQ_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 300,
+                temperature: 0.1,
+            }),
+        });
+
+        if (!groqRes.ok) {
+            const errText = await groqRes.text();
+            console.error('Groq extract error:', groqRes.status, errText);
+            return c.json({ success: false, message: 'AI service error' }, 500);
+        }
+
+        const groqData = await groqRes.json();
+        const raw = groqData.choices?.[0]?.message?.content || '';
+
+        // Parse the JSON — strip any markdown fences if model added them
+        const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        let fields;
+        try {
+            fields = JSON.parse(jsonStr);
+        } catch {
+            console.error('Failed to parse AI extract response:', raw);
+            return c.json({ success: false, message: 'AI returned invalid JSON. Try with clearer text.' }, 500);
+        }
+
+        return c.json({ success: true, fields });
+    } catch (error) {
+        console.error('AI extract error:', error);
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
 // POST /api/ai/chat
 aiRouter.post('/chat', async (c) => {
     try {
@@ -15,7 +85,7 @@ aiRouter.post('/chat', async (c) => {
             return c.json({ success: false, message: 'GROQ_API_KEY not configured' }, 500);
         }
 
-        // Fetch all live context from DB in parallel
+        // Fetch live context from DB in parallel (reduced limits to save tokens)
         const [statsRow, teamRows, allInward, allOutward, recentLogs] = await Promise.allSettled([
             c.env.DB.prepare(`
                 SELECT
@@ -42,18 +112,18 @@ aiRouter.post('/chat', async (c) => {
                 SELECT inward_no, subject, particulars_from_whom, means,
                        assigned_team, assignment_status, due_date,
                        sign_receipt_datetime, file_reference, remarks
-                FROM inward ORDER BY created_at DESC LIMIT 50
+                FROM inward ORDER BY created_at DESC LIMIT 25
             `).all(),
             c.env.DB.prepare(`
                 SELECT outward_no, subject, to_whom, sent_by, means,
                        created_by_team, file_reference, postal_tariff,
                        case_closed, linked_inward_id, sign_receipt_datetime,
                        remarks, created_at
-                FROM outward ORDER BY created_at DESC LIMIT 30
+                FROM outward ORDER BY created_at DESC LIMIT 15
             `).all(),
             c.env.DB.prepare(`
                 SELECT action, actor, description, inward_no, created_at
-                FROM audit_log ORDER BY created_at DESC LIMIT 15
+                FROM audit_log ORDER BY created_at DESC LIMIT 10
             `).all(),
         ]);
 
@@ -63,7 +133,7 @@ aiRouter.post('/chat', async (c) => {
         const outward = allOutward.status === 'fulfilled' ? allOutward.value.results : [];
         const logs    = recentLogs.status === 'fulfilled' ? recentLogs.value.results : [];
 
-        // If the latest user message references a specific INW number, fetch its full audit trail
+        // If user mentions a specific INW number, fetch its full audit trail
         const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content || '';
         const inwardNoMatch = lastUserMsg.match(/INW\/\d{2}\/\d{2}\/\d{4}-\d+/i);
         let entryAuditTrail = '';
@@ -73,145 +143,80 @@ aiRouter.post('/chat', async (c) => {
                     `SELECT action, actor, description, created_at FROM audit_log WHERE inward_no = ? ORDER BY created_at ASC`
                 ).bind(inwardNoMatch[0].toUpperCase()).all();
                 if (entryLogs.length > 0) {
-                    entryAuditTrail = `\nAUDIT TRAIL FOR ${inwardNoMatch[0].toUpperCase()}:\n` +
+                    entryAuditTrail = `\nAUDIT FOR ${inwardNoMatch[0].toUpperCase()}:\n` +
                         entryLogs.map(l =>
                             `  [${new Date(l.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}] ${l.actor}: ${l.description}`
                         ).join('\n');
-                } else {
-                    entryAuditTrail = `\nAUDIT TRAIL FOR ${inwardNoMatch[0].toUpperCase()}: No activity recorded yet.`;
                 }
             } catch { /* ignore */ }
         }
 
+        // Compact summaries (shorter format = fewer tokens)
         const teamSummary = teams.length > 0
             ? teams.map(t =>
-                `  - ${t.assigned_team} Team: ${t.total} assigned | ${t.pending} pending | ${t.in_progress} in progress | ${t.completed} completed | ${t.overdue} overdue`
+                `  ${t.assigned_team}: total=${t.total} pending=${t.pending} inprogress=${t.in_progress} completed=${t.completed} overdue=${t.overdue}`
               ).join('\n')
             : '  No team assignments yet';
 
         const inwardSummary = inward.length > 0
-            ? inward.map(e =>
-                `  [${e.inward_no}] ${e.sign_receipt_datetime ? new Date(e.sign_receipt_datetime).toLocaleDateString('en-IN') : 'No date'} | From: ${e.particulars_from_whom} | Subject: ${e.subject} | Mode: ${e.means || '-'} | Team: ${e.assigned_team || 'Unassigned'} | Status: ${e.assignment_status || 'Unassigned'} | Due: ${e.due_date || 'Not set'}${e.remarks ? ` | Remarks: ${e.remarks}` : ''}`
-              ).join('\n')
-            : '  No inward entries yet';
+            ? inward.map(e => {
+                const date = e.sign_receipt_datetime ? new Date(e.sign_receipt_datetime).toLocaleDateString('en-IN') : '-';
+                return `  ${e.inward_no}|${date}|${e.particulars_from_whom}|${e.subject}|${e.means || '-'}|${e.assigned_team || 'Unassigned'}|${e.assignment_status || 'Unassigned'}|${e.due_date || '-'}${e.remarks ? '|' + e.remarks : ''}`;
+              }).join('\n')
+            : '  No inward entries';
 
         const outwardSummary = outward.length > 0
-            ? outward.map(e =>
-                `  [${e.outward_no}] ${e.sign_receipt_datetime ? new Date(e.sign_receipt_datetime).toLocaleDateString('en-IN') : new Date(e.created_at).toLocaleDateString('en-IN')} | To: ${e.to_whom} | Subject: ${e.subject} | Sent by: ${e.sent_by || '-'} | Team: ${e.created_by_team || '-'} | Mode: ${e.means || '-'}${e.file_reference ? ` | File: ${e.file_reference}` : ''}${e.postal_tariff ? ` | Postal: ₹${e.postal_tariff}` : ''}${e.case_closed ? ' | Case CLOSED' : ''}${e.remarks ? ` | Remarks: ${e.remarks}` : ''}`
-              ).join('\n')
-            : '  No outward entries yet';
+            ? outward.map(e => {
+                const date = e.sign_receipt_datetime
+                    ? new Date(e.sign_receipt_datetime).toLocaleDateString('en-IN')
+                    : new Date(e.created_at).toLocaleDateString('en-IN');
+                return `  ${e.outward_no}|${date}|${e.to_whom}|${e.subject}|${e.sent_by || '-'}|${e.created_by_team || '-'}|${e.means || '-'}${e.file_reference ? '|' + e.file_reference : ''}${e.postal_tariff ? '|₹' + e.postal_tariff : ''}${e.case_closed ? '|CLOSED' : ''}${e.remarks ? '|' + e.remarks : ''}`;
+              }).join('\n')
+            : '  No outward entries';
 
         const logSummary = logs.length > 0
             ? logs.map(l =>
-                `  [${new Date(l.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}] ${l.actor}: ${l.description}${l.inward_no ? ` (${l.inward_no})` : ''}`
+                `  [${new Date(l.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}] ${l.actor}: ${l.description}${l.inward_no ? ' (' + l.inward_no + ')' : ''}`
               ).join('\n')
-            : '  No activity yet';
+            : '  No activity';
 
-        const systemPrompt = `You are IOSYS Assistant, an intelligent AI for SSSIHL's (Sri Sathya Sai Institute of Higher Learning) Inward/Outward Document Management System. You have full access to live database data.
+        const systemPrompt = `You are IOSYS Assistant for SSSIHL's Inward/Outward Document Management System. You have live database access.
+Current time: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} IST
 
-Current date/time: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} IST
+=== LIVE DATA ===
 
-=== LIVE DATABASE — COMPLETE SNAPSHOT ===
+STATS: inward=${stats.total_inward || 0} | pending=${stats.pending || 0} | in_progress=${stats.in_progress || 0} | completed=${stats.completed || 0} | unassigned=${stats.unassigned || 0} | overdue=${stats.total_overdue || 0} | outward=${outward.length}
 
-OVERALL STATS:
-  - Total Inward: ${stats.total_inward || 0}
-  - Total Outward: ${outward.length > 0 ? outward.length + ' (showing latest 30)' : 0}
-  - Inward Pending: ${stats.pending || 0}
-  - Inward In Progress: ${stats.in_progress || 0}
-  - Inward Completed: ${stats.completed || 0}
-  - Inward Unassigned: ${stats.unassigned || 0}
-  - Total Overdue: ${stats.total_overdue || 0}
-
-TEAM BREAKDOWN:
+TEAMS (assigned_team|total|pending|in_progress|completed|overdue):
 ${teamSummary}
 
-ALL INWARD ENTRIES (latest 50, newest first):
+INWARD (latest 25, format: no|date|from|subject|mode|team|status|due[|remarks]):
 ${inwardSummary}
 
-ALL OUTWARD ENTRIES (latest 30, newest first):
+OUTWARD (latest 15, format: no|date|to|subject|sentBy|team|mode[|file][|postal][|CLOSED][|remarks]):
 ${outwardSummary}
 
-RECENT ACTIVITY LOG (last 15 actions):
+ACTIVITY LOG (latest 10):
 ${logSummary}
 ${entryAuditTrail}
-=== INSTRUCTIONS ===
-- You have COMPLETE data above — use it to answer accurately
-- Look up specific entry numbers (INW/... or OTW/...) directly in the lists above
-- For questions about outward, search the OUTWARD ENTRIES section
-- You CANNOT modify the database — read-only assistance only
-- Never say "I don't have access" if the data is in the snapshot above
+=== RULES ===
+- Answer using the data above — never say "I don't have access" if data is shown
+- Read-only — you cannot modify the database
+- For unassigned entries: filter rows where team = "Unassigned" or "-"
+- For overdue: entries where status != Completed and due date is past today
+- For trend analysis: group by month using date in inward_no (INW/DD/MM/YYYY-NNNN)
 
-=== CAPABILITY GUIDE ===
-
-DAILY BRIEFING — when asked for today's briefing:
-  State: entries received today (match today's date in inward_no), overdue count, team with most pending, any unassigned entries. Keep it to 4-5 bullet points.
-
-TREND ANALYSIS — when asked about volume trends or patterns:
-  Count entries per month from the inward_no dates (format INW/DD/MM/YYYY-NNNN). Compare months and state if volume is rising/falling.
-
-SENDER ANALYSIS — when asked who sends the most:
-  Group entries by particulars_from_whom, count each, sort descending, show top 10 as a numbered list.
-
-BOTTLENECK DETECTION — when asked about longest pending:
-  Find entries with status Pending/In Progress, sort by date in inward_no ascending (oldest first), show the oldest 10.
-
-SLA / TURNAROUND — when asked about completion time:
-  For completed entries that have both assignment and completion info in the audit log, estimate average days per team. If exact dates unavailable, state that clearly.
-
-ENTRY CLASSIFICATION — when asked to categorise entries:
-  Scan subject text and group into categories like: Exam/ESE, Certificate Requests, Attendance, Concessions, Duplicate Grade Card, Course Completion, General/Other. Show category name + count.
-
-STATUS REPORT — when asked for a formal report:
-  Output a professional paragraph: "As of [date], the COE office has received [N] inward entries. [Team breakdown]. [Overdue count] entries are overdue. [Unassigned count] entries await assignment."
-
-TEAM COMPARISON — when asked to compare teams:
-  Show a table-style text comparison: total assigned, pending, completed, overdue, completion rate % for each team.
-
-ASSIGNMENT SUGGESTION — when asked which team should handle something:
-  Read the subject/description, reason about UG (undergraduate), PG/PRO (postgraduate/professional), PhD, and suggest the best fit with a one-line reason.
-
-DRAFT REPLY / FOLLOW-UP — when asked to draft a letter or follow-up:
-  Write a formal, concise reply addressed appropriately. Start with "Respected Sir/Madam," and end with "Yours sincerely, Controller of Examinations, SSSIHL".
-
-ENTRY LOOKUP — when asked about a specific INW or OTW number:
-  Find it in the lists above and show full details as an entry card + a plain English 2-line summary of what action may be needed.
-
-UNASSIGNED ENTRIES — when asked for unassigned entries:
-  Filter inward entries where team = "" or "Unassigned" and show them as entry cards.
-
-AUDIT TRAIL — when asked for activity on a specific entry:
-  Search the RECENT ACTIVITY LOG for lines containing that inward_no and list them chronologically.
-
-=== OUTPUT FORMAT FOR ENTRY DATA (MANDATORY) ===
-Whenever you need to show one or more inward OR outward entries, you MUST output a JSON block in EXACTLY this structure — no exceptions:
+=== ENTRY OUTPUT FORMAT (use whenever showing entries) ===
+Write your text answer first, then one ENTRIES_JSON block (max 10 entries). If more exist, say "Showing X of Y" in your text.
 
 ENTRIES_JSON
 [
-  {
-    "no": "OTW/2026/001",
-    "type": "outward",
-    "date": "8 Apr 2026",
-    "to": "Finance office",
-    "subject": "Re: Shredded Paper amount",
-    "sentBy": "PCS",
-    "team": "PhD",
-    "mode": "Email",
-    "file": "GEN-17",
-    "closed": true
-  }
+  {"no":"INW/...","type":"inward","date":"1 Apr 2026","from":"Sender","subject":"Subject text","team":"UG","status":"Pending","due":"2026-04-15"},
+  {"no":"OTW/...","type":"outward","date":"1 Apr 2026","to":"Receiver","subject":"Subject","sentBy":"Name","team":"PhD","mode":"Email","file":"REF-1","closed":false}
 ]
 END_ENTRIES_JSON
 
-For inward entries use these fields instead: "no", "type":"inward", "date", "from", "subject", "team", "status", "due"
-
-RULES — follow exactly:
-1. Write your answer text FIRST (e.g. "Here are the first 10 of 35 UG entries:")
-2. Then output the ENTRIES_JSON block on its own line
-3. The JSON must be a valid array — double quotes, no trailing commas
-4. Use "" for missing values, true/false for closed (boolean)
-5. NEVER use bullet points or numbered lists for entry data — use the JSON block only
-6. ONE ENTRIES_JSON block per response maximum
-7. MAXIMUM 10 entries per ENTRIES_JSON block — if there are more, say "Showing 10 of N" in the text and list only the first 10`;
+Rules: valid JSON array, double quotes, no trailing commas, "" for missing values, boolean for "closed", ONE block per reply max.`;
 
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -225,15 +230,20 @@ RULES — follow exactly:
                     { role: 'system', content: systemPrompt },
                     ...messages
                 ],
-                max_tokens: 2048,
-                temperature: 0.5,
+                max_tokens: 1500,
+                temperature: 0.4,
             }),
         });
 
         if (!groqRes.ok) {
             const errText = await groqRes.text();
-            console.error('Groq API error:', errText);
-            return c.json({ success: false, message: 'AI service error. Please try again.' }, 500);
+            console.error('Groq API error:', groqRes.status, errText);
+            let errMsg = 'AI service error. Please try again.';
+            try {
+                const errJson = JSON.parse(errText);
+                if (errJson?.error?.message) errMsg = errJson.error.message;
+            } catch { /* use default */ }
+            return c.json({ success: false, message: errMsg }, 500);
         }
 
         const groqData = await groqRes.json();
