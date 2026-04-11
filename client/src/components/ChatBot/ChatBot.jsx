@@ -17,128 +17,92 @@ const INITIAL_MESSAGE = {
     content: "Sai Ram! I'm your IOSYS Assistant. I have live access to your entries, team workloads, and activity. What would you like to know?",
 };
 
-// Parse a line like: [OTW/2026/001] 12 Apr 2026 | To: Dean | Subject: ... | Sent by: X | Team: UG
-// Normalize key names so display is consistent regardless of AI casing
-const KEY_ALIASES = {
-    'sent by': 'Sent By', 'sentby': 'Sent By',
-    'from': 'From', 'to': 'To', 'subject': 'Subject',
-    'date': 'Date', 'team': 'Team', 'status': 'Status',
-    'due': 'Due', 'mode': 'Mode', 'file': 'File',
-    'postal': 'Amount', 'amount': 'Amount', 'postal tariff': 'Amount',
-    'file reference': 'File', 'file ref': 'File',
-    'remarks': 'Remarks',
-};
+// Extract ENTRIES_JSON block from AI reply
+// Returns { text: string, entries: array }
+function parseAIReply(content) {
+    const match = content.match(/ENTRIES_JSON\s*([\s\S]*?)\s*END_ENTRIES_JSON/);
+    if (!match) return { text: content, entries: [] };
 
-function parseEntryLine(line) {
-    const match = line.match(/^\s*\[?((?:OTW|INW)\/[^\]\s|]+)\]?\s*(.*)/);
-    if (!match) return null;
+    const text = content
+        .replace(/ENTRIES_JSON[\s\S]*?END_ENTRIES_JSON/, '')
+        .trim();
 
-    const no = match[1].trim();
-    const rest = match[2].trim();
-    const type = no.startsWith('OTW') ? 'outward' : 'inward';
-
-    // Split on pipe — allow spaces around it
-    const parts = rest.split(/\s*\|\s*/);
-    const fields = [];
-    let caseClosed = false;
-
-    // First part may be a bare date (no colon)
-    if (parts[0] && !parts[0].includes(':')) {
-        fields.push({ key: 'Date', val: parts[0].trim() });
-        parts.shift();
+    try {
+        const entries = JSON.parse(match[1].trim());
+        return { text, entries: Array.isArray(entries) ? entries : [] };
+    } catch {
+        return { text: content, entries: [] };
     }
-
-    for (const part of parts) {
-        const trimmed = part.trim();
-        if (!trimmed) continue;
-        if (/^case\s+closed$/i.test(trimmed)) { caseClosed = true; continue; }
-
-        const colon = trimmed.indexOf(':');
-        if (colon > -1) {
-            const rawKey = trimmed.substring(0, colon).trim().toLowerCase();
-            const val = trimmed.substring(colon + 1).trim();
-            const key = KEY_ALIASES[rawKey] || (rawKey.charAt(0).toUpperCase() + rawKey.slice(1));
-            if (val) fields.push({ key, val });
-        }
-    }
-
-    return { no, type, fields, caseClosed };
 }
 
-// Render one assistant message — plain text OR structured entry cards
+// Fields to show per entry type, in display order
+const INWARD_FIELDS  = [
+    { key: 'date',    label: 'Date'    },
+    { key: 'from',    label: 'From'    },
+    { key: 'subject', label: 'Subject' },
+    { key: 'team',    label: 'Team'    },
+    { key: 'status',  label: 'Status'  },
+    { key: 'due',     label: 'Due'     },
+];
+const OUTWARD_FIELDS = [
+    { key: 'date',    label: 'Date'    },
+    { key: 'to',      label: 'To'      },
+    { key: 'subject', label: 'Subject' },
+    { key: 'sentBy',  label: 'Sent By' },
+    { key: 'team',    label: 'Team'    },
+    { key: 'mode',    label: 'Mode'    },
+    { key: 'file',    label: 'File'    },
+];
+
+function EntryCard({ entry }) {
+    const type   = entry.type === 'outward' ? 'outward' : 'inward';
+    const schema = type === 'outward' ? OUTWARD_FIELDS : INWARD_FIELDS;
+    const fields = schema.filter(f => entry[f.key] && entry[f.key] !== '');
+
+    return (
+        <div className={`chatbot-entry-card chatbot-entry-card--${type}`}>
+            <div className="chatbot-entry-header">
+                <span className="chatbot-entry-no">{entry.no}</span>
+                <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                    {entry.closed && (
+                        <span className="chatbot-entry-badge chatbot-entry-badge--closed">Closed</span>
+                    )}
+                    <span className={`chatbot-entry-badge chatbot-entry-badge--${type}`}>
+                        {type === 'outward' ? 'Outward' : 'Inward'}
+                    </span>
+                </div>
+            </div>
+            <div className="chatbot-entry-fields">
+                {fields.map(({ key, label }) => (
+                    <div key={key} className="chatbot-entry-field">
+                        <span className="chatbot-field-key">{label}</span>
+                        <span className="chatbot-field-val" title={entry[key]}>{entry[key]}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// Render assistant message: plain text + optional entry cards
 function MessageContent({ content }) {
-    const lines = content.split('\n');
-    const segments = [];
-    let textBuffer = [];
-
-    const flushText = () => {
-        if (textBuffer.length > 0) {
-            segments.push({ kind: 'text', lines: [...textBuffer] });
-            textBuffer = [];
-        }
-    };
-
-    for (const line of lines) {
-        const entry = parseEntryLine(line);
-        if (entry) {
-            flushText();
-            segments.push({ kind: 'entry', entry });
-        } else {
-            textBuffer.push(line);
-        }
-    }
-    flushText();
+    const { text, entries } = parseAIReply(content);
 
     return (
         <div className="chatbot-message-content">
-            {segments.map((seg, i) => {
-                if (seg.kind === 'text') {
-                    const text = seg.lines.join('\n').trim();
-                    if (!text) return null;
-                    return (
-                        <p key={i} className="chatbot-text-segment">
-                            {seg.lines.map((line, j) => (
-                                <span key={j}>
-                                    {line}
-                                    {j < seg.lines.length - 1 && <br />}
-                                </span>
-                            ))}
-                        </p>
-                    );
-                }
-                const { no, type, fields, caseClosed } = seg.entry;
-                const PRIORITY = ['Date', 'From', 'To', 'Subject', 'Sent By', 'Team', 'Status', 'Due', 'Mode', 'File', 'Amount'];
-                const displayFields = [
-                    ...PRIORITY.map(k => fields.find(f => f.key === k)).filter(Boolean),
-                    ...fields.filter(f => !PRIORITY.includes(f.key))
-                ].slice(0, 6);
-
-                return (
-                    <div key={i} className={`chatbot-entry-card chatbot-entry-card--${type}`}>
-                        <div className="chatbot-entry-header">
-                            <span className="chatbot-entry-no">{no}</span>
-                            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                                {caseClosed && (
-                                    <span className="chatbot-entry-badge chatbot-entry-badge--closed">
-                                        Closed
-                                    </span>
-                                )}
-                                <span className={`chatbot-entry-badge chatbot-entry-badge--${type}`}>
-                                    {type === 'outward' ? 'Outward' : 'Inward'}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="chatbot-entry-fields">
-                            {displayFields.map(({ key, val }) => (
-                                <div key={key} className="chatbot-entry-field">
-                                    <span className="chatbot-field-key">{key}</span>
-                                    <span className="chatbot-field-val" title={val}>{val}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
-            })}
+            {text && (
+                <p className="chatbot-text-segment">
+                    {text.split('\n').map((line, i, arr) => (
+                        <span key={i}>
+                            {line}
+                            {i < arr.length - 1 && <br />}
+                        </span>
+                    ))}
+                </p>
+            )}
+            {entries.map((entry, i) => (
+                <EntryCard key={i} entry={entry} />
+            ))}
         </div>
     );
 }

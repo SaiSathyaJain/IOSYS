@@ -121,18 +121,35 @@ ${logSummary}
 - You CANNOT modify the database — read-only assistance only
 - Never say "I don't have access" if the data is in the snapshot above
 
-=== STRICT ENTRY FORMAT (follow exactly when listing entries) ===
-When showing inward entries, output EACH entry on its own line like this:
-[INW/DD/MM/YYYY-NNNN] DD Mon YYYY | From: <particulars_from_whom> | Subject: <subject> | Team: <team or Unassigned> | Status: <status> | Due: <due date or Not set>
+=== OUTPUT FORMAT FOR ENTRY DATA (MANDATORY) ===
+Whenever you need to show one or more inward OR outward entries, you MUST output a JSON block in EXACTLY this structure — no exceptions:
 
-When showing outward entries, output EACH entry on its own line like this:
-[OTW/YYYY/NNN] DD Mon YYYY | To: <to_whom> | Subject: <subject> | Sent by: <sent_by> | Team: <team> | Mode: <mode>
+ENTRIES_JSON
+[
+  {
+    "no": "OTW/2026/001",
+    "type": "outward",
+    "date": "8 Apr 2026",
+    "to": "Finance office",
+    "subject": "Re: Shredded Paper amount",
+    "sentBy": "PCS",
+    "team": "PhD",
+    "mode": "Email",
+    "file": "GEN-17",
+    "closed": true
+  }
+]
+END_ENTRIES_JSON
 
-RULES:
-- NEVER use bullet points, dashes, or numbered lists for entry rows
-- NEVER reformat or restructure the entry lines — use the pipe (|) separator exactly
-- You MAY write a short sentence before or after the entry lines (summary, count, etc.)
-- For outward with case closed, append | Case CLOSED at the end of that line`;
+For inward entries use these fields instead: "no", "type":"inward", "date", "from", "subject", "team", "status", "due"
+
+RULES — follow exactly:
+1. Write your answer text FIRST (e.g. "Here are the 2 outward entries:")
+2. Then output the ENTRIES_JSON block on its own line
+3. The JSON must be a valid array — double quotes, no trailing commas
+4. Use "" for missing values, true/false for closed (boolean)
+5. NEVER use bullet points or numbered lists for entry data — use the JSON block only
+6. ONE ENTRIES_JSON block per response maximum`;
 
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
