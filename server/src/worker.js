@@ -6,6 +6,7 @@ import { dashboardRouter } from './routers/dashboard.js';
 import { notesRouter } from './routers/notes.js';
 import { auditRouter } from './routers/auditLog.js';
 import { pushRouter } from './routers/push.js';
+import { aiRouter } from './routers/ai.js';
 import { sendWeeklyReport } from './services/weeklyReport.js';
 
 
@@ -51,6 +52,7 @@ app.route('/api/dashboard', dashboardRouter);
 app.route('/api/notes', notesRouter);
 app.route('/api/audit', auditRouter);
 app.route('/api/push', pushRouter);
+app.route('/api/ai', aiRouter);
 
 // Hidden trigger to bypass cron limitations for testing purposes
 app.get('/api/trigger-email', async (c) => {

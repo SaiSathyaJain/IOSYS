@@ -11,6 +11,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
     ResponsiveContainer
 } from 'recharts';
+import ChatBot from '../ChatBot/ChatBot';
 import './Dashboard.css';
 
 const RingProgress = ({ percent, color }) => {
@@ -679,6 +680,7 @@ function Dashboard() {
                     </div>
                 )}
             </div>
+            <ChatBot />
         </div>
     );
 }

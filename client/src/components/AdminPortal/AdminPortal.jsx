@@ -10,6 +10,7 @@ import {
     FileText, RefreshCw, Eye, Edit3, ArrowDownToLine, Loader2, Download,
     Sun, Moon, ArrowLeft, Printer
 } from 'lucide-react';
+import ChatBot from '../ChatBot/ChatBot';
 import './AdminPortal.css';
 
 const ALLOWED_EMAIL = 'coeofficeinward@sssihl.edu.in';
@@ -1284,6 +1285,8 @@ function AdminPortal() {
                     )}
                 </div>
             )}
+
+            <ChatBot />
 
             {/* Subject Tooltip */}
             {tooltip.visible && (
