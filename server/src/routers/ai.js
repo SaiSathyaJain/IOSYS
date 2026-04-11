@@ -77,11 +77,23 @@ Return ONLY the JSON object:`;
 // POST /api/ai/chat
 aiRouter.post('/chat', async (c) => {
     try {
-        const { messages } = await c.req.json();
+        const { messages, model: requestedModel } = await c.req.json();
 
         if (!messages || !Array.isArray(messages)) {
             return c.json({ success: false, message: 'messages array required' }, 400);
         }
+
+        const ALLOWED_MODELS = new Set([
+            'google/gemma-4-26b-a4b-it:free',
+            'google/gemma-4-31b-it:free',
+            'openai/gpt-oss-20b:free',
+            'openai/gpt-oss-120b:free',
+            'qwen/qwen3-next-80b-a3b-instruct:free',
+            'nvidia/nemotron-3-super-120b-a12b:free',
+            'nvidia/nemotron-3-nano-30b-a3b:free',
+        ]);
+        const DEFAULT_MODEL = 'google/gemma-4-26b-a4b-it:free';
+        const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
 
         if (!c.env.OPENROUTER_API_KEY) {
             return c.json({ success: false, message: 'OPENROUTER_API_KEY not configured' }, 500);
@@ -291,7 +303,7 @@ Rules: valid JSON array, double quotes, no trailing commas, "" for missing value
                 'X-Title': 'IOSYS Assistant',
             },
             body: JSON.stringify({
-                model: 'meta-llama/llama-3.3-70b-instruct:free',
+                model,
                 messages: [
                     { role: 'system', content: systemPrompt },
                     ...messages

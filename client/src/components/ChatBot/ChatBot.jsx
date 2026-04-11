@@ -1,8 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown } from 'lucide-react';
 import './ChatBot.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+const MODELS = [
+    { id: 'google/gemma-4-26b-a4b-it:free',          label: 'Gemma 4 26B',       badge: 'Fast'     },
+    { id: 'openai/gpt-oss-20b:free',                  label: 'GPT OSS 20B',       badge: 'Fast'     },
+    { id: 'google/gemma-4-31b-it:free',               label: 'Gemma 4 31B',       badge: 'Balanced' },
+    { id: 'qwen/qwen3-next-80b-a3b-instruct:free',    label: 'Qwen3 80B',         badge: 'Fast'     },
+    { id: 'nvidia/nemotron-3-nano-30b-a3b:free',      label: 'Nemotron Nano 30B', badge: 'Fast'     },
+    { id: 'openai/gpt-oss-120b:free',                 label: 'GPT OSS 120B',      badge: 'Powerful' },
+    { id: 'nvidia/nemotron-3-super-120b-a12b:free',   label: 'Nemotron Super',    badge: 'Powerful' },
+];
+const DEFAULT_MODEL = MODELS[0].id;
 
 const QUICK_ACTIONS = [
     // Overview
@@ -211,11 +222,25 @@ function ChatBot() {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState([INITIAL_MESSAGE]);
     const [input, setInput] = useState('');
-    const [loading, setLoading] = useState(false);   // typing indicator
-    const [streaming, setStreaming] = useState(false); // stream in progress
+    const [loading, setLoading] = useState(false);
+    const [streaming, setStreaming] = useState(false);
+    const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
+    const [showModelPicker, setShowModelPicker] = useState(false);
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
     const chipsRef = useRef(null);
+    const modelPickerRef = useRef(null);
+
+    // Close model picker when clicking outside
+    useEffect(() => {
+        const handler = (e) => {
+            if (modelPickerRef.current && !modelPickerRef.current.contains(e.target)) {
+                setShowModelPicker(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
     const scrollChips = (dir) => {
         if (chipsRef.current) {
@@ -249,7 +274,7 @@ function ChatBot() {
             const res = await fetch(`${API_URL}/ai/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: apiMessages }),
+                body: JSON.stringify({ messages: apiMessages, model: selectedModel }),
             });
 
             // Non-streaming error response
@@ -335,9 +360,31 @@ function ChatBot() {
                         </div>
                         <div>
                             <div className="chatbot-title">IOSYS Assistant</div>
-                            <div className="chatbot-subtitle">
+                            <div className="chatbot-subtitle" ref={modelPickerRef} style={{ position: 'relative' }}>
                                 <span className="chatbot-live-dot" />
-                                Llama 3.3 70B · Live data
+                                <button
+                                    className="chatbot-model-btn"
+                                    onClick={() => setShowModelPicker(p => !p)}
+                                    title="Switch model"
+                                >
+                                    {MODELS.find(m => m.id === selectedModel)?.label ?? 'Model'}
+                                    <ChevronDown size={10} />
+                                </button>
+                                · Live data
+                                {showModelPicker && (
+                                    <div className="chatbot-model-picker">
+                                        {MODELS.map(m => (
+                                            <button
+                                                key={m.id}
+                                                className={`chatbot-model-option${selectedModel === m.id ? ' active' : ''}`}
+                                                onClick={() => { setSelectedModel(m.id); setShowModelPicker(false); }}
+                                            >
+                                                <span className="model-option-label">{m.label}</span>
+                                                <span className={`model-option-badge badge-${m.badge.toLowerCase()}`}>{m.badge}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
