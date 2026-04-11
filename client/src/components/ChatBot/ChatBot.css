@@ -341,16 +341,44 @@
 }
 
 /* ── Quick-action chips (always visible) ── */
+.chatbot-quick-actions-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-top: 1px solid var(--border-color, #f0eeff);
+    flex-shrink: 0;
+    padding: 0.45rem 0;
+}
+.chatbot-chips-arrow {
+    flex-shrink: 0;
+    width: 26px;
+    height: 100%;
+    min-height: 32px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #5b45d4;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+    padding: 0;
+}
+.chatbot-chips-arrow:hover { opacity: 1; }
 .chatbot-quick-actions {
     display: flex;
     gap: 0.4rem;
-    padding: 0.6rem 0.85rem 0.4rem;
+    padding: 0.1rem 0.25rem;
     overflow-x: auto;
-    flex-shrink: 0;
+    flex: 1;
     scrollbar-width: none;
-    border-top: 1px solid var(--border-color, #f0eeff);
 }
 .chatbot-quick-actions::-webkit-scrollbar { display: none; }
+
+[data-theme="dark"] .chatbot-quick-actions-wrap { border-color: rgba(91,69,212,0.15); }
+[data-theme="dark"] .chatbot-chips-arrow { color: #a78bfa; }
 
 .chatbot-qa-chip {
     display: flex;

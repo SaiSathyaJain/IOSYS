@@ -154,6 +154,13 @@ function ChatBot() {
     const [loading, setLoading] = useState(false);
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
+    const chipsRef = useRef(null);
+
+    const scrollChips = (dir) => {
+        if (chipsRef.current) {
+            chipsRef.current.scrollBy({ left: dir * 160, behavior: 'smooth' });
+        }
+    };
 
     useEffect(() => {
         if (open) setTimeout(() => inputRef.current?.focus(), 300);
@@ -281,18 +288,22 @@ function ChatBot() {
                 </div>
 
                 {/* Quick-action chips — always visible */}
-                <div className="chatbot-quick-actions">
-                    {QUICK_ACTIONS.map(({ label, query }) => (
-                        <button
-                            key={label}
-                            className="chatbot-qa-chip"
-                            onClick={() => sendMessage(query)}
-                            disabled={loading}
-                        >
-                            {label}
-                            <ArrowUpRight size={11} />
-                        </button>
-                    ))}
+                <div className="chatbot-quick-actions-wrap">
+                    <button className="chatbot-chips-arrow" onClick={() => scrollChips(-1)} title="Scroll left">‹</button>
+                    <div className="chatbot-quick-actions" ref={chipsRef}>
+                        {QUICK_ACTIONS.map(({ label, query }) => (
+                            <button
+                                key={label}
+                                className="chatbot-qa-chip"
+                                onClick={() => sendMessage(query)}
+                                disabled={loading}
+                            >
+                                {label}
+                                <ArrowUpRight size={11} />
+                            </button>
+                        ))}
+                    </div>
+                    <button className="chatbot-chips-arrow" onClick={() => scrollChips(1)} title="Scroll right">›</button>
                 </div>
 
                 {/* Input row */}
