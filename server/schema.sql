@@ -53,8 +53,19 @@ CREATE TABLE IF NOT EXISTS notes (
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Audit Log Table
+CREATE TABLE IF NOT EXISTS audit_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    action      TEXT NOT NULL,
+    actor       TEXT NOT NULL,
+    description TEXT NOT NULL,
+    inward_no   TEXT,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_inward_status ON inward(assignment_status);
 CREATE INDEX IF NOT EXISTS idx_inward_assigned_team ON inward(assigned_team);
 CREATE INDEX IF NOT EXISTS idx_outward_created_by_team ON outward(created_by_team);
 CREATE INDEX IF NOT EXISTS idx_notes_type ON notes(note_type);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);

@@ -69,6 +69,11 @@ inwardRouter.post('/', async (c) => {
         const insertedEntry = toCamelCase(result);
         const id = insertedEntry.id;
 
+        // Audit log
+        await c.env.DB.prepare(
+            'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+        ).bind('ENTRY_CREATED', 'Admin', `Admin created inward entry ${inwardNo}`, inwardNo).run();
+
         return c.json({
             success: true,
             message: 'Inward entry created successfully',
@@ -106,6 +111,11 @@ inwardRouter.put('/:id/assign', async (c) => {
             assignmentDate, dueDate, updatedAt, id
         ).run();
 
+        // Audit log
+        await c.env.DB.prepare(
+            'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+        ).bind('ENTRY_ASSIGNED', 'Admin', `Admin assigned ${existing.inward_no} to ${assignedTeam} Team`, existing.inward_no).run();
+
         return c.json({
             success: true,
             message: `Entry assigned to ${assignedTeam} team.`
@@ -119,10 +129,22 @@ inwardRouter.put('/:id/assign', async (c) => {
 inwardRouter.put('/:id/remarks', async (c) => {
     try {
         const id = c.req.param('id');
-        const { remarks } = await c.req.json();
+        const { remarks, actor } = await c.req.json();
         const updatedAt = new Date().toISOString();
+
+        const entry = await c.env.DB.prepare('SELECT inward_no FROM inward WHERE id = ?').bind(id).first();
+
         await c.env.DB.prepare('UPDATE inward SET remarks = ?, updated_at = ? WHERE id = ?')
             .bind(remarks, updatedAt, id).run();
+
+        // Audit log
+        const auditActor = actor || 'System';
+        if (entry) {
+            await c.env.DB.prepare(
+                'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+            ).bind('REMARKS_UPDATED', auditActor, `${auditActor} updated remarks on ${entry.inward_no}`, entry.inward_no).run();
+        }
+
         return c.json({ success: true, message: 'Remarks updated successfully' });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);
@@ -133,8 +155,10 @@ inwardRouter.put('/:id/remarks', async (c) => {
 inwardRouter.put('/:id/status', async (c) => {
     try {
         const id = c.req.param('id');
-        const { assignmentStatus, fileReference } = await c.req.json();
+        const { assignmentStatus, fileReference, actor } = await c.req.json();
         const updatedAt = new Date().toISOString();
+
+        const entry = await c.env.DB.prepare('SELECT inward_no FROM inward WHERE id = ?').bind(id).first();
 
         if (assignmentStatus === 'Completed') {
             const completionDate = new Date().toISOString();
@@ -148,6 +172,14 @@ inwardRouter.put('/:id/status', async (c) => {
         } else {
             await c.env.DB.prepare('UPDATE inward SET assignment_status = ?, updated_at = ? WHERE id = ?')
                 .bind(assignmentStatus, updatedAt, id).run();
+        }
+
+        // Audit log
+        const auditActor = actor || 'System';
+        if (entry) {
+            await c.env.DB.prepare(
+                'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+            ).bind('STATUS_CHANGED', auditActor, `${auditActor} marked ${entry.inward_no} as ${assignmentStatus}`, entry.inward_no).run();
         }
 
         return c.json({ success: true, message: 'Status updated successfully' });

@@ -14,8 +14,8 @@ export const inwardAPI = {
     getAll: () => api.get('/inward'),
     create: (data) => api.post('/inward', data),
     assign: (id, data) => api.put(`/inward/${id}/assign`, data),
-    updateStatus: (id, status, fileReference) => api.put(`/inward/${id}/status`, { assignmentStatus: status, ...(fileReference ? { fileReference } : {}) }),
-    updateRemarks: (id, remarks) => api.put(`/inward/${id}/remarks`, { remarks })
+    updateStatus: (id, status, fileReference, actor) => api.put(`/inward/${id}/status`, { assignmentStatus: status, ...(fileReference ? { fileReference } : {}), ...(actor ? { actor } : {}) }),
+    updateRemarks: (id, remarks, actor) => api.put(`/inward/${id}/remarks`, { remarks, ...(actor ? { actor } : {}) })
 };
 
 // Outward API
@@ -39,6 +39,11 @@ export const notesAPI = {
     getAll: (type) => api.get('/notes', { params: type ? { type } : {} }),
     create: (data) => api.post('/notes', data),
     remove: (id) => api.delete(`/notes/${id}`),
+};
+
+// Audit Log API
+export const auditAPI = {
+    getLogs: (page = 1) => api.get(`/audit?page=${page}`)
 };
 
 // Notifications API

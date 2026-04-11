@@ -30,6 +30,8 @@ function TeamPortal() {
     const [searchTerm, setSearchTerm] = useState('');
     const [pendingSearch, setPendingSearch] = useState('');
     const [completedSearch, setCompletedSearch] = useState('');
+    const [outwardPage, setOutwardPage] = useState(1);
+    const OUTWARD_PAGE_SIZE = 20;
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [showInwardModal, setShowInwardModal] = useState(false);
@@ -99,6 +101,7 @@ function TeamPortal() {
     };
 
     const filterEntries = () => {
+        setOutwardPage(1);
         if (!searchTerm) { setFilteredEntries(entries); return; }
         const term = searchTerm.toLowerCase();
         setFilteredEntries(entries.filter(e =>
@@ -137,7 +140,7 @@ function TeamPortal() {
     const submitMarkComplete = async (e) => {
         e.preventDefault();
         try {
-            await inwardAPI.updateStatus(completeModal, 'Completed', completeFileRef);
+            await inwardAPI.updateStatus(completeModal, 'Completed', completeFileRef, `${selectedTeam} Team`);
             setCompleteModal(null);
             loadData();
         } catch (error) {
@@ -153,7 +156,7 @@ function TeamPortal() {
     const submitRemarks = async (e) => {
         e.preventDefault();
         try {
-            await inwardAPI.updateRemarks(remarksModal.id, remarksText);
+            await inwardAPI.updateRemarks(remarksModal.id, remarksText, `${selectedTeam} Team`);
             setRemarksModal(null);
             loadData();
         } catch (error) {
@@ -481,7 +484,7 @@ function TeamPortal() {
                                         <th>TEAM</th><th>STATUS</th><th>DATE</th><th>ACTIONS</th>
                                     </tr></thead>
                                     <tbody>
-                                        {filteredEntries.map(entry => (
+                                        {filteredEntries.slice((outwardPage - 1) * OUTWARD_PAGE_SIZE, outwardPage * OUTWARD_PAGE_SIZE).map(entry => (
                                             <tr key={entry.id}>
                                                 <td className="tp-outward-link">{entry.outwardNo}</td>
                                                 <td className="tp-subject-cell">{entry.subject?.length > 50 ? entry.subject.slice(0,50)+'...' : entry.subject}</td>
@@ -506,9 +509,34 @@ function TeamPortal() {
                                         ))}
                                     </tbody>
                                 </table>
+                                {filteredEntries.length > OUTWARD_PAGE_SIZE && (() => {
+                                    const totalPages = Math.ceil(filteredEntries.length / OUTWARD_PAGE_SIZE);
+                                    const pct = totalPages > 1 ? ((outwardPage - 1) / (totalPages - 1)) * 100 : 0;
+                                    return (
+                                        <div className="table-pagination">
+                                            <span className="table-note">
+                                                Showing {(outwardPage - 1) * OUTWARD_PAGE_SIZE + 1}–{Math.min(outwardPage * OUTWARD_PAGE_SIZE, filteredEntries.length)} of {filteredEntries.length}
+                                            </span>
+                                            <div className="slider-pagination">
+                                                <button className="page-arrow" disabled={outwardPage === 1} onClick={() => setOutwardPage(p => p - 1)}>‹</button>
+                                                <div className="slider-wrap">
+                                                    <input
+                                                        type="range"
+                                                        className="page-slider"
+                                                        min={1} max={totalPages} value={outwardPage}
+                                                        style={{ '--pct': `${pct}%` }}
+                                                        onChange={e => setOutwardPage(Number(e.target.value))}
+                                                    />
+                                                </div>
+                                                <button className="page-arrow" disabled={outwardPage === totalPages} onClick={() => setOutwardPage(p => p + 1)}>›</button>
+                                                <span className="page-badge">{outwardPage} <span className="page-of">/ {totalPages}</span></span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
-                        <div className="tp-table-footer">Showing {filteredEntries.length} results of {entries.length}</div>
+                        <div className="tp-table-footer">Showing {Math.min(outwardPage * OUTWARD_PAGE_SIZE, filteredEntries.length)} of {filteredEntries.length} results ({entries.length} total)</div>
                     </div>
                 )}
 

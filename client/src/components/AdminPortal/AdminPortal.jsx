@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
-import { inwardAPI, dashboardAPI, outwardAPI, notesAPI } from '../../services/api';
+import { inwardAPI, dashboardAPI, outwardAPI, notesAPI, auditAPI } from '../../services/api';
 import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
     Clock, CheckCircle2, AlertCircle, Calendar, Mail, User,
@@ -27,8 +27,14 @@ function AdminPortal() {
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(true);
     const [tooltip, setTooltip] = useState({ text: '', x: 0, y: 0, visible: false });
+    const [adminPage, setAdminPage] = useState('registers');
+    const [auditLogs, setAuditLogs] = useState([]);
+    const [auditPage, setAuditPage] = useState(1);
+    const [auditTotalPages, setAuditTotalPages] = useState(1);
+    const [auditTotal, setAuditTotal] = useState(0);
+    const [auditLoading, setAuditLoading] = useState(false);
     const [inwardPage, setInwardPage] = useState(1);
-    const INWARD_PAGE_SIZE = 10;
+    const INWARD_PAGE_SIZE = 20;
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [teamFilter, setTeamFilter] = useState('all');
@@ -479,6 +485,21 @@ function AdminPortal() {
         setTimeout(() => { win.focus(); win.print(); }, 500);
     };
 
+    const loadAuditLogs = async (page = 1) => {
+        setAuditLoading(true);
+        try {
+            const res = await auditAPI.getLogs(page);
+            setAuditLogs(res.data.logs || []);
+            setAuditTotalPages(res.data.totalPages || 1);
+            setAuditTotal(res.data.total || 0);
+            setAuditPage(page);
+        } catch (err) {
+            console.error('Error loading audit logs:', err);
+        } finally {
+            setAuditLoading(false);
+        }
+    };
+
     const filteredNotes = notesEntries.filter(n => n.note_type === notesTab);
 
     const handleNotesSubmit = async (e) => {
@@ -519,11 +540,14 @@ function AdminPortal() {
                 </div>
 
                 <div className="ap-nav-tabs">
-                    <button className="ap-nav-tab active" onClick={() => navigate('/admin')}>
+                    <button className={`ap-nav-tab${adminPage === 'registers' ? ' active' : ''}`} onClick={() => setAdminPage('registers')}>
                         Registers
                     </button>
                     <button className="ap-nav-tab" onClick={() => navigate('/admin/dashboard')}>
                         Intelligence
+                    </button>
+                    <button className={`ap-nav-tab${adminPage === 'auditlog' ? ' active' : ''}`} onClick={() => { setAdminPage('auditlog'); loadAuditLogs(1); }}>
+                        Audit Log
                     </button>
                 </div>
 
@@ -674,6 +698,7 @@ function AdminPortal() {
                 </div>
             )}
 
+            {adminPage === 'registers' && <>
             {/* Entries Table */}
             <div className="card">
                 <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1113,6 +1138,95 @@ function AdminPortal() {
                             </div>
                         </form>
                     </div>
+                </div>
+            )}
+
+            </>}
+
+            {/* Audit Log Section */}
+            {adminPage === 'auditlog' && (
+                <div className="card">
+                    <div className="card-header">
+                        <h3 className="card-title">
+                            <ClipboardList size={20} /> Audit Log
+                            <span className="entry-count">({auditTotal})</span>
+                        </h3>
+                    </div>
+                    {auditLoading ? (
+                        <div className="loading-state">
+                            <Loader2 size={40} className="spin" />
+                            <p>Loading audit log...</p>
+                        </div>
+                    ) : auditLogs.length === 0 ? (
+                        <div className="empty-state">
+                            <ClipboardList size={48} />
+                            <p>No activity recorded yet</p>
+                        </div>
+                    ) : (
+                        <div className="table-container">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Actor</th>
+                                        <th>Action</th>
+                                        <th>Details</th>
+                                        <th>Entry Ref</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {auditLogs.map(log => (
+                                        <tr key={log.id}>
+                                            <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                                {new Date(log.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                            <td>
+                                                <span style={{ fontWeight: 600, fontSize: '0.82rem' }}>{log.actor}</span>
+                                            </td>
+                                            <td>
+                                                <span className={`badge badge-${
+                                                    log.action === 'ENTRY_CREATED' ? 'pending' :
+                                                    log.action === 'ENTRY_ASSIGNED' ? 'success' :
+                                                    log.action === 'STATUS_CHANGED' ? 'warning' :
+                                                    log.action === 'OUTWARD_CREATED' ? 'team' : 'none'
+                                                }`} style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                    {log.action.replace(/_/g, ' ')}
+                                                </span>
+                                            </td>
+                                            <td style={{ fontSize: '0.82rem' }}>{log.description}</td>
+                                            <td style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--primary)' }}>
+                                                {log.inward_no || '-'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {auditTotalPages > 1 && (() => {
+                                const pct = auditTotalPages > 1 ? ((auditPage - 1) / (auditTotalPages - 1)) * 100 : 0;
+                                return (
+                                    <div className="table-pagination">
+                                        <span className="table-note">
+                                            Page {auditPage} of {auditTotalPages} &mdash; {auditTotal} total entries
+                                        </span>
+                                        <div className="slider-pagination">
+                                            <button className="page-arrow" disabled={auditPage === 1} onClick={() => loadAuditLogs(auditPage - 1)}>‹</button>
+                                            <div className="slider-wrap">
+                                                <input
+                                                    type="range"
+                                                    className="page-slider"
+                                                    min={1} max={auditTotalPages} value={auditPage}
+                                                    style={{ '--pct': `${pct}%` }}
+                                                    onChange={e => loadAuditLogs(Number(e.target.value))}
+                                                />
+                                            </div>
+                                            <button className="page-arrow" disabled={auditPage === auditTotalPages} onClick={() => loadAuditLogs(auditPage + 1)}>›</button>
+                                            <span className="page-badge">{auditPage} <span className="page-of">/ {auditTotalPages}</span></span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
                 </div>
             )}
 

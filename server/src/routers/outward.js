@@ -113,6 +113,12 @@ outwardRouter.post('/', async (c) => {
             );
         }
 
+        // Audit log
+        const auditActor = createdByTeam ? `${createdByTeam} Team` : 'Team';
+        await c.env.DB.prepare(
+            'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+        ).bind('OUTWARD_CREATED', auditActor, `${auditActor} created outward entry ${outwardNo}`, null).run();
+
         return c.json({
             success: true,
             message: 'Outward entry created successfully',
