@@ -18,24 +18,28 @@ const INITIAL_MESSAGE = {
 };
 
 // Extract ENTRIES_JSON block from AI reply
-// Returns { text: string, entries: array }
+// Returns { text, entries, showing, total }
 function parseAIReply(content) {
     const match = content.match(/ENTRIES_JSON\s*([\s\S]*?)\s*END_ENTRIES_JSON/);
 
-    // Strip any ENTRIES_JSON markers from displayed text regardless of parse success
+    // Strip any ENTRIES_JSON markers from displayed text
     const cleanText = content
         .replace(/ENTRIES_JSON[\s\S]*?END_ENTRIES_JSON/g, '')
-        .replace(/ENTRIES_JSON[\s\S]*/g, '') // handle cut-off block
+        .replace(/ENTRIES_JSON[\s\S]*/g, '')
         .trim();
 
-    if (!match) return { text: cleanText, entries: [] };
+    // Detect "Showing X of Y" in the text to know if more exist
+    const pageMatch = cleanText.match(/showing\s+(\d+)\s+of\s+(\d+)/i);
+    const showing = pageMatch ? parseInt(pageMatch[1]) : null;
+    const total   = pageMatch ? parseInt(pageMatch[2]) : null;
+
+    if (!match) return { text: cleanText, entries: [], showing, total };
 
     try {
         const entries = JSON.parse(match[1].trim());
-        return { text: cleanText, entries: Array.isArray(entries) ? entries : [] };
+        return { text: cleanText, entries: Array.isArray(entries) ? entries : [], showing, total };
     } catch {
-        // JSON was cut off — show clean text without the broken block
-        return { text: cleanText, entries: [] };
+        return { text: cleanText, entries: [], showing, total };
     }
 }
 
@@ -94,9 +98,17 @@ function EntryCard({ entry }) {
     );
 }
 
-// Render assistant message: plain text + optional entry cards
-function MessageContent({ content }) {
-    const { text, entries } = parseAIReply(content);
+// Render assistant message: plain text + optional entry cards + load more button
+function MessageContent({ content, onSend }) {
+    const { text, entries, showing, total } = parseAIReply(content);
+    const hasMore = showing !== null && total !== null && showing < total;
+    const nextStart = showing + 1;
+    const nextEnd   = Math.min(showing + 10, total);
+
+    // Build the "show more" query by extracting context from existing text
+    const handleShowMore = () => {
+        onSend(`Show entries ${nextStart} to ${nextEnd} (continue from where you left off)`);
+    };
 
     return (
         <div className="chatbot-message-content">
@@ -113,6 +125,11 @@ function MessageContent({ content }) {
             {entries.map((entry, i) => (
                 <EntryCard key={i} entry={entry} />
             ))}
+            {hasMore && (
+                <button className="chatbot-load-more" onClick={handleShowMore}>
+                    Show next 10 ({nextStart}–{nextEnd} of {total}) →
+                </button>
+            )}
         </div>
     );
 }
@@ -226,7 +243,7 @@ function ChatBot() {
                             )}
                             {msg.role === 'assistant' ? (
                                 <div className="chatbot-bubble chatbot-bubble--assistant">
-                                    <MessageContent content={msg.content} />
+                                    <MessageContent content={msg.content} onSend={sendMessage} />
                                 </div>
                             ) : (
                                 <div className="chatbot-bubble chatbot-bubble--user">

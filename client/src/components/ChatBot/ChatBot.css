@@ -286,6 +286,36 @@
     min-width: 0;
 }
 
+/* ── Load more button ── */
+.chatbot-load-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.45rem 0.75rem;
+    background: #f3f0ff;
+    border: 1.5px dashed #c4b5fd;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #5b45d4;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.chatbot-load-more:hover {
+    background: #ede8ff;
+    border-color: #5b45d4;
+}
+[data-theme="dark"] .chatbot-load-more {
+    background: rgba(91,69,212,0.12);
+    border-color: rgba(91,69,212,0.35);
+    color: #a78bfa;
+}
+[data-theme="dark"] .chatbot-load-more:hover {
+    background: rgba(91,69,212,0.22);
+}
+
 /* ── Typing indicator ── */
 .chatbot-bubble--typing {
     display: flex;
