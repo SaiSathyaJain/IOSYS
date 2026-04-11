@@ -21,17 +21,21 @@ const INITIAL_MESSAGE = {
 // Returns { text: string, entries: array }
 function parseAIReply(content) {
     const match = content.match(/ENTRIES_JSON\s*([\s\S]*?)\s*END_ENTRIES_JSON/);
-    if (!match) return { text: content, entries: [] };
 
-    const text = content
-        .replace(/ENTRIES_JSON[\s\S]*?END_ENTRIES_JSON/, '')
+    // Strip any ENTRIES_JSON markers from displayed text regardless of parse success
+    const cleanText = content
+        .replace(/ENTRIES_JSON[\s\S]*?END_ENTRIES_JSON/g, '')
+        .replace(/ENTRIES_JSON[\s\S]*/g, '') // handle cut-off block
         .trim();
+
+    if (!match) return { text: cleanText, entries: [] };
 
     try {
         const entries = JSON.parse(match[1].trim());
-        return { text, entries: Array.isArray(entries) ? entries : [] };
+        return { text: cleanText, entries: Array.isArray(entries) ? entries : [] };
     } catch {
-        return { text: content, entries: [] };
+        // JSON was cut off — show clean text without the broken block
+        return { text: cleanText, entries: [] };
     }
 }
 

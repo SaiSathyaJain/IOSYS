@@ -144,12 +144,13 @@ END_ENTRIES_JSON
 For inward entries use these fields instead: "no", "type":"inward", "date", "from", "subject", "team", "status", "due"
 
 RULES — follow exactly:
-1. Write your answer text FIRST (e.g. "Here are the 2 outward entries:")
+1. Write your answer text FIRST (e.g. "Here are the first 10 of 35 UG entries:")
 2. Then output the ENTRIES_JSON block on its own line
 3. The JSON must be a valid array — double quotes, no trailing commas
 4. Use "" for missing values, true/false for closed (boolean)
 5. NEVER use bullet points or numbered lists for entry data — use the JSON block only
-6. ONE ENTRIES_JSON block per response maximum`;
+6. ONE ENTRIES_JSON block per response maximum
+7. MAXIMUM 10 entries per ENTRIES_JSON block — if there are more, say "Showing 10 of N" in the text and list only the first 10`;
 
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -163,7 +164,7 @@ RULES — follow exactly:
                     { role: 'system', content: systemPrompt },
                     ...messages
                 ],
-                max_tokens: 1024,
+                max_tokens: 2048,
                 temperature: 0.5,
             }),
         });
