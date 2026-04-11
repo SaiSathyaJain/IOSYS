@@ -151,7 +151,8 @@ function ChatBot() {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState([INITIAL_MESSAGE]);
     const [input, setInput] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);   // typing indicator
+    const [streaming, setStreaming] = useState(false); // stream in progress
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
     const chipsRef = useRef(null);
@@ -172,7 +173,7 @@ function ChatBot() {
 
     const sendMessage = async (text) => {
         const content = (text || input).trim();
-        if (!content || loading) return;
+        if (!content || loading || streaming) return;
         setInput('');
 
         const userMsg = { role: 'user', content };
@@ -191,12 +192,49 @@ function ChatBot() {
                 body: JSON.stringify({ messages: apiMessages }),
             });
 
-            const data = await res.json();
-            const reply = data.success
-                ? data.reply
-                : `Sorry, something went wrong: ${data.message || 'Please try again.'}`;
+            // Non-streaming error response
+            if (!res.headers.get('content-type')?.includes('text/event-stream')) {
+                const data = await res.json();
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: `Sorry, something went wrong: ${data.message || 'Please try again.'}`,
+                }]);
+                return;
+            }
 
-            setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+            // Streaming — hide typing indicator, start filling message
+            setLoading(false);
+            setStreaming(true);
+            setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // keep incomplete line
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const data = line.slice(6).trim();
+                    if (data === '[DONE]') break;
+                    try {
+                        const json = JSON.parse(data);
+                        const delta = json.choices?.[0]?.delta?.content || '';
+                        if (delta) {
+                            setMessages(prev => {
+                                const last = prev[prev.length - 1];
+                                return [...prev.slice(0, -1), { ...last, content: last.content + delta }];
+                            });
+                        }
+                    } catch { /* skip malformed chunk */ }
+                }
+            }
         } catch {
             setMessages(prev => [...prev, {
                 role: 'assistant',
@@ -204,6 +242,7 @@ function ChatBot() {
             }]);
         } finally {
             setLoading(false);
+            setStreaming(false);
         }
     };
 
@@ -296,7 +335,7 @@ function ChatBot() {
                                 key={label}
                                 className="chatbot-qa-chip"
                                 onClick={() => sendMessage(query)}
-                                disabled={loading}
+                                disabled={loading || streaming}
                             >
                                 {label}
                                 <ArrowUpRight size={11} />
@@ -320,12 +359,12 @@ function ChatBot() {
                                 sendMessage();
                             }
                         }}
-                        disabled={loading}
+                        disabled={loading || streaming}
                     />
                     <button
                         className="chatbot-send"
                         onClick={() => sendMessage()}
-                        disabled={!input.trim() || loading}
+                        disabled={!input.trim() || loading || streaming}
                     >
                         {loading
                             ? <Loader2 size={15} className="chatbot-spin" />
