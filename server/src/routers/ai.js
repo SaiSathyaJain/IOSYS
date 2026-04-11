@@ -41,7 +41,7 @@ Return ONLY the JSON object:`;
                 'X-Title': 'IOSYS Assistant',
             },
             body: JSON.stringify({
-                model: 'meta-llama/llama-3.3-70b-instruct:free',
+                model: 'nvidia/nemotron-3-nano-30b-a3b:free',
                 messages: [{ role: 'user', content: prompt }],
                 max_tokens: 300,
                 temperature: 0.1,
@@ -84,15 +84,12 @@ aiRouter.post('/chat', async (c) => {
         }
 
         const ALLOWED_MODELS = new Set([
-            'google/gemma-4-26b-a4b-it:free',
-            'google/gemma-4-31b-it:free',
+            'nvidia/nemotron-3-nano-30b-a3b:free',
             'openai/gpt-oss-20b:free',
             'openai/gpt-oss-120b:free',
-            'qwen/qwen3-next-80b-a3b-instruct:free',
             'nvidia/nemotron-3-super-120b-a12b:free',
-            'nvidia/nemotron-3-nano-30b-a3b:free',
         ]);
-        const DEFAULT_MODEL = 'google/gemma-4-26b-a4b-it:free';
+        const DEFAULT_MODEL = 'nvidia/nemotron-3-nano-30b-a3b:free';
         const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
 
         if (!c.env.OPENROUTER_API_KEY) {

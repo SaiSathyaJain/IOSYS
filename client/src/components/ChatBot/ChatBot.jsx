@@ -5,13 +5,10 @@ import './ChatBot.css';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const MODELS = [
-    { id: 'google/gemma-4-26b-a4b-it:free',          label: 'Gemma 4 26B',       badge: 'Fast'     },
-    { id: 'openai/gpt-oss-20b:free',                  label: 'GPT OSS 20B',       badge: 'Fast'     },
-    { id: 'google/gemma-4-31b-it:free',               label: 'Gemma 4 31B',       badge: 'Balanced' },
-    { id: 'qwen/qwen3-next-80b-a3b-instruct:free',    label: 'Qwen3 80B',         badge: 'Fast'     },
-    { id: 'nvidia/nemotron-3-nano-30b-a3b:free',      label: 'Nemotron Nano 30B', badge: 'Fast'     },
-    { id: 'openai/gpt-oss-120b:free',                 label: 'GPT OSS 120B',      badge: 'Powerful' },
-    { id: 'nvidia/nemotron-3-super-120b-a12b:free',   label: 'Nemotron Super',    badge: 'Powerful' },
+    { id: 'nvidia/nemotron-3-nano-30b-a3b:free',    label: 'Nemotron Nano 30B', badge: 'Fast'     },
+    { id: 'openai/gpt-oss-20b:free',                label: 'GPT OSS 20B',       badge: 'Fast'     },
+    { id: 'openai/gpt-oss-120b:free',               label: 'GPT OSS 120B',      badge: 'Powerful' },
+    { id: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'Nemotron Super',    badge: 'Powerful' },
 ];
 const DEFAULT_MODEL = MODELS[0].id;
 
