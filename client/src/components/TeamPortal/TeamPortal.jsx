@@ -200,7 +200,8 @@ function TeamPortal() {
     const checkPushStatus = async () => {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
         if (Notification.permission === 'granted') {
-            const reg = await navigator.serviceWorker.register('/sw.js');
+            await navigator.serviceWorker.register('/sw.js');
+            const reg = await navigator.serviceWorker.ready;
             const existing = await reg.pushManager.getSubscription();
             if (existing) setPushEnabled(true);
         }
@@ -218,7 +219,8 @@ function TeamPortal() {
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') { alert('Notification permission denied.'); return; }
 
-            const reg = await navigator.serviceWorker.register('/sw.js');
+            await navigator.serviceWorker.register('/sw.js');
+            const reg = await navigator.serviceWorker.ready;
             const keyBytes = Uint8Array.from(
                 atob(vapidKey.replace(/-/g, '+').replace(/_/g, '/')),
                 c => c.charCodeAt(0)
