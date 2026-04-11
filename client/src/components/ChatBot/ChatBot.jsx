@@ -130,7 +130,7 @@ function renderInline(text) {
     });
 }
 
-// Block markdown renderer: headings, bullets, numbered lists, paragraphs
+// Block markdown renderer: headings, bullets, numbered lists, tables, paragraphs
 function MarkdownBlock({ text }) {
     if (!text) return null;
     const lines = text.split('\n');
@@ -155,6 +155,43 @@ function MarkdownBlock({ text }) {
         if (trimmed.startsWith('# ')) {
             elements.push(<p key={i} className="md-h1">{renderInline(trimmed.slice(2))}</p>);
             i++; continue;
+        }
+
+        // Table — detect by pipe characters
+        if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+            const tableLines = [];
+            while (i < lines.length && lines[i].trim().startsWith('|')) {
+                tableLines.push(lines[i].trim());
+                i++;
+            }
+            // Parse header, separator, rows
+            const parseRow = (row) =>
+                row.slice(1, -1).split('|').map(cell => cell.trim());
+            const isSeparator = (row) => /^[\s|:-]+$/.test(row);
+
+            const header = parseRow(tableLines[0]);
+            const dataRows = tableLines
+                .slice(1)
+                .filter(r => !isSeparator(r))
+                .map(parseRow);
+
+            elements.push(
+                <div key={`tbl-${i}`} className="md-table-wrap">
+                    <table className="md-table">
+                        <thead>
+                            <tr>{header.map((h, ci) => <th key={ci}>{renderInline(h)}</th>)}</tr>
+                        </thead>
+                        <tbody>
+                            {dataRows.map((row, ri) => (
+                                <tr key={ri}>
+                                    {row.map((cell, ci) => <td key={ci}>{renderInline(cell)}</td>)}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+            continue;
         }
 
         // Bullet list — collect consecutive bullets

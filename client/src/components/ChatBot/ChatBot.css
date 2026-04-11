@@ -538,6 +538,14 @@
 
 .md-code { background: rgba(0,0,0,0.25); padding: 0.1rem 0.35rem; border-radius: 3px; font-family: monospace; font-size: 0.78rem; color: #a5f3fc; }
 
+/* Markdown table */
+.md-table-wrap { overflow-x: auto; margin: 0.4rem 0; border-radius: 8px; }
+.md-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.md-table th { background: rgba(91,69,212,0.35); color: #c4b5fd; font-weight: 600; padding: 0.45rem 0.75rem; text-align: left; white-space: nowrap; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.md-table td { padding: 0.38rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); vertical-align: top; }
+.md-table tr:last-child td { border-bottom: none; }
+.md-table tr:hover td { background: rgba(255,255,255,0.04); }
+
 [data-theme="light"] .md-p,
 [data-theme="light"] .md-li { color: #1e293b; }
 [data-theme="light"] .md-h1 { color: #0f172a; }
@@ -546,6 +554,9 @@
 [data-theme="light"] .md-li::before { color: #5b45d4; }
 [data-theme="light"] .md-hr { border-top-color: rgba(0,0,0,0.1); }
 [data-theme="light"] .md-code { background: rgba(0,0,0,0.06); color: #0891b2; }
+[data-theme="light"] .md-table th { background: rgba(91,69,212,0.08); color: #5b45d4; border-bottom-color: rgba(0,0,0,0.1); }
+[data-theme="light"] .md-table td { color: #334155; border-bottom-color: rgba(0,0,0,0.06); }
+[data-theme="light"] .md-table tr:hover td { background: rgba(0,0,0,0.02); }
 
 /* ── Model picker ───────────────────────────────────────────── */
 .chatbot-model-btn {
