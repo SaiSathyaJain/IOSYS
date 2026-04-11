@@ -111,30 +111,90 @@ function EntryCard({ entry }) {
     );
 }
 
-// Render assistant message: plain text + optional entry cards + load more button
+// Inline markdown: **bold**, *italic*, `code`
+function renderInline(text) {
+    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+    return parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) return <strong key={i}>{part.slice(2, -2)}</strong>;
+        if (part.startsWith('*')  && part.endsWith('*'))  return <em key={i}>{part.slice(1, -1)}</em>;
+        if (part.startsWith('`')  && part.endsWith('`'))  return <code key={i} className="md-code">{part.slice(1, -1)}</code>;
+        return part;
+    });
+}
+
+// Block markdown renderer: headings, bullets, numbered lists, paragraphs
+function MarkdownBlock({ text }) {
+    if (!text) return null;
+    const lines = text.split('\n');
+    const elements = [];
+    let i = 0;
+
+    while (i < lines.length) {
+        const line = lines[i];
+        const trimmed = line.trim();
+
+        if (!trimmed) { i++; continue; }
+
+        // Headings
+        if (trimmed.startsWith('### ')) {
+            elements.push(<p key={i} className="md-h3">{renderInline(trimmed.slice(4))}</p>);
+            i++; continue;
+        }
+        if (trimmed.startsWith('## ')) {
+            elements.push(<p key={i} className="md-h2">{renderInline(trimmed.slice(3))}</p>);
+            i++; continue;
+        }
+        if (trimmed.startsWith('# ')) {
+            elements.push(<p key={i} className="md-h1">{renderInline(trimmed.slice(2))}</p>);
+            i++; continue;
+        }
+
+        // Bullet list — collect consecutive bullets
+        if (/^(\s*[-*]|\s*\d+\.) /.test(line)) {
+            const items = [];
+            while (i < lines.length && /^(\s*[-*]|\s*\d+\.) /.test(lines[i])) {
+                const l = lines[i];
+                const nested = /^\s{2,}/.test(l);
+                const content = l.replace(/^\s*[-*\d.]+\s/, '');
+                items.push(
+                    <li key={i} className={nested ? 'md-li md-li--nested' : 'md-li'}>
+                        {renderInline(content)}
+                    </li>
+                );
+                i++;
+            }
+            elements.push(<ul key={`ul-${i}`} className="md-ul">{items}</ul>);
+            continue;
+        }
+
+        // Horizontal rule
+        if (/^[-*_]{3,}$/.test(trimmed)) {
+            elements.push(<hr key={i} className="md-hr" />);
+            i++; continue;
+        }
+
+        // Plain paragraph
+        elements.push(<p key={i} className="md-p">{renderInline(trimmed)}</p>);
+        i++;
+    }
+
+    return <div className="md-body">{elements}</div>;
+}
+
+// Render assistant message: markdown text + optional entry cards + load more button
 function MessageContent({ content, onSend }) {
     const { text, entries, showing, total } = parseAIReply(content);
     const hasMore = showing !== null && total !== null && showing < total;
     const nextStart = showing + 1;
     const nextEnd   = Math.min(showing + 10, total);
 
-    // Build the "show more" query by extracting context from existing text
     const handleShowMore = () => {
         onSend(`Show entries ${nextStart} to ${nextEnd} (continue from where you left off)`);
     };
 
     return (
         <div className="chatbot-message-content">
-            {text && (
-                <p className="chatbot-text-segment">
-                    {text.split('\n').map((line, i, arr) => (
-                        <span key={i}>
-                            {line}
-                            {i < arr.length - 1 && <br />}
-                        </span>
-                    ))}
-                </p>
-            )}
+            {text && <MarkdownBlock text={text} />}
             {entries.map((entry, i) => (
                 <EntryCard key={i} entry={entry} />
             ))}
@@ -277,7 +337,7 @@ function ChatBot() {
                             <div className="chatbot-title">IOSYS Assistant</div>
                             <div className="chatbot-subtitle">
                                 <span className="chatbot-live-dot" />
-                                Nemotron 3 Super · Live data
+                                Llama 3.3 70B · Live data
                             </div>
                         </div>
                     </div>

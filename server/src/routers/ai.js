@@ -41,7 +41,7 @@ Return ONLY the JSON object:`;
                 'X-Title': 'IOSYS Assistant',
             },
             body: JSON.stringify({
-                model: 'nvidia/nemotron-3-super-120b-a12b:free',
+                model: 'meta-llama/llama-3.3-70b-instruct:free',
                 messages: [{ role: 'user', content: prompt }],
                 max_tokens: 300,
                 temperature: 0.1,
@@ -291,12 +291,12 @@ Rules: valid JSON array, double quotes, no trailing commas, "" for missing value
                 'X-Title': 'IOSYS Assistant',
             },
             body: JSON.stringify({
-                model: 'nvidia/nemotron-3-super-120b-a12b:free',
+                model: 'meta-llama/llama-3.3-70b-instruct:free',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     ...messages
                 ],
-                max_tokens: 1500,
+                max_tokens: 2500,
                 temperature: 0.4,
                 stream: true,
             }),
