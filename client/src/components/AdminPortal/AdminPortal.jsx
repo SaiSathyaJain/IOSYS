@@ -192,6 +192,55 @@ function AdminPortal() {
         }
     };
 
+    const handleInboxPrint = (item) => {
+        const receivedDate = new Date(item.received_at).toLocaleString('en-IN', {
+            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        const esc = (str) => (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const bodyHtml = esc(item.body_preview || '(No preview available)').replace(/\n/g, '<br/>');
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Email — ${esc(item.subject)}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 12px; padding: 32px; color: #111; max-width: 800px; margin: auto; }
+    .org { text-align: center; font-size: 14px; font-weight: 700; letter-spacing: 0.03em; margin-bottom: 4px; }
+    .org-sub { text-align: center; font-size: 11px; color: #555; margin-bottom: 20px; }
+    .divider { border: none; border-top: 2px solid #1d4ed8; margin-bottom: 16px; }
+    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .meta-table td { padding: 5px 8px; border: 1px solid #ddd; vertical-align: top; }
+    .meta-table td:first-child { font-weight: 600; width: 28%; background: #f0f4ff; color: #1d4ed8; }
+    .body-label { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; margin-bottom: 8px; }
+    .body-box { border: 1px solid #ddd; border-radius: 4px; padding: 14px; line-height: 1.7; white-space: pre-wrap; background: #fafafa; min-height: 120px; }
+    .footer { margin-top: 24px; font-size: 9px; color: #aaa; text-align: right; border-top: 1px solid #eee; padding-top: 8px; }
+    @page { size: A4; margin: 18mm; }
+  </style>
+</head>
+<body>
+  <div class="org">Sri Sathya Sai Institute of Higher Learning</div>
+  <div class="org-sub">Controller of Examinations — Inward/Outward System</div>
+  <hr class="divider"/>
+  <table class="meta-table">
+    <tr><td>From</td><td>${esc(item.from_name) ? `${esc(item.from_name)} &lt;${esc(item.from_email)}&gt;` : esc(item.from_email)}</td></tr>
+    <tr><td>Subject</td><td><strong>${esc(item.subject)}</strong></td></tr>
+    <tr><td>Received</td><td>${receivedDate}</td></tr>
+    ${item.ai_team ? `<tr><td>AI Suggested Team</td><td>${esc(item.ai_team)}${item.ai_due_date ? ` &nbsp;|&nbsp; Due: ${esc(item.ai_due_date)}` : ''}</td></tr>` : ''}
+    ${item.ai_remarks ? `<tr><td>AI Remarks</td><td>${esc(item.ai_remarks)}</td></tr>` : ''}
+  </table>
+  <div class="body-label">Email Body Preview</div>
+  <div class="body-box">${bodyHtml}</div>
+  <div class="footer">Printed on ${new Date().toLocaleString('en-IN')} &mdash; SSSIHL Inward/Outward System</div>
+</body>
+</html>`;
+        const win = window.open('', '_blank');
+        if (!win) { alert('Please allow pop-ups for this site and try again.'); return; }
+        win.document.write(html);
+        win.document.close();
+        setTimeout(() => { win.focus(); win.print(); }, 400);
+    };
+
     const handleInboxReject = async (id) => {
         try {
             await inboxQueueAPI.reject(id);
@@ -1601,6 +1650,9 @@ function AdminPortal() {
                                                     </button>
                                                     <button className="btn btn-ghost btn-sm iq-reject-btn" onClick={() => handleInboxReject(item.id)}>
                                                         <X size={13} /> Reject
+                                                    </button>
+                                                    <button className="btn btn-ghost btn-sm" onClick={() => handleInboxPrint(item)} title="Print email">
+                                                        <Printer size={13} />
                                                     </button>
                                                 </div>
                                             </div>
