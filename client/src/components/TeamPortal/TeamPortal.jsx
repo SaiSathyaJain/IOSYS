@@ -4,7 +4,7 @@ import { outwardAPI, inwardAPI, dashboardAPI } from '../../services/api';
 import {
     Clock, CheckCircle2, ArrowRight, Calendar, Plus, X,
     ClipboardList, Check, FileText, Search, RefreshCw, Eye,
-    ArrowUpFromLine, Loader2, AlertTriangle, Link2, Lock,
+    ArrowUpFromLine, ArrowLeft, Loader2, AlertTriangle, Link2, Lock,
     Sun, Moon, LayoutDashboard, Send, History, User, Download
 } from 'lucide-react';
 import './TeamPortal.css';
@@ -361,6 +361,9 @@ function TeamPortal() {
                         <span className="tp-main-date">{formatHeaderDate()}</span>
                     </div>
                     <div className="tp-main-header-right">
+                        <button className="tp-export-btn" onClick={() => navigate('/team')} title="Back to team selection">
+                            <ArrowLeft size={14} /> Back
+                        </button>
                         <button className="tp-export-btn"><Download size={14} /> Export</button>
                         {!pushEnabled && 'Notification' in window && Notification.permission !== 'denied' && (
                             <button className="tp-export-btn" onClick={registerPush} title="Enable push notifications" style={{ gap: '0.35rem' }}>
