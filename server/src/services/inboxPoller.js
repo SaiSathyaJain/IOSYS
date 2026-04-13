@@ -1,7 +1,7 @@
 /**
  * Inbox Poller — reads unread Gmail messages, AI-extracts fields,
  * inserts into inbox_queue for admin review.
- * Triggered by cron every 5 minutes.
+ * Triggered by cron every 30 minutes.
  */
 
 async function getAccessToken(env) {
@@ -129,8 +129,12 @@ export async function pollInbox(env) {
     const accessToken = await getAccessToken(env);
 
     // Fetch unread messages (max 15 per poll)
+    // Exclude Gmail auto-categories (Promotions, Updates, Social, Forums) and limit to last 2 days
+    const gmailQuery = encodeURIComponent(
+        'is:unread in:inbox -category:promotions -category:updates -category:social -category:forums newer_than:2d'
+    );
     const listRes = await fetch(
-        'https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread in:inbox&maxResults=15',
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${gmailQuery}&maxResults=15`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     if (!listRes.ok) {
@@ -167,6 +171,17 @@ export async function pollInbox(env) {
                 : new Date().toISOString();
 
             const { name: fromName, email: fromEmail } = parseFrom(fromHeader);
+
+            // Skip advertisement / automated emails based on subject keywords
+            const AD_KEYWORDS = [
+                'unsubscribe', 'newsletter', 'no-reply', 'noreply', 'do not reply',
+                'opt-out', 'mailing list', 'automated', 'promotion', 'promotional',
+                'offer', 'discount', 'deal', 'sale', '% off',
+            ];
+            const subjectLower = subject.toLowerCase();
+            const fromEmailLower = fromEmail.toLowerCase();
+            const isAd = AD_KEYWORDS.some(kw => subjectLower.includes(kw) || fromEmailLower.includes(kw));
+            if (isAd) { result.skipped++; continue; }
 
             // Extract body
             const bodyText    = extractBodyText(detail.payload || {});

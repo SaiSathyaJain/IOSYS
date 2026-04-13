@@ -95,6 +95,8 @@ function AdminPortal() {
     const [inboxAcceptItem, setInboxAcceptItem] = useState(null); // item being confirmed
     const [inboxAcceptData, setInboxAcceptData] = useState({});   // editable fields
     const [inboxAccepting, setInboxAccepting]   = useState(false);
+    const [inboxQueuePage, setInboxQueuePage]   = useState(1);
+    const INBOX_PAGE_SIZE = 5;
 
     const TEAM_EMAILS = {
         'UG': 'coeoffice@sssihl.edu.in',
@@ -152,6 +154,7 @@ function AdminPortal() {
             const res = await inboxQueueAPI.getItems('pending');
             setInboxItems(res.data.items || []);
             setInboxCount(res.data.pendingCount || 0);
+            setInboxQueuePage(1);
         } catch (err) {
             console.error('Error loading inbox queue:', err);
         } finally {
@@ -1557,47 +1560,77 @@ function AdminPortal() {
                         <div className="empty-state">
                             <Mail size={48} />
                             <p>No emails pending review</p>
-                            <span>New emails will appear here every 5 minutes</span>
+                            <span>New emails will appear here every 30 minutes</span>
                         </div>
-                    ) : (
-                        <div className="inbox-queue-list">
-                            {inboxItems.map(item => (
-                                <div key={item.id} className="inbox-queue-item">
-                                    <div className="iq-left">
-                                        <div className="iq-from">
-                                            <span className="iq-from-name">{item.from_name || item.from_email}</span>
-                                            <span className="iq-from-email">{item.from_email}</span>
-                                        </div>
-                                        <div className="iq-subject">{item.subject}</div>
-                                        {item.body_preview && (
-                                            <div className="iq-preview">{item.body_preview.slice(0, 180)}…</div>
-                                        )}
-                                        <div className="iq-meta">
-                                            <span>{new Date(item.received_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                        </div>
-                                    </div>
-                                    <div className="iq-right">
-                                        <div className="iq-ai-suggestion">
-                                            <span className="iq-ai-label"><Sparkles size={11} /> AI Suggestion</span>
-                                            <div className="iq-ai-fields">
-                                                {item.ai_team && <span className="badge badge-team">{item.ai_team}</span>}
-                                                {item.ai_due_date && <span className="iq-ai-due">Due: {item.ai_due_date}</span>}
-                                                {item.ai_remarks && <span className="iq-ai-remarks">{item.ai_remarks}</span>}
+                    ) : (() => {
+                        const iqTotalPages = Math.ceil(inboxItems.length / INBOX_PAGE_SIZE);
+                        const pagedInboxItems = inboxItems.slice(
+                            (inboxQueuePage - 1) * INBOX_PAGE_SIZE,
+                            inboxQueuePage * INBOX_PAGE_SIZE
+                        );
+                        return (
+                            <>
+                                <div className="inbox-queue-list">
+                                    {pagedInboxItems.map(item => (
+                                        <div key={item.id} className="inbox-queue-item">
+                                            <div className="iq-left">
+                                                <div className="iq-from">
+                                                    <span className="iq-from-name">{item.from_name || item.from_email}</span>
+                                                    <span className="iq-from-email">{item.from_email}</span>
+                                                </div>
+                                                <div className="iq-subject">{item.subject}</div>
+                                                {item.body_preview && (
+                                                    <div className="iq-preview">{item.body_preview.slice(0, 180)}…</div>
+                                                )}
+                                                <div className="iq-meta">
+                                                    <span>{new Date(item.received_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                            </div>
+                                            <div className="iq-right">
+                                                <div className="iq-ai-suggestion">
+                                                    <span className="iq-ai-label"><Sparkles size={11} /> AI Suggestion</span>
+                                                    <div className="iq-ai-fields">
+                                                        {item.ai_team && <span className="badge badge-team">{item.ai_team}</span>}
+                                                        {item.ai_due_date && <span className="iq-ai-due">Due: {item.ai_due_date}</span>}
+                                                        {item.ai_remarks && <span className="iq-ai-remarks">{item.ai_remarks}</span>}
+                                                    </div>
+                                                </div>
+                                                <div className="iq-actions">
+                                                    <button className="btn btn-primary btn-sm" onClick={() => openInboxAccept(item)}>
+                                                        <Check size={13} /> Accept
+                                                    </button>
+                                                    <button className="btn btn-ghost btn-sm iq-reject-btn" onClick={() => handleInboxReject(item.id)}>
+                                                        <X size={13} /> Reject
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="iq-actions">
-                                            <button className="btn btn-primary btn-sm" onClick={() => openInboxAccept(item)}>
-                                                <Check size={13} /> Accept
-                                            </button>
-                                            <button className="btn btn-ghost btn-sm iq-reject-btn" onClick={() => handleInboxReject(item.id)}>
-                                                <X size={13} /> Reject
-                                            </button>
+                                    ))}
+                                </div>
+                                {iqTotalPages > 1 && (
+                                    <div className="table-pagination">
+                                        <span className="table-note">
+                                            Showing {(inboxQueuePage - 1) * INBOX_PAGE_SIZE + 1}–{Math.min(inboxQueuePage * INBOX_PAGE_SIZE, inboxItems.length)} of {inboxItems.length}
+                                        </span>
+                                        <div className="slider-pagination">
+                                            <button className="page-arrow" disabled={inboxQueuePage === 1} onClick={() => setInboxQueuePage(p => p - 1)}>‹</button>
+                                            <div className="slider-wrap">
+                                                <input
+                                                    type="range"
+                                                    className="page-slider"
+                                                    min={1} max={iqTotalPages} value={inboxQueuePage}
+                                                    style={{ '--pct': `${iqTotalPages > 1 ? ((inboxQueuePage - 1) / (iqTotalPages - 1)) * 100 : 0}%` }}
+                                                    onChange={e => setInboxQueuePage(Number(e.target.value))}
+                                                />
+                                            </div>
+                                            <button className="page-arrow" disabled={inboxQueuePage === iqTotalPages} onClick={() => setInboxQueuePage(p => p + 1)}>›</button>
+                                            <span className="page-badge">{inboxQueuePage} <span className="page-of">/ {iqTotalPages}</span></span>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                )}
+                            </>
+                        );
+                    })()}
                 </div>
             )}
 
