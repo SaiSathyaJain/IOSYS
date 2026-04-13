@@ -6,7 +6,7 @@ export const inboxQueueRouter = new Hono();
 inboxQueueRouter.get('/', async (c) => {
     const status = c.req.query('status') || 'pending';
     const { results } = await c.env.DB.prepare(
-        'SELECT * FROM inbox_queue WHERE status = ? AND inward_id IS NULL ORDER BY received_at DESC'
+        'SELECT * FROM inbox_queue WHERE status = ? AND inward_id IS NULL ORDER BY created_at DESC'
     ).bind(status).all();
 
     const pendingRow = await c.env.DB.prepare(

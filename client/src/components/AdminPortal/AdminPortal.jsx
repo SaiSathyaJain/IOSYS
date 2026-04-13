@@ -122,6 +122,16 @@ function AdminPortal() {
         filterEntries();
     }, [entries, searchTerm, statusFilter, teamFilter, dateFrom, dateTo]);
 
+    // Auto-refresh inbox every 30 min when inbox tab is active
+    useEffect(() => {
+        if (adminPage !== 'inbox') return;
+        setInboxQueuePage(1);
+        const interval = setInterval(() => {
+            loadInboxItems();
+        }, 30 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, [adminPage]);
+
     const loadData = async () => {
         setLoading(true);
         try {
