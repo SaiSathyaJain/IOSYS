@@ -275,6 +275,14 @@ function AdminPortal() {
                     email: formData.assignedToEmail,
                     subject: formData.subject,
                 });
+            } else if (response.data.aiAssigned) {
+                // AI auto-assigned on the server
+                setAssignSuccess({
+                    inwardNo: response.data.inwardNo,
+                    team: response.data.assignedTeam,
+                    email: response.data.assignedToEmail,
+                    subject: formData.subject,
+                });
             } else {
                 setCreateSuccess({
                     inwardNo: response.data.inwardNo,
