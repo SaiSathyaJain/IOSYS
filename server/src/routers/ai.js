@@ -294,35 +294,57 @@ END_ENTRIES_JSON
 Rules: valid JSON array, double quotes, no trailing commas, "" for missing values, boolean for "closed", ONE block per reply max.
 Never include ENTRIES_JSON for summary tables, counts, statistics, or grouped data — use a markdown table instead.`;
 
-        const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
-                'X-Title': 'IOSYS Assistant',
-            },
-            body: JSON.stringify({
-                model,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    ...messages
-                ],
-                max_tokens: 2500,
-                temperature: 0.4,
-                stream: true,
-            }),
-        });
+        const FALLBACK_MODELS = [
+            model,
+            'openai/gpt-oss-20b:free',
+            'nvidia/nemotron-3-nano-30b-a3b:free',
+            'openai/gpt-oss-120b:free',
+        ];
+        // Deduplicate while preserving order
+        const tryModels = [...new Set(FALLBACK_MODELS)];
 
-        if (!aiRes.ok) {
-            const errText = await aiRes.text();
-            console.error('OpenRouter API error:', aiRes.status, errText);
-            let errMsg = 'AI service error. Please try again.';
+        const openRouterHeaders = {
+            'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
+            'X-Title': 'IOSYS Assistant',
+        };
+
+        let aiRes = null;
+        let lastErr = 'AI service error. Please try again.';
+
+        for (const tryModel of tryModels) {
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: openRouterHeaders,
+                body: JSON.stringify({
+                    model: tryModel,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...messages
+                    ],
+                    max_tokens: 2500,
+                    temperature: 0.4,
+                    stream: true,
+                }),
+            });
+
+            if (res.ok) {
+                aiRes = res;
+                break;
+            }
+
+            // Parse error for logging/message
+            const errText = await res.text();
+            console.error(`OpenRouter error with model ${tryModel}:`, res.status, errText);
             try {
                 const errJson = JSON.parse(errText);
-                if (errJson?.error?.message) errMsg = errJson.error.message;
+                if (errJson?.error?.message) lastErr = errJson.error.message;
             } catch { /* use default */ }
-            return c.json({ success: false, message: errMsg }, 500);
+        }
+
+        if (!aiRes) {
+            return c.json({ success: false, message: `All models unavailable. ${lastErr}` }, 500);
         }
 
         // Proxy the SSE stream directly to the client

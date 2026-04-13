@@ -319,29 +319,60 @@
     background: rgba(91,69,212,0.22);
 }
 
-/* ── Typing indicator ── */
-.chatbot-bubble--typing {
+/* ── Searching indicator ── */
+.chatbot-searching {
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding: 0.7rem 1rem !important;
-    min-width: 56px;
+    gap: 0.5rem;
+    padding: 0.1rem 0;
 }
-.chatbot-bubble--typing span {
-    width: 7px;
-    height: 7px;
+.chatbot-searching-icon {
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: #5b45d4;
+    background: rgba(91,69,212,0.15);
+    border: 1px solid rgba(91,69,212,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7c5de8;
+    flex-shrink: 0;
+    animation: cb-search-pulse 1.2s infinite ease-in-out;
+}
+@keyframes cb-search-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(91,69,212,0.3); }
+    50%       { box-shadow: 0 0 0 5px rgba(91,69,212,0); }
+}
+.chatbot-searching-label {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.7);
+    font-style: italic;
+    transition: opacity 0.3s;
+}
+.chatbot-searching-dots {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 2px;
+}
+.chatbot-searching-dots span {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #7c5de8;
     opacity: 0.4;
     animation: cb-typing 1.3s infinite ease-in-out;
 }
-.chatbot-bubble--typing span:nth-child(1) { animation-delay: 0s; }
-.chatbot-bubble--typing span:nth-child(2) { animation-delay: 0.18s; }
-.chatbot-bubble--typing span:nth-child(3) { animation-delay: 0.36s; }
+.chatbot-searching-dots span:nth-child(1) { animation-delay: 0s; }
+.chatbot-searching-dots span:nth-child(2) { animation-delay: 0.2s; }
+.chatbot-searching-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes cb-typing {
     0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
-    30% { transform: translateY(-6px); opacity: 1; }
+    30%           { transform: translateY(-4px); opacity: 1; }
 }
+
+[data-theme="light"] .chatbot-searching-label { color: #4b5563; }
+[data-theme="light"] .chatbot-searching-icon { background: rgba(91,69,212,0.08); color: #5b45d4; }
 
 /* ── Quick-action chips (always visible) ── */
 .chatbot-quick-actions-wrap {
@@ -504,7 +535,7 @@
     box-shadow: 0 0 0 3px rgba(124,93,232,0.15);
 }
 [data-theme="dark"] .chatbot-input::placeholder { color: #5b5880; }
-[data-theme="dark"] .chatbot-bubble--typing span { background: #a78bfa; }
+
 
 /* ── Mobile ── */
 @media (max-width: 480px) {

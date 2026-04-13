@@ -1,5 +1,32 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu } from 'lucide-react';
+
+const SEARCH_STEPS = [
+    { icon: Database, label: 'Fetching live data…'      },
+    { icon: Search,   label: 'Searching entries…'       },
+    { icon: Cpu,      label: 'Generating response…'     },
+];
+
+function SearchingIndicator() {
+    const [step, setStep] = useState(0);
+
+    useEffect(() => {
+        const id = setInterval(() => setStep(s => (s + 1) % SEARCH_STEPS.length), 1200);
+        return () => clearInterval(id);
+    }, []);
+
+    const { icon: Icon, label } = SEARCH_STEPS[step];
+
+    return (
+        <div className="chatbot-searching">
+            <div className="chatbot-searching-icon">
+                <Icon size={13} />
+            </div>
+            <span className="chatbot-searching-label">{label}</span>
+            <span className="chatbot-searching-dots"><span /><span /><span /></span>
+        </div>
+    );
+}
 import './ChatBot.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -453,14 +480,14 @@ function ChatBot() {
                         </div>
                     ))}
 
-                    {/* Typing indicator */}
+                    {/* Searching indicator */}
                     {loading && (
                         <div className="chatbot-msg chatbot-msg--assistant">
                             <div className="chatbot-msg-avatar">
                                 <Sparkles size={10} />
                             </div>
-                            <div className="chatbot-bubble chatbot-bubble--assistant chatbot-bubble--typing">
-                                <span /><span /><span />
+                            <div className="chatbot-bubble chatbot-bubble--assistant">
+                                <SearchingIndicator />
                             </div>
                         </div>
                     )}
