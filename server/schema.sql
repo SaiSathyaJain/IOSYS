@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE TABLE IF NOT EXISTS inbox_queue (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     gmail_message_id TEXT UNIQUE NOT NULL,
+    gmail_thread_id  TEXT,
     from_email       TEXT NOT NULL,
     from_name        TEXT,
     subject          TEXT NOT NULL,

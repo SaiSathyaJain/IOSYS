@@ -198,11 +198,12 @@ export async function pollInbox(env) {
             // Insert into inbox_queue FIRST — only mark as read on success
             await env.DB.prepare(`
                 INSERT INTO inbox_queue
-                    (gmail_message_id, from_email, from_name, subject,
+                    (gmail_message_id, gmail_thread_id, from_email, from_name, subject,
                      body_preview, received_at, ai_from, ai_means, ai_team, ai_due_date, ai_remarks)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).bind(
                 msg.id,
+                msg.threadId || msg.id,
                 fromEmail,
                 fromName,
                 subject,

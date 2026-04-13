@@ -197,10 +197,11 @@ function AdminPortal() {
             alert('Gmail message ID not available for this email.');
             return;
         }
-        // Open Gmail's native print view — same layout Gmail uses when you click print inside an email.
-        // permthid = thread ID, simpl = message ID (for single emails both are the same message ID)
+        // Open Gmail's native print view.
+        // permthid uses threadId (thread-f:ID), simpl uses messageId (msg-f:ID)
+        const tid = item.gmail_thread_id || item.gmail_message_id;
         const mid = item.gmail_message_id;
-        const url = `https://mail.google.com/mail/u/0/?view=pt&search=all&permthid=thread-f${mid}&simpl=msg-f${mid}`;
+        const url = `https://mail.google.com/mail/u/0/?view=pt&search=all&permthid=thread-f:${tid}&simpl=msg-f:${mid}`;
         const win = window.open(url, '_blank');
         if (!win) { alert('Please allow pop-ups for this site and try again.'); }
     };
