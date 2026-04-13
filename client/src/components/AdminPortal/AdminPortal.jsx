@@ -1628,7 +1628,7 @@ function AdminPortal() {
                             <>
                                 <div className="inbox-queue-list">
                                     {pagedInboxItems.map(item => (
-                                        <div key={item.id} className="inbox-queue-item">
+                                        <div key={item.id} className={`inbox-queue-item${inboxItems[0]?.id === item.id ? ' inbox-queue-item--latest' : ''}`}>
                                             <div className="iq-left">
                                                 <div className="iq-from">
                                                     <span className="iq-from-name">{item.from_name || item.from_email}</span>

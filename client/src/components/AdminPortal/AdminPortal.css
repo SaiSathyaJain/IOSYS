@@ -1724,6 +1724,17 @@
 .inbox-queue-item:last-child { border-bottom: none; }
 .inbox-queue-item:hover { background: var(--bg-card-elevated); }
 
+@keyframes iq-glow {
+    0%   { box-shadow: 0 0 0px rgba(99,102,241,0); background: transparent; }
+    50%  { box-shadow: 0 0 12px 3px rgba(99,102,241,0.25); background: rgba(99,102,241,0.06); }
+    100% { box-shadow: 0 0 0px rgba(99,102,241,0); background: transparent; }
+}
+.inbox-queue-item--latest {
+    animation: iq-glow 2s ease-in-out infinite;
+    border-left: 3px solid #6366f1;
+    padding-left: calc(1.5rem - 3px);
+}
+
 .iq-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
 .iq-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; flex-shrink: 0; width: 220px; }
 
