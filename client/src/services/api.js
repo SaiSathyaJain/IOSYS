@@ -52,6 +52,14 @@ export const aiAPI = {
     suggestAssign: (data) => api.post('/ai/agent', { action: 'suggest-assign', ...data }),
 };
 
+// Inbox Queue API
+export const inboxQueueAPI = {
+    getItems:  (status = 'pending') => api.get(`/inbox-queue?status=${status}`),
+    getCount:  ()                   => api.get('/inbox-queue/count'),
+    accept:    (id, data)           => api.put(`/inbox-queue/${id}/accept`, data),
+    reject:    (id)                 => api.put(`/inbox-queue/${id}/reject`),
+};
+
 // Notifications API
 export const notificationsAPI = {
     getAll: (email) => api.get(`/notifications?email=${encodeURIComponent(email)}`),

@@ -7,7 +7,9 @@ import { notesRouter } from './routers/notes.js';
 import { auditRouter } from './routers/auditLog.js';
 import { pushRouter } from './routers/push.js';
 import { aiRouter } from './routers/ai.js';
+import { inboxQueueRouter } from './routers/inboxQueue.js';
 import { sendWeeklyReport } from './services/weeklyReport.js';
+import { pollInbox } from './services/inboxPoller.js';
 
 
 const app = new Hono();
@@ -53,6 +55,48 @@ app.route('/api/notes', notesRouter);
 app.route('/api/audit', auditRouter);
 app.route('/api/push', pushRouter);
 app.route('/api/ai', aiRouter);
+app.route('/api/inbox-queue', inboxQueueRouter);
+
+// One-time migration endpoint — run once, then ignore
+app.get('/api/run-migration', async (c) => {
+    try {
+        await c.env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS inbox_queue (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                gmail_message_id TEXT UNIQUE NOT NULL,
+                from_email       TEXT NOT NULL,
+                from_name        TEXT,
+                subject          TEXT NOT NULL,
+                body_preview     TEXT,
+                received_at      TEXT NOT NULL,
+                ai_from          TEXT,
+                ai_means         TEXT DEFAULT 'Email',
+                ai_team          TEXT,
+                ai_due_date      TEXT,
+                ai_remarks       TEXT,
+                status           TEXT DEFAULT 'pending',
+                inward_id        INTEGER,
+                created_at       TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        `).run();
+        await c.env.DB.prepare(
+            `CREATE INDEX IF NOT EXISTS idx_inbox_queue_status ON inbox_queue(status)`
+        ).run();
+        return c.json({ success: true, message: 'inbox_queue table created' });
+    } catch (e) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
+// Manual trigger for inbox poll (testing)
+app.get('/api/trigger-inbox-poll', async (c) => {
+    try {
+        await pollInbox(c.env);
+        return c.json({ success: true, message: 'Inbox poll completed' });
+    } catch (e) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
 
 // Hidden trigger to bypass cron limitations for testing purposes
 app.get('/api/trigger-email', async (c) => {
@@ -67,7 +111,11 @@ app.get('/api/trigger-email', async (c) => {
 
 export default {
     fetch: app.fetch.bind(app),
-    async scheduled(_event, env, ctx) {
-        ctx.waitUntil(sendWeeklyReport(env));
+    async scheduled(event, env, ctx) {
+        if (event.cron === '30 5 * * 6') {
+            ctx.waitUntil(sendWeeklyReport(env));
+        } else if (event.cron === '*/5 * * * *') {
+            ctx.waitUntil(pollInbox(env));
+        }
     }
 };

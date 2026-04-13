@@ -73,9 +73,29 @@ CREATE TABLE IF NOT EXISTS audit_log (
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Inbox Queue Table (for Gmail inbox integration review queue)
+CREATE TABLE IF NOT EXISTS inbox_queue (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    gmail_message_id TEXT UNIQUE NOT NULL,
+    from_email       TEXT NOT NULL,
+    from_name        TEXT,
+    subject          TEXT NOT NULL,
+    body_preview     TEXT,
+    received_at      TEXT NOT NULL,
+    ai_from          TEXT,
+    ai_means         TEXT DEFAULT 'Email',
+    ai_team          TEXT,
+    ai_due_date      TEXT,
+    ai_remarks       TEXT,
+    status           TEXT DEFAULT 'pending',
+    inward_id        INTEGER,
+    created_at       TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_inward_status ON inward(assignment_status);
 CREATE INDEX IF NOT EXISTS idx_inward_assigned_team ON inward(assigned_team);
 CREATE INDEX IF NOT EXISTS idx_outward_created_by_team ON outward(created_by_team);
 CREATE INDEX IF NOT EXISTS idx_notes_type ON notes(note_type);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_inbox_queue_status ON inbox_queue(status);

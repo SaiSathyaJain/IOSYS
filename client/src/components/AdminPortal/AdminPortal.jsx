@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
-import { inwardAPI, dashboardAPI, outwardAPI, notesAPI, auditAPI, aiAPI } from '../../services/api';
+import { inwardAPI, dashboardAPI, outwardAPI, notesAPI, auditAPI, aiAPI, inboxQueueAPI } from '../../services/api';
 import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
     Clock, CheckCircle2, AlertCircle, Calendar, Mail, User,
@@ -88,6 +88,14 @@ function AdminPortal() {
     // AI Agent — Auto-assign
     const [autoAssignLoadingId, setAutoAssignLoadingId] = useState(null);
 
+    // Inbox Queue
+    const [inboxItems, setInboxItems]       = useState([]);
+    const [inboxCount, setInboxCount]       = useState(0);
+    const [inboxLoading, setInboxLoading]   = useState(false);
+    const [inboxAcceptItem, setInboxAcceptItem] = useState(null); // item being confirmed
+    const [inboxAcceptData, setInboxAcceptData] = useState({});   // editable fields
+    const [inboxAccepting, setInboxAccepting]   = useState(false);
+
     const TEAM_EMAILS = {
         'UG': 'coeoffice@sssihl.edu.in',
         'PG/PRO': 'coeoffice@sssihl.edu.in',
@@ -131,6 +139,63 @@ function AdminPortal() {
             setNotesEntries(notesRes.data.entries || []);
         } catch (error) {
             console.error('Error loading notes:', error);
+        }
+        try {
+            const countRes = await inboxQueueAPI.getCount();
+            setInboxCount(countRes.data.count || 0);
+        } catch { /* ignore */ }
+    };
+
+    const loadInboxItems = async () => {
+        setInboxLoading(true);
+        try {
+            const res = await inboxQueueAPI.getItems('pending');
+            setInboxItems(res.data.items || []);
+            setInboxCount(res.data.pendingCount || 0);
+        } catch (err) {
+            console.error('Error loading inbox queue:', err);
+        } finally {
+            setInboxLoading(false);
+        }
+    };
+
+    const openInboxAccept = (item) => {
+        setInboxAcceptItem(item);
+        setInboxAcceptData({
+            particularsFromWhom:    item.ai_from || item.from_name || item.from_email,
+            subject:                item.subject,
+            means:                  'Email',
+            signReceiptDateTime:    item.received_at,
+            assignedTeam:           item.ai_team || '',
+            assignedToEmail:        item.ai_team ? (TEAM_EMAILS[item.ai_team] || '') : '',
+            assignmentInstructions: '',
+            dueDate:                item.ai_due_date || '',
+            remarks:                item.ai_remarks  || '',
+        });
+    };
+
+    const handleInboxAccept = async () => {
+        if (!inboxAcceptItem) return;
+        setInboxAccepting(true);
+        try {
+            await inboxQueueAPI.accept(inboxAcceptItem.id, inboxAcceptData);
+            setInboxAcceptItem(null);
+            await loadInboxItems();
+            await loadData();
+        } catch (err) {
+            alert('Failed to accept: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setInboxAccepting(false);
+        }
+    };
+
+    const handleInboxReject = async (id) => {
+        try {
+            await inboxQueueAPI.reject(id);
+            setInboxItems(prev => prev.filter(i => i.id !== id));
+            setInboxCount(prev => Math.max(0, prev - 1));
+        } catch (err) {
+            alert('Failed to reject: ' + (err.response?.data?.message || err.message));
         }
     };
 
@@ -669,6 +734,12 @@ function AdminPortal() {
                     <button className={`ap-nav-tab${adminPage === 'auditlog' ? ' active' : ''}`} onClick={() => { setAdminPage('auditlog'); loadAuditLogs(1); }}>
                         Audit Log
                     </button>
+                    {isAdmin && (
+                        <button className={`ap-nav-tab ap-nav-tab--inbox${adminPage === 'inbox' ? ' active' : ''}`} onClick={() => { setAdminPage('inbox'); loadInboxItems(); }}>
+                            Inbox
+                            {inboxCount > 0 && <span className="inbox-badge">{inboxCount}</span>}
+                        </button>
+                    )}
                 </div>
 
                 <div className="ap-nav-right">
@@ -1465,6 +1536,136 @@ function AdminPortal() {
                             })()}
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Inbox Review Queue */}
+            {adminPage === 'inbox' && (
+                <div className="card animate-fade">
+                    <div className="card-header">
+                        <h3 className="card-title">
+                            <Mail size={20} /> Inbox Review Queue
+                            {inboxCount > 0 && <span className="entry-count">({inboxCount} pending)</span>}
+                        </h3>
+                        <button className="btn btn-icon-only" onClick={loadInboxItems} disabled={inboxLoading} title="Refresh">
+                            <RefreshCw size={15} className={inboxLoading ? 'spin' : ''} />
+                        </button>
+                    </div>
+                    {inboxLoading ? (
+                        <div className="loading-state"><Loader2 size={40} className="spin" /><p>Loading inbox…</p></div>
+                    ) : inboxItems.length === 0 ? (
+                        <div className="empty-state">
+                            <Mail size={48} />
+                            <p>No emails pending review</p>
+                            <span>New emails will appear here every 5 minutes</span>
+                        </div>
+                    ) : (
+                        <div className="inbox-queue-list">
+                            {inboxItems.map(item => (
+                                <div key={item.id} className="inbox-queue-item">
+                                    <div className="iq-left">
+                                        <div className="iq-from">
+                                            <span className="iq-from-name">{item.from_name || item.from_email}</span>
+                                            <span className="iq-from-email">{item.from_email}</span>
+                                        </div>
+                                        <div className="iq-subject">{item.subject}</div>
+                                        {item.body_preview && (
+                                            <div className="iq-preview">{item.body_preview.slice(0, 180)}…</div>
+                                        )}
+                                        <div className="iq-meta">
+                                            <span>{new Date(item.received_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                    </div>
+                                    <div className="iq-right">
+                                        <div className="iq-ai-suggestion">
+                                            <span className="iq-ai-label"><Sparkles size={11} /> AI Suggestion</span>
+                                            <div className="iq-ai-fields">
+                                                {item.ai_team && <span className="badge badge-team">{item.ai_team}</span>}
+                                                {item.ai_due_date && <span className="iq-ai-due">Due: {item.ai_due_date}</span>}
+                                                {item.ai_remarks && <span className="iq-ai-remarks">{item.ai_remarks}</span>}
+                                            </div>
+                                        </div>
+                                        <div className="iq-actions">
+                                            <button className="btn btn-primary btn-sm" onClick={() => openInboxAccept(item)}>
+                                                <Check size={13} /> Accept
+                                            </button>
+                                            <button className="btn btn-ghost btn-sm iq-reject-btn" onClick={() => handleInboxReject(item.id)}>
+                                                <X size={13} /> Reject
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Inbox Accept Modal */}
+            {inboxAcceptItem && (
+                <div className="modal-overlay" onClick={() => setInboxAcceptItem(null)}>
+                    <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3><Check size={18} /> Review &amp; Accept Email</h3>
+                            <button className="modal-close" onClick={() => setInboxAcceptItem(null)}><X size={18} /></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="iq-accept-source">
+                                <span className="iq-ai-label"><Mail size={11} /> From: {inboxAcceptItem.from_email}</span>
+                                <span className="iq-preview">{inboxAcceptItem.subject}</span>
+                            </div>
+                            <div className="grid-2" style={{ marginTop: '1rem' }}>
+                                <div className="form-group">
+                                    <label className="form-label">From (Sender) *</label>
+                                    <input className="form-input" value={inboxAcceptData.particularsFromWhom || ''}
+                                        onChange={e => setInboxAcceptData(p => ({ ...p, particularsFromWhom: e.target.value }))} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Mode</label>
+                                    <select className="form-select" value={inboxAcceptData.means || 'Email'}
+                                        onChange={e => setInboxAcceptData(p => ({ ...p, means: e.target.value }))}>
+                                        <option>Email</option><option>Post</option><option>Hand Delivery</option><option>Courier</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Subject *</label>
+                                <input className="form-input" value={inboxAcceptData.subject || ''}
+                                    onChange={e => setInboxAcceptData(p => ({ ...p, subject: e.target.value }))} />
+                            </div>
+                            <div className="grid-2">
+                                <div className="form-group">
+                                    <label className="form-label">Assign Team</label>
+                                    <select className="form-select" value={inboxAcceptData.assignedTeam || ''}
+                                        onChange={e => setInboxAcceptData(p => ({ ...p, assignedTeam: e.target.value, assignedToEmail: TEAM_EMAILS[e.target.value] || '' }))}>
+                                        <option value="">— No Assignment —</option>
+                                        <option>UG</option><option>PG/PRO</option><option>PhD</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Due Date</label>
+                                    <input type="date" className="form-input" value={inboxAcceptData.dueDate || ''}
+                                        onChange={e => setInboxAcceptData(p => ({ ...p, dueDate: e.target.value }))} />
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Assignment Instructions</label>
+                                <textarea className="form-textarea" rows={2} value={inboxAcceptData.assignmentInstructions || ''}
+                                    onChange={e => setInboxAcceptData(p => ({ ...p, assignmentInstructions: e.target.value }))} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Remarks</label>
+                                <textarea className="form-textarea" rows={2} value={inboxAcceptData.remarks || ''}
+                                    onChange={e => setInboxAcceptData(p => ({ ...p, remarks: e.target.value }))} />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-ghost" onClick={() => setInboxAcceptItem(null)}>Cancel</button>
+                            <button className="btn btn-primary" onClick={handleInboxAccept} disabled={inboxAccepting || !inboxAcceptData.subject || !inboxAcceptData.particularsFromWhom}>
+                                {inboxAccepting ? <><Loader2 size={15} className="spin" /> Creating…</> : <><Check size={15} /> Create Inward Entry</>}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
