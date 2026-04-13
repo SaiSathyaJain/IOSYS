@@ -74,6 +74,84 @@ Return ONLY the JSON object:`;
     }
 });
 
+// POST /api/ai/agent  — AI Agent actions (suggest-assign)
+aiRouter.post('/agent', async (c) => {
+    try {
+        const { action, subject, from, remarks, means } = await c.req.json();
+
+        if (action !== 'suggest-assign') {
+            return c.json({ success: false, message: 'Unknown action' }, 400);
+        }
+        if (!subject || !from) {
+            return c.json({ success: false, message: 'subject and from are required' }, 400);
+        }
+        if (!c.env.OPENROUTER_API_KEY) {
+            return c.json({ success: false, message: 'OPENROUTER_API_KEY not configured' }, 500);
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+
+        const prompt = `You are an assignment assistant for SSSIHL's Inward Document Management System.
+Determine the correct team and assignment details for this inward entry.
+
+Teams:
+- UG: undergraduate student matters — admissions, exams, hall tickets, transcripts, bonafide, attendance, fee, certificates for UG students
+- PG/PRO: postgraduate and professional programs — M.Tech, MBA, M.Sc, M.Phil, PGDM, professional course certificates
+- PhD: doctoral research — research scholars, thesis submission, synopsis, fellowship, registration, research grants
+
+Entry details:
+From: ${from}
+Subject: ${subject}
+Remarks: ${remarks || 'None'}
+Mode: ${means || 'Not specified'}
+
+Today: ${today}
+
+Return ONLY valid JSON — no explanation, no markdown:
+{
+  "assignedTeam": "UG or PG/PRO or PhD",
+  "assignmentInstructions": "Brief actionable instruction for the team (1-2 sentences, what to do with this entry)",
+  "dueDate": "YYYY-MM-DD (7 days from today for urgent/exam/deadline matters, 14 days for normal, 21 days for low priority)",
+  "reasoning": "One sentence explaining the team choice"
+}`;
+
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
+                'X-Title': 'IOSYS Agent',
+            },
+            body: JSON.stringify({
+                model: 'nvidia/nemotron-3-nano-30b-a3b:free',
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 250,
+                temperature: 0.1,
+            }),
+        });
+
+        if (!res.ok) {
+            return c.json({ success: false, message: 'AI service error' }, 500);
+        }
+
+        const data = await res.json();
+        const raw = data.choices?.[0]?.message?.content || '';
+        const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+        let suggestion;
+        try {
+            suggestion = JSON.parse(jsonStr);
+        } catch {
+            return c.json({ success: false, message: 'AI returned invalid response. Try again.' }, 500);
+        }
+
+        return c.json({ success: true, suggestion });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
 // POST /api/ai/chat
 aiRouter.post('/chat', async (c) => {
     try {

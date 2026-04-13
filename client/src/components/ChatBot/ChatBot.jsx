@@ -461,27 +461,35 @@ function ChatBot() {
 
                 {/* Messages */}
                 <div className="chatbot-messages">
-                    {messages.map((msg, i) => (
-                        <div key={i} className={`chatbot-msg chatbot-msg--${msg.role}`}>
-                            {msg.role === 'assistant' && (
-                                <div className="chatbot-msg-avatar">
-                                    <Sparkles size={10} />
-                                </div>
-                            )}
-                            {msg.role === 'assistant' ? (
-                                <div className="chatbot-bubble chatbot-bubble--assistant">
-                                    <MessageContent content={msg.content} onSend={sendMessage} />
-                                </div>
-                            ) : (
-                                <div className="chatbot-bubble chatbot-bubble--user">
-                                    {msg.content}
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                    {messages.map((msg, i) => {
+                        // Skip the empty streaming placeholder — SearchingIndicator covers it
+                        const isEmptyStreamPlaceholder =
+                            streaming && i === messages.length - 1 &&
+                            msg.role === 'assistant' && msg.content === '';
+                        if (isEmptyStreamPlaceholder) return null;
 
-                    {/* Searching indicator */}
-                    {loading && (
+                        return (
+                            <div key={i} className={`chatbot-msg chatbot-msg--${msg.role}`}>
+                                {msg.role === 'assistant' && (
+                                    <div className="chatbot-msg-avatar">
+                                        <Sparkles size={10} />
+                                    </div>
+                                )}
+                                {msg.role === 'assistant' ? (
+                                    <div className="chatbot-bubble chatbot-bubble--assistant">
+                                        <MessageContent content={msg.content} onSend={sendMessage} />
+                                    </div>
+                                ) : (
+                                    <div className="chatbot-bubble chatbot-bubble--user">
+                                        {msg.content}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+
+                    {/* Searching indicator — show while loading OR while streaming but no content yet */}
+                    {(loading || (streaming && messages[messages.length - 1]?.content === '')) && (
                         <div className="chatbot-msg chatbot-msg--assistant">
                             <div className="chatbot-msg-avatar">
                                 <Sparkles size={10} />

@@ -80,6 +80,14 @@ function AdminPortal() {
     const [notesFormData, setNotesFormData] = useState({ slNo: '', outwardNo: '', date: '', description: '', remarks: '' });
     const [notesLoading, setNotesLoading] = useState(false);
 
+    // AI Agent — Create from Email
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailPasteText, setEmailPasteText] = useState('');
+    const [emailAnalyzing, setEmailAnalyzing] = useState(false);
+
+    // AI Agent — Auto-assign
+    const [autoAssignLoadingId, setAutoAssignLoadingId] = useState(null);
+
     const TEAM_EMAILS = {
         'UG': 'coeoffice@sssihl.edu.in',
         'PG/PRO': 'coeoffice@sssihl.edu.in',
@@ -284,6 +292,60 @@ function AdminPortal() {
             setSmartFillResult('Error: ' + (err.response?.data?.message || err.message));
         } finally {
             setSmartFillLoading(false);
+        }
+    };
+
+    // AI Agent: analyze pasted email text → populate create form
+    const handleAnalyzeEmail = async () => {
+        if (!emailPasteText.trim()) return;
+        setEmailAnalyzing(true);
+        try {
+            const res = await aiAPI.extract(emailPasteText);
+            const fields = res.data.fields || {};
+            setFormData(prev => ({
+                ...prev,
+                particularsFromWhom: fields.particularsFromWhom || prev.particularsFromWhom,
+                subject:             fields.subject             || prev.subject,
+                means:               fields.means              || prev.means,
+                assignedTeam:        fields.assignedTeam        || prev.assignedTeam,
+                assignedToEmail:     fields.assignedTeam ? (TEAM_EMAILS[fields.assignedTeam] || '') : prev.assignedToEmail,
+                dueDate:             fields.dueDate             || prev.dueDate,
+                remarks:             fields.remarks             || prev.remarks,
+            }));
+            setShowEmailModal(false);
+            setEmailPasteText('');
+            setShowForm(true);
+        } catch (err) {
+            alert('AI extraction failed: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setEmailAnalyzing(false);
+        }
+    };
+
+    // AI Agent: suggest team assignment for an unassigned entry
+    const handleAutoAssign = async (entry) => {
+        setAutoAssignLoadingId(entry.id);
+        try {
+            const res = await aiAPI.suggestAssign({
+                subject: entry.subject,
+                from:    entry.particularsFromWhom,
+                remarks: entry.remarks,
+                means:   entry.means,
+            });
+            const s = res.data.suggestion || {};
+            // Pre-fill the reassign modal with AI suggestion
+            setReassignData({
+                assignedTeam:            s.assignedTeam || '',
+                assignedToEmail:         s.assignedTeam ? (TEAM_EMAILS[s.assignedTeam] || '') : '',
+                assignmentInstructions:  s.assignmentInstructions || '',
+                dueDate:                 s.dueDate || '',
+            });
+            setSelectedEntry(entry);
+            setShowReassignModal(true);
+        } catch (err) {
+            alert('Auto-assign failed: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setAutoAssignLoadingId(null);
         }
     };
 
@@ -616,11 +678,14 @@ function AdminPortal() {
                     <button className="btn btn-icon-only" onClick={loadData} disabled={loading} title="Refresh">
                         <RefreshCw size={16} className={loading ? 'spin' : ''} />
                     </button>
-                    {isAdmin && (
+                    {isAdmin && (<>
+                        <button className="btn btn-ghost ap-nav-action-btn" onClick={() => setShowEmailModal(true)} title="Create entry from pasted email or letter">
+                            <Sparkles size={15} /> From Email
+                        </button>
                         <button className="btn btn-primary ap-nav-action-btn" onClick={() => setShowForm(true)}>
                             <Plus size={16} /> New Entry
                         </button>
-                    )}
+                    </>)}
                     <div className="ap-nav-divider" />
                     <button className="ap-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
                         {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
@@ -647,6 +712,42 @@ function AdminPortal() {
                 <h2 className="page-title"><Inbox className="icon-svg" /> Admin Portal</h2>
             </div>
 
+
+            {/* AI Agent — Create from Email Modal */}
+            {showEmailModal && (
+                <div className="modal-overlay" onClick={() => { setShowEmailModal(false); setEmailPasteText(''); }}>
+                    <div className="modal" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3><Sparkles size={18} /> Create Entry from Email / Letter</h3>
+                            <button className="modal-close" onClick={() => { setShowEmailModal(false); setEmailPasteText(''); }}><X size={18} /></button>
+                        </div>
+                        <div className="modal-body">
+                            <p className="agent-email-hint">Paste the full email or letter text below. AI will extract the sender, subject, mode, team, and due date automatically.</p>
+                            <textarea
+                                className="form-textarea agent-email-textarea"
+                                rows={10}
+                                placeholder="Paste email or letter content here…"
+                                value={emailPasteText}
+                                onChange={e => setEmailPasteText(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-ghost" onClick={() => { setShowEmailModal(false); setEmailPasteText(''); }}>Cancel</button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleAnalyzeEmail}
+                                disabled={emailAnalyzing || !emailPasteText.trim()}
+                            >
+                                {emailAnalyzing
+                                    ? <><Loader2 size={15} className="spin" /> Analyzing…</>
+                                    : <><Sparkles size={15} /> Analyze & Fill Form</>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Create Entry Modal */}
             {showForm && (
@@ -896,11 +997,24 @@ function AdminPortal() {
                                                 <button className="btn-icon" onClick={() => openDetailsModal(entry)} title="View Details">
                                                     <Eye size={16} />
                                                 </button>
-                                                {isAdmin && (
+                                                {isAdmin && (<>
+                                                    {!entry.assignedTeam && (
+                                                        <button
+                                                            className={`btn-icon btn-icon--ai${autoAssignLoadingId === entry.id ? ' loading' : ''}`}
+                                                            onClick={() => handleAutoAssign(entry)}
+                                                            disabled={autoAssignLoadingId === entry.id}
+                                                            title="AI: suggest team assignment"
+                                                        >
+                                                            {autoAssignLoadingId === entry.id
+                                                                ? <Loader2 size={14} className="spin" />
+                                                                : <Sparkles size={14} />
+                                                            }
+                                                        </button>
+                                                    )}
                                                     <button className="btn-icon" onClick={() => openReassignModal(entry)} title={entry.assignedTeam ? 'Reassign' : 'Assign'}>
                                                         <Edit3 size={16} />
                                                     </button>
-                                                )}
+                                                </>)}
                                             </div>
                                         </td>
                                     </tr>

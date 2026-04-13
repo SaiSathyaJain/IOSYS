@@ -49,6 +49,7 @@ export const auditAPI = {
 // AI API
 export const aiAPI = {
     extract: (text) => api.post('/ai/extract', { text }),
+    suggestAssign: (data) => api.post('/ai/agent', { action: 'suggest-assign', ...data }),
 };
 
 // Notifications API

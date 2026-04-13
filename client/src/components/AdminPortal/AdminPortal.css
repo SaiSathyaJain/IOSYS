@@ -1639,3 +1639,50 @@
 .smart-fill-result--error {
     color: #ef4444;
 }
+
+/* ── AI Agent ── */
+
+/* "From Email" button in nav */
+.btn.btn-ghost.ap-nav-action-btn {
+    background: rgba(91, 69, 212, 0.08);
+    border: 1px solid rgba(91, 69, 212, 0.25);
+    color: var(--primary, #5b45d4);
+    font-weight: 500;
+}
+.btn.btn-ghost.ap-nav-action-btn:hover {
+    background: rgba(91, 69, 212, 0.15);
+}
+
+/* AI sparkle button on unassigned table rows */
+.btn-icon--ai {
+    color: #7c5de8;
+    background: rgba(91, 69, 212, 0.08);
+    border: 1px solid rgba(91, 69, 212, 0.2);
+}
+.btn-icon--ai:hover {
+    background: rgba(91, 69, 212, 0.18);
+    color: #5b45d4;
+}
+.btn-icon--ai.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+[data-theme="light"] .btn-icon--ai {
+    background: rgba(91, 69, 212, 0.06);
+    border-color: rgba(91, 69, 212, 0.2);
+}
+
+/* Email paste modal */
+.agent-email-hint {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.85rem;
+    line-height: 1.5;
+}
+.agent-email-textarea {
+    width: 100%;
+    font-size: 0.82rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 180px;
+}
