@@ -192,20 +192,6 @@ function AdminPortal() {
         }
     };
 
-    const handleInboxPrint = (item) => {
-        if (!item.gmail_message_id) {
-            alert('Gmail message ID not available for this email.');
-            return;
-        }
-        // Open Gmail's native print view.
-        // permthid uses threadId (thread-f:ID), simpl uses messageId (msg-f:ID)
-        const tid = item.gmail_thread_id || item.gmail_message_id;
-        const mid = item.gmail_message_id;
-        const url = `https://mail.google.com/mail/u/0/?view=pt&search=all&permthid=thread-f:${tid}&simpl=msg-f:${mid}`;
-        const win = window.open(url, '_blank');
-        if (!win) { alert('Please allow pop-ups for this site and try again.'); }
-    };
-
     const handleInboxReject = async (id) => {
         try {
             await inboxQueueAPI.reject(id);
@@ -1615,9 +1601,6 @@ function AdminPortal() {
                                                     </button>
                                                     <button className="btn btn-ghost btn-sm iq-reject-btn" onClick={() => handleInboxReject(item.id)}>
                                                         <X size={13} /> Reject
-                                                    </button>
-                                                    <button className="btn btn-ghost btn-sm" onClick={() => handleInboxPrint(item)} title="Print email">
-                                                        <Printer size={13} />
                                                     </button>
                                                 </div>
                                             </div>
