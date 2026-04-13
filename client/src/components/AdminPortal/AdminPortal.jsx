@@ -95,6 +95,7 @@ function AdminPortal() {
     const [inboxAcceptItem, setInboxAcceptItem] = useState(null); // item being confirmed
     const [inboxAcceptData, setInboxAcceptData] = useState({});   // editable fields
     const [inboxAccepting, setInboxAccepting]   = useState(false);
+    const [inboxAiLoading, setInboxAiLoading]   = useState(false);
     const [inboxQueuePage, setInboxQueuePage]   = useState(1);
     const INBOX_PAGE_SIZE = 5;
 
@@ -163,7 +164,6 @@ function AdminPortal() {
     };
 
     const openInboxAccept = async (item) => {
-        // Pre-fill with what we already have
         const baseData = {
             particularsFromWhom:    item.ai_from || item.from_name || item.from_email,
             subject:                item.subject,
@@ -175,32 +175,38 @@ function AdminPortal() {
             dueDate:                item.ai_due_date || '',
             remarks:                item.ai_remarks  || '',
         };
-        setInboxAcceptItem(item);
-        setInboxAcceptData(baseData);
 
-        // If AI team wasn't set during polling, fetch a fresh suggestion now
-        if (!item.ai_team) {
-            try {
-                const aiRes = await aiAPI.suggestAssign({
-                    subject: item.subject,
-                    from:    item.from_name || item.from_email,
-                    remarks: item.ai_remarks || '',
-                    means:   'Email',
-                });
-                const s = aiRes.data.suggestion || {};
-                if (s.assignedTeam) {
-                    setInboxAcceptData(prev => ({
-                        ...prev,
-                        assignedTeam:           s.assignedTeam,
-                        assignedToEmail:        TEAM_EMAILS[s.assignedTeam] || '',
-                        assignmentInstructions: s.assignmentInstructions || '',
-                        dueDate:                s.dueDate || prev.dueDate,
-                    }));
-                }
-            } catch {
-                // AI failed — modal stays open with blank team, admin fills manually
-            }
+        // If AI already suggested a team during polling, open modal immediately
+        if (item.ai_team) {
+            setInboxAcceptData(baseData);
+            setInboxAcceptItem(item);
+            return;
         }
+
+        // No AI team yet — fetch suggestion first, show spinner on the button
+        setInboxAiLoading(item.id);
+        try {
+            const aiRes = await aiAPI.suggestAssign({
+                subject: item.subject,
+                from:    item.from_name || item.from_email,
+                remarks: item.ai_remarks || '',
+                means:   'Email',
+            });
+            const s = aiRes.data.suggestion || {};
+            if (s.assignedTeam) {
+                baseData.assignedTeam           = s.assignedTeam;
+                baseData.assignedToEmail        = TEAM_EMAILS[s.assignedTeam] || '';
+                baseData.assignmentInstructions = s.assignmentInstructions || '';
+                baseData.dueDate                = s.dueDate || baseData.dueDate;
+            }
+        } catch {
+            // AI failed — open modal anyway, admin fills team manually
+        } finally {
+            setInboxAiLoading(null);
+        }
+
+        setInboxAcceptData(baseData);
+        setInboxAcceptItem(item);
     };
 
     const handleInboxAccept = async () => {
@@ -1633,10 +1639,12 @@ function AdminPortal() {
                                                     </div>
                                                 </div>
                                                 <div className="iq-actions">
-                                                    <button className="btn btn-primary btn-sm" onClick={() => openInboxAccept(item)}>
-                                                        <Check size={13} /> Accept
+                                                    <button className="btn btn-primary btn-sm" onClick={() => openInboxAccept(item)} disabled={inboxAiLoading === item.id}>
+                                                        {inboxAiLoading === item.id
+                                                            ? <><Loader2 size={13} className="spin" /> AI…</>
+                                                            : <><Check size={13} /> Accept</>}
                                                     </button>
-                                                    <button className="btn btn-ghost btn-sm iq-reject-btn" onClick={() => handleInboxReject(item.id)}>
+                                                    <button className="btn btn-ghost btn-sm iq-reject-btn" onClick={() => handleInboxReject(item.id)} disabled={inboxAiLoading === item.id}>
                                                         <X size={13} /> Reject
                                                     </button>
                                                 </div>
