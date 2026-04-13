@@ -1487,7 +1487,7 @@ function AdminPortal() {
                                     {auditLogs.map(log => (
                                         <tr key={log.id}>
                                             <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                                                {new Date(log.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                {new Date(log.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
                                             </td>
                                             <td>
                                                 <span style={{ fontWeight: 600, fontSize: '0.82rem' }}>{log.actor}</span>

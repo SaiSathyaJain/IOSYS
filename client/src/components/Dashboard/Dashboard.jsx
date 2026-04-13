@@ -211,7 +211,7 @@ function Dashboard() {
             <div className="dash-body">
 
                 {/* Page Header */}
-                <div className="dash-header">
+                <div className="dash-header dash-header--compact">
                     <div className="dash-title-group">
                         <div className="dash-title-icon"><Activity size={20} /></div>
                         <div>
@@ -353,49 +353,89 @@ function Dashboard() {
                     </div>
                 </div>
 
-                {/* Volume Analytics Chart */}
-                <div className="dash-card">
-                    <div className="dash-card-header">
-                        <div className="dash-card-title">
-                            <TrendingUp size={18} />
-                            <span>Volume Analytics</span>
+                {/* Main two-column row: Chart left, Activity right */}
+                <div className="dash-two-col">
+                    {/* Volume Analytics Chart */}
+                    <div className="dash-card dash-col-card">
+                        <div className="dash-card-header">
+                            <div className="dash-card-title">
+                                <TrendingUp size={18} />
+                                <span>Volume Analytics</span>
+                            </div>
+                            <span className="dash-card-hint">Last 6 months</span>
                         </div>
-                        <span className="dash-card-hint">Last 6 months</span>
+                        <div className="chart-area">
+                            {chartData.length === 0 || !chartData.some(d => d.inward > 0 || d.outward > 0) ? (
+                                <div className="chart-empty">No correspondence data in the last 6 months</div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <AreaChart data={chartData} margin={{ top: 10, right: 20, left: -16, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="gradInward" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
+                                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="gradOutward" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.25} />
+                                                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" vertical={false} />
+                                        <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} domain={[0, 'dataMax + 1']} />
+                                        <Tooltip
+                                            contentStyle={{ background: '#0D1526', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.85rem', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
+                                            labelStyle={{ color: '#E2E8F0', fontWeight: 600, marginBottom: '4px' }}
+                                            itemStyle={{ color: '#94A3B8' }}
+                                            cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }}
+                                        />
+                                        <Legend
+                                            wrapperStyle={{ fontSize: '0.8rem', color: '#64748B', paddingTop: '12px' }}
+                                            iconType="circle"
+                                            iconSize={8}
+                                        />
+                                        <Area type="monotone" dataKey="inward" name="Inward" stroke="#3B82F6" strokeWidth={2.5} fill="url(#gradInward)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
+                                        <Area type="monotone" dataKey="outward" name="Outward" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#gradOutward)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
                     </div>
-                    <div className="chart-area">
-                        {chartData.length === 0 || !chartData.some(d => d.inward > 0 || d.outward > 0) ? (
-                            <div className="chart-empty">No correspondence data in the last 6 months</div>
+
+                    {/* Recent Activity Feed */}
+                    <div className="dash-card dash-col-card">
+                        <div className="dash-card-header">
+                            <div className="dash-card-title">
+                                <Activity size={18} />
+                                <span>Recent Activity</span>
+                            </div>
+                            <span className="dash-card-hint">Last 10 actions</span>
+                        </div>
+                        {recentLogs.length === 0 ? (
+                            <div className="chart-empty">No activity recorded yet</div>
                         ) : (
-                            <ResponsiveContainer width="100%" height={260}>
-                                <AreaChart data={chartData} margin={{ top: 10, right: 20, left: -16, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="gradInward" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
-                                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                                        </linearGradient>
-                                        <linearGradient id="gradOutward" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.25} />
-                                            <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" vertical={false} />
-                                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} domain={[0, 'dataMax + 1']} />
-                                    <Tooltip
-                                        contentStyle={{ background: '#0D1526', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.85rem', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
-                                        labelStyle={{ color: '#E2E8F0', fontWeight: 600, marginBottom: '4px' }}
-                                        itemStyle={{ color: '#94A3B8' }}
-                                        cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }}
-                                    />
-                                    <Legend
-                                        wrapperStyle={{ fontSize: '0.8rem', color: '#64748B', paddingTop: '12px' }}
-                                        iconType="circle"
-                                        iconSize={8}
-                                    />
-                                    <Area type="monotone" dataKey="inward" name="Inward" stroke="#3B82F6" strokeWidth={2.5} fill="url(#gradInward)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
-                                    <Area type="monotone" dataKey="outward" name="Outward" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#gradOutward)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                            <div className="activity-feed activity-feed--scroll">
+                                {recentLogs.map(log => (
+                                    <div key={log.id} className="activity-item">
+                                        <div className={`activity-dot activity-dot--${
+                                            log.action === 'ENTRY_CREATED' ? 'created' :
+                                            log.action === 'ENTRY_ASSIGNED' ? 'assigned' :
+                                            log.action === 'STATUS_CHANGED' ? 'status' :
+                                            log.action === 'OUTWARD_CREATED' ? 'outward' : 'other'
+                                        }`} />
+                                        <div className="activity-body">
+                                            <div className="activity-desc">{log.description}</div>
+                                            <div className="activity-meta">
+                                                <span className="activity-actor">{log.actor}</span>
+                                                {log.inward_no && <span className="activity-ref">{log.inward_no}</span>}
+                                                <span className="activity-time">
+                                                    {new Date(log.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </div>
@@ -441,43 +481,6 @@ function Dashboard() {
                             </div>
                         ))}
                     </div>
-                </div>
-
-                {/* Recent Activity Feed */}
-                <div className="dash-card">
-                    <div className="dash-card-header">
-                        <div className="dash-card-title">
-                            <Activity size={18} />
-                            <span>Recent Activity</span>
-                        </div>
-                        <span className="dash-card-hint">Last 10 actions</span>
-                    </div>
-                    {recentLogs.length === 0 ? (
-                        <div className="chart-empty">No activity recorded yet</div>
-                    ) : (
-                        <div className="activity-feed">
-                            {recentLogs.map(log => (
-                                <div key={log.id} className="activity-item">
-                                    <div className={`activity-dot activity-dot--${
-                                        log.action === 'ENTRY_CREATED' ? 'created' :
-                                        log.action === 'ENTRY_ASSIGNED' ? 'assigned' :
-                                        log.action === 'STATUS_CHANGED' ? 'status' :
-                                        log.action === 'OUTWARD_CREATED' ? 'outward' : 'other'
-                                    }`} />
-                                    <div className="activity-body">
-                                        <div className="activity-desc">{log.description}</div>
-                                        <div className="activity-meta">
-                                            <span className="activity-actor">{log.actor}</span>
-                                            {log.inward_no && <span className="activity-ref">{log.inward_no}</span>}
-                                            <span className="activity-time">
-                                                {new Date(log.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
                 </div>
 
                 {/* Team Detail Panel */}
