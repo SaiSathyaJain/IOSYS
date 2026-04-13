@@ -6,11 +6,11 @@ export const inboxQueueRouter = new Hono();
 inboxQueueRouter.get('/', async (c) => {
     const status = c.req.query('status') || 'pending';
     const { results } = await c.env.DB.prepare(
-        'SELECT * FROM inbox_queue WHERE status = ? ORDER BY received_at DESC'
+        'SELECT * FROM inbox_queue WHERE status = ? AND inward_id IS NULL ORDER BY received_at DESC'
     ).bind(status).all();
 
     const pendingRow = await c.env.DB.prepare(
-        "SELECT COUNT(*) as count FROM inbox_queue WHERE status = 'pending'"
+        "SELECT COUNT(*) as count FROM inbox_queue WHERE status = 'pending' AND inward_id IS NULL"
     ).first();
 
     return c.json({ success: true, items: results, pendingCount: pendingRow?.count || 0 });
@@ -19,7 +19,7 @@ inboxQueueRouter.get('/', async (c) => {
 // GET /api/inbox-queue/count  — badge count only
 inboxQueueRouter.get('/count', async (c) => {
     const row = await c.env.DB.prepare(
-        "SELECT COUNT(*) as count FROM inbox_queue WHERE status = 'pending'"
+        "SELECT COUNT(*) as count FROM inbox_queue WHERE status = 'pending' AND inward_id IS NULL"
     ).first();
     return c.json({ success: true, count: row?.count || 0 });
 });
