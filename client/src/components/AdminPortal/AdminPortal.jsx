@@ -162,9 +162,9 @@ function AdminPortal() {
         }
     };
 
-    const openInboxAccept = (item) => {
-        setInboxAcceptItem(item);
-        setInboxAcceptData({
+    const openInboxAccept = async (item) => {
+        // Pre-fill with what we already have
+        const baseData = {
             particularsFromWhom:    item.ai_from || item.from_name || item.from_email,
             subject:                item.subject,
             means:                  'Email',
@@ -174,7 +174,33 @@ function AdminPortal() {
             assignmentInstructions: '',
             dueDate:                item.ai_due_date || '',
             remarks:                item.ai_remarks  || '',
-        });
+        };
+        setInboxAcceptItem(item);
+        setInboxAcceptData(baseData);
+
+        // If AI team wasn't set during polling, fetch a fresh suggestion now
+        if (!item.ai_team) {
+            try {
+                const aiRes = await aiAPI.suggestAssign({
+                    subject: item.subject,
+                    from:    item.from_name || item.from_email,
+                    remarks: item.ai_remarks || '',
+                    means:   'Email',
+                });
+                const s = aiRes.data.suggestion || {};
+                if (s.assignedTeam) {
+                    setInboxAcceptData(prev => ({
+                        ...prev,
+                        assignedTeam:           s.assignedTeam,
+                        assignedToEmail:        TEAM_EMAILS[s.assignedTeam] || '',
+                        assignmentInstructions: s.assignmentInstructions || '',
+                        dueDate:                s.dueDate || prev.dueDate,
+                    }));
+                }
+            } catch {
+                // AI failed — modal stays open with blank team, admin fills manually
+            }
+        }
     };
 
     const handleInboxAccept = async () => {
@@ -247,48 +273,51 @@ function AdminPortal() {
         e.preventDefault();
         try {
             const response = await inwardAPI.create(formData);
-            console.log('Server Response:', response.data);
+            const newId      = response.data.id;
+            const inwardNo   = response.data.inwardNo;
 
-            let message = 'Inward entry created successfully!';
-            if (response.data.emailStatus) {
-                if (response.data.emailStatus === 'sent') {
-                    message += ` Email sent to ${formData.assignedToEmail}`;
-                } else if (response.data.emailStatus === 'skipped') {
-                    console.warn('Email skipped');
-                } else if (response.data.emailStatus.startsWith('failed')) {
-                    message += `\n\nWarning: Email failed - ${response.data.emailStatus}`;
-                    console.error('Email failed:', response.data.emailStatus);
-                }
-            }
-
-            const newId = response.data.id;
             if (formData.assignedTeam && newId) {
+                // Admin manually picked a team — assign directly
                 await inwardAPI.assign(newId, {
-                    assignedTeam: formData.assignedTeam,
-                    assignedToEmail: formData.assignedToEmail,
+                    assignedTeam:           formData.assignedTeam,
+                    assignedToEmail:        formData.assignedToEmail,
                     assignmentInstructions: formData.assignmentInstructions,
-                    dueDate: formData.dueDate
+                    dueDate:                formData.dueDate,
                 });
                 setAssignSuccess({
-                    inwardNo: response.data.inwardNo,
-                    team: formData.assignedTeam,
-                    email: formData.assignedToEmail,
-                    subject: formData.subject,
+                    inwardNo, team: formData.assignedTeam,
+                    email: formData.assignedToEmail, subject: formData.subject,
                 });
-            } else if (response.data.aiAssigned) {
-                // AI auto-assigned on the server
-                setAssignSuccess({
-                    inwardNo: response.data.inwardNo,
-                    team: response.data.assignedTeam,
-                    email: response.data.assignedToEmail,
-                    subject: formData.subject,
-                });
-            } else {
-                setCreateSuccess({
-                    inwardNo: response.data.inwardNo,
-                    subject: formData.subject,
-                });
+            } else if (newId) {
+                // No team selected — get AI suggestion, then let admin approve via reassign modal
+                setShowForm(false);
+                resetForm();
+                loadData();
+                try {
+                    const aiRes = await aiAPI.suggestAssign({
+                        subject: formData.subject,
+                        from:    formData.particularsFromWhom,
+                        remarks: formData.remarks,
+                        means:   formData.means,
+                    });
+                    const s = aiRes.data.suggestion || {};
+                    if (s.assignedTeam) {
+                        setReassignData({
+                            assignedTeam:           s.assignedTeam,
+                            assignedToEmail:        TEAM_EMAILS[s.assignedTeam] || '',
+                            assignmentInstructions: s.assignmentInstructions || '',
+                            dueDate:                s.dueDate || '',
+                        });
+                        const entryRes = await inwardAPI.get(newId);
+                        setSelectedEntry(entryRes.data.entry);
+                        setShowReassignModal(true);
+                    }
+                } catch {
+                    // AI failed silently — entry stays unassigned
+                }
+                return;
             }
+
             setShowForm(false);
             resetForm();
             loadData();

@@ -3,62 +3,7 @@ import { toCamelCase } from '../utils/caseConverter.js';
 import { sendAssignmentNotification } from '../services/notification.js';
 import { sendTeamPushNotifications } from '../services/webPush.js';
 
-const TEAM_SLUG  = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'PhD': 'phd' };
-const TEAM_EMAIL = { 'UG': 'coeoffice@sssihl.edu.in', 'PG/PRO': 'coeoffice@sssihl.edu.in', 'PhD': 'coeoffice@sssihl.edu.in' };
-const VALID_TEAMS = new Set(['UG', 'PG/PRO', 'PhD']);
-
-async function aiSuggestTeam(env, { subject, from, remarks, means }) {
-    if (!env.OPENROUTER_API_KEY) return null;
-    const today = new Date().toISOString().split('T')[0];
-    const prompt = `You are an assignment assistant for SSSIHL's Inward Document Management System.
-Determine the correct team and assignment details for this inward entry.
-
-Teams:
-- UG: undergraduate student matters — admissions, exams, hall tickets, transcripts, bonafide, attendance, fee, certificates for UG students
-- PG/PRO: postgraduate and professional programs — M.Tech, MBA, M.Sc, M.Phil, PGDM, professional course certificates
-- PhD: doctoral research — research scholars, thesis submission, synopsis, fellowship, registration, research grants
-
-Entry details:
-From: ${from}
-Subject: ${subject}
-Remarks: ${remarks || 'None'}
-Mode: ${means || 'Not specified'}
-
-Today: ${today}
-
-Return ONLY valid JSON — no explanation, no markdown:
-{
-  "assignedTeam": "UG or PG/PRO or PhD",
-  "assignmentInstructions": "Brief actionable instruction for the team (1-2 sentences)",
-  "dueDate": "YYYY-MM-DD (7 days from today for urgent/exam matters, 14 days normal, 21 days low priority)",
-  "reasoning": "One sentence explaining the team choice"
-}`;
-    try {
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
-                'X-Title': 'IOSYS Agent',
-            },
-            body: JSON.stringify({
-                model: 'nvidia/nemotron-3-nano-30b-a3b:free',
-                messages: [{ role: 'user', content: prompt }],
-                max_tokens: 250,
-                temperature: 0.1,
-            }),
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        const raw = data.choices?.[0]?.message?.content || '';
-        const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const suggestion = JSON.parse(jsonStr);
-        return VALID_TEAMS.has(suggestion.assignedTeam) ? suggestion : null;
-    } catch {
-        return null;
-    }
-}
+const TEAM_SLUG = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'PhD': 'phd' };
 
 export const inwardRouter = new Hono();
 
@@ -132,57 +77,6 @@ inwardRouter.post('/', async (c) => {
         await c.env.DB.prepare(
             'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
         ).bind('ENTRY_CREATED', 'Admin', `Admin created inward entry ${inwardNo}`, inwardNo).run();
-
-        // AI auto-assign if no team was provided
-        if (!assignedTeam) {
-            const suggestion = await aiSuggestTeam(c.env, {
-                subject, from: particularsFromWhom, remarks, means
-            });
-
-            if (suggestion) {
-                const aiTeam        = suggestion.assignedTeam;
-                const aiEmail       = TEAM_EMAIL[aiTeam];
-                const aiInstructions = suggestion.assignmentInstructions || '';
-                const aiDueDate     = suggestion.dueDate || null;
-                const assignDate    = new Date().toISOString();
-
-                await c.env.DB.prepare(`
-                    UPDATE inward SET
-                        assigned_team = ?, assigned_to_email = ?,
-                        assignment_instructions = ?, assignment_date = ?,
-                        assignment_status = 'Pending', due_date = ?, updated_at = ?
-                    WHERE id = ?
-                `).bind(aiTeam, aiEmail, aiInstructions, assignDate, aiDueDate, assignDate, id).run();
-
-                await c.env.DB.prepare(
-                    'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
-                ).bind('AI_ASSIGNED', 'AI Agent', `AI assigned ${inwardNo} to ${aiTeam} Team — ${suggestion.reasoning || ''}`, inwardNo).run();
-
-                c.executionCtx.waitUntil((async () => {
-                    await Promise.allSettled([
-                        sendAssignmentNotification({
-                            inwardNo, subject, particularsFromWhom,
-                            assignedTeam: aiTeam, assignedToEmail: aiEmail,
-                            assignmentInstructions: aiInstructions, dueDate: aiDueDate
-                        }, c.env).catch(err => console.error('Email notification failed:', err)),
-                        sendTeamPushNotifications(c.env, c.env.DB, aiTeam, {
-                            title: `New Assignment — ${aiTeam} Team`,
-                            body: `${inwardNo}: ${(subject || '').slice(0, 60)}`,
-                            url: `https://iosys.pages.dev/team/${TEAM_SLUG[aiTeam] || 'ug'}`
-                        }).catch(err => console.error('Push notification failed:', err))
-                    ]);
-                })());
-
-                return c.json({
-                    success: true,
-                    message: 'Inward entry created and auto-assigned by AI',
-                    id, inwardNo,
-                    aiAssigned: true,
-                    assignedTeam: aiTeam,
-                    assignedToEmail: aiEmail,
-                });
-            }
-        }
 
         return c.json({
             success: true,
