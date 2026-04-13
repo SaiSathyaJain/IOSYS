@@ -193,113 +193,16 @@ function AdminPortal() {
     };
 
     const handleInboxPrint = (item) => {
-        const esc = (str) => (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const printedOn = new Date().toLocaleString('en-IN', {
-            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-        });
-        const receivedDate = new Date(item.received_at).toLocaleString('en-IN', {
-            weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        });
-        const senderInitial = (item.from_name || item.from_email || '?')[0].toUpperCase();
-        const fromDisplay = item.from_name
-            ? `${esc(item.from_name)} &lt;${esc(item.from_email)}&gt;`
-            : esc(item.from_email);
-        const toDisplay = 'COE Office Inward, SSSIHL &lt;coeofficeinward@sssihl.edu.in&gt;';
-        const bodyHtml = esc(item.body_preview || '(No body preview available)').replace(/\n/g, '<br/>');
-
-        const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <title>${esc(item.subject)}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; font-size: 12px; color: #222; background: #fff; padding: 24px 32px; max-width: 860px; margin: auto; }
-
-    /* Top bar */
-    .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0; }
-    .logo-block { display: flex; align-items: center; gap: 10px; }
-    .logo-circle { width: 38px; height: 38px; border-radius: 50%; background: #1a3a6b; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .logo-text { font-size: 13px; font-weight: 700; color: #1a3a6b; line-height: 1.3; }
-    .logo-text span { font-size: 10px; font-weight: 400; color: #666; display: block; }
-    .print-date { font-size: 10px; color: #888; }
-
-    /* Subject */
-    .subject-row { margin-bottom: 6px; }
-    .subject-line { font-size: 20px; font-weight: 400; color: #222; line-height: 1.3; }
-
-    /* Message card */
-    .msg-card { border: 1px solid #e0e0e0; border-radius: 4px; margin-top: 16px; }
-    .msg-header { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px 10px; border-bottom: 1px solid #f0f0f0; }
-    .avatar { width: 36px; height: 36px; border-radius: 50%; background: #1a73e8; color: #fff; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .msg-meta { flex: 1; }
-    .msg-from { font-size: 13px; font-weight: 600; color: #222; }
-    .msg-to { font-size: 11px; color: #666; margin-top: 2px; }
-    .msg-to span { color: #444; }
-    .msg-date { font-size: 11px; color: #888; white-space: nowrap; padding-top: 2px; }
-
-    /* Body */
-    .msg-body { padding: 16px; font-size: 12px; line-height: 1.75; color: #333; white-space: pre-wrap; word-break: break-word; }
-
-    /* AI note */
-    .ai-note { margin: 12px 16px; padding: 8px 12px; background: #f0f4ff; border-left: 3px solid #4f46e5; border-radius: 0 4px 4px 0; font-size: 10.5px; color: #444; }
-    .ai-note strong { color: #4f46e5; }
-
-    /* Footer */
-    .footer { margin-top: 20px; font-size: 9px; color: #bbb; text-align: right; border-top: 1px solid #eee; padding-top: 8px; }
-
-    @page { size: A4; margin: 14mm 16mm; }
-    @media print { body { padding: 0; } }
-  </style>
-</head>
-<body>
-  <!-- Top bar: logo + print date -->
-  <div class="top-bar">
-    <div class="logo-block">
-      <div class="logo-circle">S</div>
-      <div class="logo-text">
-        SSSIHL
-        <span>Sri Sathya Sai Institute of Higher Learning Mail</span>
-      </div>
-    </div>
-    <div class="print-date">${printedOn}</div>
-  </div>
-
-  <!-- Subject -->
-  <div class="subject-row">
-    <div class="subject-line">${esc(item.subject)}</div>
-  </div>
-
-  <!-- Message card -->
-  <div class="msg-card">
-    <div class="msg-header">
-      <div class="avatar">${senderInitial}</div>
-      <div class="msg-meta">
-        <div class="msg-from">${fromDisplay}</div>
-        <div class="msg-to">To: <span>${toDisplay}</span></div>
-      </div>
-      <div class="msg-date">${receivedDate}</div>
-    </div>
-    <div class="msg-body">${bodyHtml}</div>
-    ${(item.ai_team || item.ai_remarks) ? `
-    <div class="ai-note">
-      <strong>AI Suggestion &mdash;</strong>
-      ${item.ai_team ? `Team: <strong>${esc(item.ai_team)}</strong>` : ''}
-      ${item.ai_team && item.ai_due_date ? ` &nbsp;|&nbsp; Due: ${esc(item.ai_due_date)}` : ''}
-      ${item.ai_remarks ? `<br/>${esc(item.ai_remarks)}` : ''}
-    </div>` : ''}
-  </div>
-
-  <div class="footer">Printed on ${printedOn} &mdash; SSSIHL Inward/Outward System &mdash; COE Office</div>
-</body>
-</html>`;
-
-        const win = window.open('', '_blank');
-        if (!win) { alert('Please allow pop-ups for this site and try again.'); return; }
-        win.document.write(html);
-        win.document.close();
-        setTimeout(() => { win.focus(); win.print(); }, 400);
+        if (!item.gmail_message_id) {
+            alert('Gmail message ID not available for this email.');
+            return;
+        }
+        // Open Gmail's native print view — same layout Gmail uses when you click print inside an email.
+        // permthid = thread ID, simpl = message ID (for single emails both are the same message ID)
+        const mid = item.gmail_message_id;
+        const url = `https://mail.google.com/mail/u/0/?view=pt&search=all&permthid=thread-f${mid}&simpl=msg-f${mid}`;
+        const win = window.open(url, '_blank');
+        if (!win) { alert('Please allow pop-ups for this site and try again.'); }
     };
 
     const handleInboxReject = async (id) => {
