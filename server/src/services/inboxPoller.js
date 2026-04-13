@@ -5,6 +5,9 @@
  */
 
 async function getAccessToken(env) {
+    if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) {
+        throw new Error('Gmail OAuth secrets not configured (GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN missing)');
+    }
     const res = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -16,7 +19,9 @@ async function getAccessToken(env) {
         }),
     });
     const data = await res.json();
-    if (!data.access_token) throw new Error('Failed to get Gmail access token');
+    if (!data.access_token) {
+        throw new Error(`Gmail token exchange failed: ${data.error || 'unknown'} — ${data.error_description || ''}`);
+    }
     return data.access_token;
 }
 
@@ -72,6 +77,7 @@ function parseFrom(fromHeader) {
 }
 
 async function extractFieldsWithAI(env, subject, bodyText, senderName) {
+    if (!env.OPENROUTER_API_KEY) return {};
     const today = new Date().toISOString().split('T')[0];
     const prompt = `Extract fields from this email for a university document management system. Return ONLY valid JSON — no explanation, no markdown.
 
@@ -112,24 +118,36 @@ Return ONLY the JSON object:`;
     }
 }
 
+/**
+ * Poll Gmail inbox, insert new emails into inbox_queue.
+ * Returns a result summary object — throws on fatal config errors.
+ */
 export async function pollInbox(env) {
-    try {
-        const accessToken = await getAccessToken(env);
+    const result = { processed: 0, skipped: 0, errors: [], total: 0 };
 
-        // Fetch unread messages (max 15 per poll)
-        const listRes = await fetch(
-            'https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread&maxResults=15',
-            { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        const listData = await listRes.json();
-        const messages = listData.messages || [];
+    // This will throw if secrets are missing — caller sees the error
+    const accessToken = await getAccessToken(env);
 
-        for (const msg of messages) {
+    // Fetch unread messages (max 15 per poll)
+    const listRes = await fetch(
+        'https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread in:inbox&maxResults=15',
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!listRes.ok) {
+        const text = await listRes.text();
+        throw new Error(`Gmail list failed (${listRes.status}): ${text.slice(0, 200)}`);
+    }
+    const listData = await listRes.json();
+    const messages = listData.messages || [];
+    result.total = messages.length;
+
+    for (const msg of messages) {
+        try {
             // Deduplication — skip if already in queue
             const existing = await env.DB.prepare(
                 'SELECT id FROM inbox_queue WHERE gmail_message_id = ?'
             ).bind(msg.id).first();
-            if (existing) continue;
+            if (existing) { result.skipped++; continue; }
 
             // Fetch full message details
             const detailRes = await fetch(
@@ -154,7 +172,7 @@ export async function pollInbox(env) {
             const bodyText    = extractBodyText(detail.payload || {});
             const bodyPreview = bodyText.slice(0, 800).trim();
 
-            // AI field extraction
+            // AI field extraction (optional — doesn't block if it fails)
             const aiFields = await extractFieldsWithAI(
                 env,
                 subject,
@@ -162,7 +180,7 @@ export async function pollInbox(env) {
                 fromName || fromEmail
             );
 
-            // Insert into inbox_queue
+            // Insert into inbox_queue FIRST — only mark as read on success
             await env.DB.prepare(`
                 INSERT INTO inbox_queue
                     (gmail_message_id, from_email, from_name, subject,
@@ -182,7 +200,7 @@ export async function pollInbox(env) {
                 aiFields.remarks       || ''
             ).run();
 
-            // Mark email as read so we don't re-process it
+            // Mark email as read only after successful INSERT
             await fetch(
                 `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}/modify`,
                 {
@@ -194,8 +212,12 @@ export async function pollInbox(env) {
                     body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
                 }
             );
+
+            result.processed++;
+        } catch (err) {
+            result.errors.push({ messageId: msg.id, error: err.message });
         }
-    } catch (err) {
-        console.error('Inbox poll error:', err.message);
     }
+
+    return result;
 }

@@ -88,14 +88,56 @@ app.get('/api/run-migration', async (c) => {
     }
 });
 
-// Manual trigger for inbox poll (testing)
+// Manual trigger for inbox poll — returns detailed result for diagnostics
 app.get('/api/trigger-inbox-poll', async (c) => {
     try {
-        await pollInbox(c.env);
-        return c.json({ success: true, message: 'Inbox poll completed' });
+        const result = await pollInbox(c.env);
+        return c.json({ success: true, message: 'Inbox poll completed', result });
     } catch (e) {
         return c.json({ success: false, error: e.message }, 500);
     }
+});
+
+// Diagnostics — check Gmail secrets + table existence
+app.get('/api/inbox-debug', async (c) => {
+    const info = {
+        hasClientId:     !!c.env.GMAIL_CLIENT_ID,
+        hasClientSecret: !!c.env.GMAIL_CLIENT_SECRET,
+        hasRefreshToken: !!c.env.GMAIL_REFRESH_TOKEN,
+        hasOpenRouter:   !!c.env.OPENROUTER_API_KEY,
+        tableExists:     false,
+        pendingCount:    0,
+        tokenTest:       null,
+    };
+    try {
+        const row = await c.env.DB.prepare("SELECT COUNT(*) as count FROM inbox_queue WHERE status = 'pending'").first();
+        info.tableExists  = true;
+        info.pendingCount = row?.count || 0;
+    } catch (e) {
+        info.tableError = e.message;
+    }
+    // Quick token test
+    if (info.hasClientId && info.hasClientSecret && info.hasRefreshToken) {
+        try {
+            const res  = await fetch('https://oauth2.googleapis.com/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    client_id:     c.env.GMAIL_CLIENT_ID,
+                    client_secret: c.env.GMAIL_CLIENT_SECRET,
+                    refresh_token: c.env.GMAIL_REFRESH_TOKEN,
+                    grant_type:    'refresh_token',
+                }),
+            });
+            const data = await res.json();
+            info.tokenTest = data.access_token ? 'OK' : `FAILED: ${data.error} — ${data.error_description}`;
+        } catch (e) {
+            info.tokenTest = `ERROR: ${e.message}`;
+        }
+    } else {
+        info.tokenTest = 'SKIPPED (secrets missing)';
+    }
+    return c.json(info);
 });
 
 // Hidden trigger to bypass cron limitations for testing purposes
@@ -115,7 +157,9 @@ export default {
         if (event.cron === '30 5 * * 6') {
             ctx.waitUntil(sendWeeklyReport(env));
         } else if (event.cron === '*/5 * * * *') {
-            ctx.waitUntil(pollInbox(env));
+            ctx.waitUntil(
+                pollInbox(env).catch(err => console.error('Scheduled inbox poll error:', err.message))
+            );
         }
     }
 };

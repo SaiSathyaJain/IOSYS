@@ -51,7 +51,8 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
 
 const PORT         = 3456;
 const REDIRECT_URI = `http://localhost:${PORT}`;
-const SCOPES       = 'https://www.googleapis.com/auth/gmail.send';
+// gmail.modify = read + list + mark-as-read + send (superset of gmail.send)
+const SCOPES       = 'https://www.googleapis.com/auth/gmail.modify';
 
 const authUrl =
     `https://accounts.google.com/o/oauth2/v2/auth` +
