@@ -77,7 +77,6 @@ function parseFrom(fromHeader) {
 }
 
 async function extractFieldsWithAI(env, subject, bodyText, senderName) {
-    if (!env.OPENROUTER_API_KEY) return {};
     const today = new Date().toISOString().split('T')[0];
     const prompt = `Extract fields from this email for a university document management system. Return ONLY valid JSON — no explanation, no markdown.
 
@@ -93,17 +92,30 @@ Fields to extract:
 
 Return ONLY the JSON object:`;
 
+    // Use Groq if available (14,400 req/day free), else fall back to OpenRouter
+    const useGroq = !!env.GROQ_API_KEY;
+    const apiUrl  = useGroq
+        ? 'https://api.groq.com/openai/v1/chat/completions'
+        : 'https://openrouter.ai/api/v1/chat/completions';
+    const apiKey  = useGroq ? env.GROQ_API_KEY : env.OPENROUTER_API_KEY;
+    const model   = useGroq ? 'llama3-8b-8192' : 'nvidia/nemotron-3-nano-30b-a3b:free';
+
+    if (!apiKey) return {};
+
     try {
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const headers = {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        };
+        if (!useGroq) {
+            headers['HTTP-Referer'] = 'https://iosys.coeofficeinward.workers.dev';
+            headers['X-Title'] = 'IOSYS Inbox Poller';
+        }
+        const res = await fetch(apiUrl, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
-                'X-Title': 'IOSYS Inbox Poller',
-            },
+            headers,
             body: JSON.stringify({
-                model: 'nvidia/nemotron-3-nano-30b-a3b:free',
+                model,
                 messages: [{ role: 'user', content: prompt }],
                 max_tokens: 200,
                 temperature: 0.1,
@@ -147,9 +159,9 @@ export async function pollInbox(env) {
 
     for (const msg of messages) {
         try {
-            // Deduplication — skip if already in queue
+            // Deduplication — skip if already in queue (pending or accepted)
             const existing = await env.DB.prepare(
-                'SELECT id FROM inbox_queue WHERE gmail_message_id = ?'
+                'SELECT id, status FROM inbox_queue WHERE gmail_message_id = ?'
             ).bind(msg.id).first();
             if (existing) { result.skipped++; continue; }
 

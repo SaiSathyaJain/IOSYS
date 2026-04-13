@@ -85,8 +85,11 @@ aiRouter.post('/agent', async (c) => {
         if (!subject || !from) {
             return c.json({ success: false, message: 'subject and from are required' }, 400);
         }
-        if (!c.env.OPENROUTER_API_KEY) {
-            return c.json({ success: false, message: 'OPENROUTER_API_KEY not configured' }, 500);
+
+        const useGroq = !!c.env.GROQ_API_KEY;
+        const apiKey  = useGroq ? c.env.GROQ_API_KEY : c.env.OPENROUTER_API_KEY;
+        if (!apiKey) {
+            return c.json({ success: false, message: 'No AI API key configured (GROQ_API_KEY or OPENROUTER_API_KEY)' }, 500);
         }
 
         const today = new Date().toISOString().split('T')[0];
@@ -115,21 +118,27 @@ Return ONLY valid JSON — no explanation, no markdown:
   "reasoning": "One sentence explaining the team choice"
 }`;
 
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
-                'X-Title': 'IOSYS Agent',
-            },
-            body: JSON.stringify({
-                model: 'nvidia/nemotron-3-nano-30b-a3b:free',
-                messages: [{ role: 'user', content: prompt }],
-                max_tokens: 250,
-                temperature: 0.1,
-            }),
-        });
+        const agentHeaders = { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
+        if (!useGroq) {
+            agentHeaders['HTTP-Referer'] = 'https://iosys.coeofficeinward.workers.dev';
+            agentHeaders['X-Title'] = 'IOSYS Agent';
+        }
+
+        const res = await fetch(
+            useGroq
+                ? 'https://api.groq.com/openai/v1/chat/completions'
+                : 'https://openrouter.ai/api/v1/chat/completions',
+            {
+                method: 'POST',
+                headers: agentHeaders,
+                body: JSON.stringify({
+                    model: useGroq ? 'llama3-8b-8192' : 'nvidia/nemotron-3-nano-30b-a3b:free',
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 250,
+                    temperature: 0.1,
+                }),
+            }
+        );
 
         if (!res.ok) {
             return c.json({ success: false, message: 'AI service error' }, 500);
@@ -390,6 +399,7 @@ Never include ENTRIES_JSON for summary tables, counts, statistics, or grouped da
 
         let aiRes = null;
         let lastErr = 'AI service error. Please try again.';
+        let isRateLimit = false;
 
         for (const tryModel of tryModels) {
             const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -417,12 +427,20 @@ Never include ENTRIES_JSON for summary tables, counts, statistics, or grouped da
             console.error(`OpenRouter error with model ${tryModel}:`, res.status, errText);
             try {
                 const errJson = JSON.parse(errText);
-                if (errJson?.error?.message) lastErr = errJson.error.message;
+                if (errJson?.error?.message) {
+                    lastErr = errJson.error.message;
+                    if (lastErr.toLowerCase().includes('rate limit') || lastErr.toLowerCase().includes('per-day')) {
+                        isRateLimit = true;
+                    }
+                }
             } catch { /* use default */ }
         }
 
         if (!aiRes) {
-            return c.json({ success: false, message: `All models unavailable. ${lastErr}` }, 500);
+            const message = isRateLimit
+                ? 'Daily free model limit reached on OpenRouter. The AI assistant will be available again tomorrow, or add credits at openrouter.ai to restore access immediately.'
+                : `AI service unavailable. ${lastErr}`;
+            return c.json({ success: false, message }, 500);
         }
 
         // Proxy the SSE stream directly to the client

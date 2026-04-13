@@ -212,11 +212,14 @@ function AdminPortal() {
     const handleInboxAccept = async () => {
         if (!inboxAcceptItem) return;
         setInboxAccepting(true);
+        const acceptedId = inboxAcceptItem.id;
         try {
-            await inboxQueueAPI.accept(inboxAcceptItem.id, inboxAcceptData);
+            await inboxQueueAPI.accept(acceptedId, inboxAcceptData);
+            // Remove immediately from the list (optimistic update)
             setInboxAcceptItem(null);
-            await loadInboxItems();
-            await loadData();
+            setInboxItems(prev => prev.filter(i => i.id !== acceptedId));
+            setInboxCount(prev => Math.max(0, prev - 1));
+            loadData();
         } catch (err) {
             alert('Failed to accept: ' + (err.response?.data?.message || err.message));
         } finally {

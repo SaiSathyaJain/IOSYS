@@ -341,9 +341,13 @@ function ChatBot() {
             // Non-streaming error response
             if (!res.headers.get('content-type')?.includes('text/event-stream')) {
                 const data = await res.json();
+                const msg = data.message || 'Please try again.';
+                const isRateLimit = msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('per-day') || msg.toLowerCase().includes('daily free');
                 setMessages(prev => [...prev, {
                     role: 'assistant',
-                    content: `Sorry, something went wrong: ${data.message || 'Please try again.'}`,
+                    content: isRateLimit
+                        ? `**Daily AI limit reached.**\n\nThe free model quota on OpenRouter has been used up for today.\n\n- The assistant will be available again **tomorrow** automatically.\n- Or add credits at **openrouter.ai** to restore access now.\n\nYou can still use all other features of IOSYS normally.`
+                        : `Sorry, something went wrong: ${msg}`,
                 }]);
                 return;
             }
