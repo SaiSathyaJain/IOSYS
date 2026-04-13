@@ -193,47 +193,108 @@ function AdminPortal() {
     };
 
     const handleInboxPrint = (item) => {
-        const receivedDate = new Date(item.received_at).toLocaleString('en-IN', {
-            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-        });
         const esc = (str) => (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const bodyHtml = esc(item.body_preview || '(No preview available)').replace(/\n/g, '<br/>');
+        const printedOn = new Date().toLocaleString('en-IN', {
+            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        const receivedDate = new Date(item.received_at).toLocaleString('en-IN', {
+            weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+        const senderInitial = (item.from_name || item.from_email || '?')[0].toUpperCase();
+        const fromDisplay = item.from_name
+            ? `${esc(item.from_name)} &lt;${esc(item.from_email)}&gt;`
+            : esc(item.from_email);
+        const toDisplay = 'COE Office Inward, SSSIHL &lt;coeofficeinward@sssihl.edu.in&gt;';
+        const bodyHtml = esc(item.body_preview || '(No body preview available)').replace(/\n/g, '<br/>');
+
         const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>Email — ${esc(item.subject)}</title>
+  <title>${esc(item.subject)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; font-size: 12px; padding: 32px; color: #111; max-width: 800px; margin: auto; }
-    .org { text-align: center; font-size: 14px; font-weight: 700; letter-spacing: 0.03em; margin-bottom: 4px; }
-    .org-sub { text-align: center; font-size: 11px; color: #555; margin-bottom: 20px; }
-    .divider { border: none; border-top: 2px solid #1d4ed8; margin-bottom: 16px; }
-    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    .meta-table td { padding: 5px 8px; border: 1px solid #ddd; vertical-align: top; }
-    .meta-table td:first-child { font-weight: 600; width: 28%; background: #f0f4ff; color: #1d4ed8; }
-    .body-label { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; margin-bottom: 8px; }
-    .body-box { border: 1px solid #ddd; border-radius: 4px; padding: 14px; line-height: 1.7; white-space: pre-wrap; background: #fafafa; min-height: 120px; }
-    .footer { margin-top: 24px; font-size: 9px; color: #aaa; text-align: right; border-top: 1px solid #eee; padding-top: 8px; }
-    @page { size: A4; margin: 18mm; }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #222; background: #fff; padding: 24px 32px; max-width: 860px; margin: auto; }
+
+    /* Top bar */
+    .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0; }
+    .logo-block { display: flex; align-items: center; gap: 10px; }
+    .logo-circle { width: 38px; height: 38px; border-radius: 50%; background: #1a3a6b; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo-text { font-size: 13px; font-weight: 700; color: #1a3a6b; line-height: 1.3; }
+    .logo-text span { font-size: 10px; font-weight: 400; color: #666; display: block; }
+    .print-date { font-size: 10px; color: #888; }
+
+    /* Subject */
+    .subject-row { margin-bottom: 6px; }
+    .subject-line { font-size: 20px; font-weight: 400; color: #222; line-height: 1.3; }
+
+    /* Message card */
+    .msg-card { border: 1px solid #e0e0e0; border-radius: 4px; margin-top: 16px; }
+    .msg-header { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px 10px; border-bottom: 1px solid #f0f0f0; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: #1a73e8; color: #fff; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .msg-meta { flex: 1; }
+    .msg-from { font-size: 13px; font-weight: 600; color: #222; }
+    .msg-to { font-size: 11px; color: #666; margin-top: 2px; }
+    .msg-to span { color: #444; }
+    .msg-date { font-size: 11px; color: #888; white-space: nowrap; padding-top: 2px; }
+
+    /* Body */
+    .msg-body { padding: 16px; font-size: 12px; line-height: 1.75; color: #333; white-space: pre-wrap; word-break: break-word; }
+
+    /* AI note */
+    .ai-note { margin: 12px 16px; padding: 8px 12px; background: #f0f4ff; border-left: 3px solid #4f46e5; border-radius: 0 4px 4px 0; font-size: 10.5px; color: #444; }
+    .ai-note strong { color: #4f46e5; }
+
+    /* Footer */
+    .footer { margin-top: 20px; font-size: 9px; color: #bbb; text-align: right; border-top: 1px solid #eee; padding-top: 8px; }
+
+    @page { size: A4; margin: 14mm 16mm; }
+    @media print { body { padding: 0; } }
   </style>
 </head>
 <body>
-  <div class="org">Sri Sathya Sai Institute of Higher Learning</div>
-  <div class="org-sub">Controller of Examinations — Inward/Outward System</div>
-  <hr class="divider"/>
-  <table class="meta-table">
-    <tr><td>From</td><td>${esc(item.from_name) ? `${esc(item.from_name)} &lt;${esc(item.from_email)}&gt;` : esc(item.from_email)}</td></tr>
-    <tr><td>Subject</td><td><strong>${esc(item.subject)}</strong></td></tr>
-    <tr><td>Received</td><td>${receivedDate}</td></tr>
-    ${item.ai_team ? `<tr><td>AI Suggested Team</td><td>${esc(item.ai_team)}${item.ai_due_date ? ` &nbsp;|&nbsp; Due: ${esc(item.ai_due_date)}` : ''}</td></tr>` : ''}
-    ${item.ai_remarks ? `<tr><td>AI Remarks</td><td>${esc(item.ai_remarks)}</td></tr>` : ''}
-  </table>
-  <div class="body-label">Email Body Preview</div>
-  <div class="body-box">${bodyHtml}</div>
-  <div class="footer">Printed on ${new Date().toLocaleString('en-IN')} &mdash; SSSIHL Inward/Outward System</div>
+  <!-- Top bar: logo + print date -->
+  <div class="top-bar">
+    <div class="logo-block">
+      <div class="logo-circle">S</div>
+      <div class="logo-text">
+        SSSIHL
+        <span>Sri Sathya Sai Institute of Higher Learning Mail</span>
+      </div>
+    </div>
+    <div class="print-date">${printedOn}</div>
+  </div>
+
+  <!-- Subject -->
+  <div class="subject-row">
+    <div class="subject-line">${esc(item.subject)}</div>
+  </div>
+
+  <!-- Message card -->
+  <div class="msg-card">
+    <div class="msg-header">
+      <div class="avatar">${senderInitial}</div>
+      <div class="msg-meta">
+        <div class="msg-from">${fromDisplay}</div>
+        <div class="msg-to">To: <span>${toDisplay}</span></div>
+      </div>
+      <div class="msg-date">${receivedDate}</div>
+    </div>
+    <div class="msg-body">${bodyHtml}</div>
+    ${(item.ai_team || item.ai_remarks) ? `
+    <div class="ai-note">
+      <strong>AI Suggestion &mdash;</strong>
+      ${item.ai_team ? `Team: <strong>${esc(item.ai_team)}</strong>` : ''}
+      ${item.ai_team && item.ai_due_date ? ` &nbsp;|&nbsp; Due: ${esc(item.ai_due_date)}` : ''}
+      ${item.ai_remarks ? `<br/>${esc(item.ai_remarks)}` : ''}
+    </div>` : ''}
+  </div>
+
+  <div class="footer">Printed on ${printedOn} &mdash; SSSIHL Inward/Outward System &mdash; COE Office</div>
 </body>
 </html>`;
+
         const win = window.open('', '_blank');
         if (!win) { alert('Please allow pop-ups for this site and try again.'); return; }
         win.document.write(html);
