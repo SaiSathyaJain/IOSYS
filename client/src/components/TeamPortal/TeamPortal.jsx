@@ -357,13 +357,13 @@ function TeamPortal() {
                 {/* Header */}
                 <div className="tp-main-header">
                     <div className="tp-main-header-left">
+                        <button className="tp-back-btn" onClick={() => navigate('/team')} title="Back to team selection">
+                            <ArrowLeft size={15} />
+                        </button>
                         <h1 className="tp-main-title">{navItems.find(n => n.id === activePage)?.label.charAt(0) + navItems.find(n => n.id === activePage)?.label.slice(1).toLowerCase() || 'Dashboard'}</h1>
                         <span className="tp-main-date">{formatHeaderDate()}</span>
                     </div>
                     <div className="tp-main-header-right">
-                        <button className="tp-export-btn" onClick={() => navigate('/team')} title="Back to team selection">
-                            <ArrowLeft size={14} /> Back
-                        </button>
                         <button className="tp-export-btn"><Download size={14} /> Export</button>
                         {!pushEnabled && 'Notification' in window && Notification.permission !== 'denied' && (
                             <button className="tp-export-btn" onClick={registerPush} title="Enable push notifications" style={{ gap: '0.35rem' }}>
