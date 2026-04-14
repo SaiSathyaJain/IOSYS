@@ -1653,7 +1653,7 @@ function AdminPortal() {
                                                     </div>
                                                 </div>
                                                 <div className="iq-actions">
-                                                    <button className="btn btn-secondary btn-sm" onClick={() => setInboxViewItem(item)}>
+                                                    <button className="btn btn-sm iq-view-btn" onClick={() => setInboxViewItem(item)}>
                                                         <Mail size={13} /> View
                                                     </button>
                                                     <button className="btn btn-primary btn-sm" onClick={() => openInboxAccept(item)} disabled={inboxAiLoading === item.id}>

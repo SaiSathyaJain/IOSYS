@@ -1754,7 +1754,8 @@
 .iq-email-view-row { display: flex; gap: 0.75rem; font-size: 0.83rem; }
 .iq-email-view-label { min-width: 60px; font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; padding-top: 0.1rem; }
 .iq-email-view-value { color: var(--text-primary); flex: 1; line-height: 1.4; }
-.iq-email-view-body { white-space: pre-wrap; word-break: break-word; font-size: 0.84rem; line-height: 1.7; color: var(--text-primary); background: var(--input-bg, rgba(255,255,255,0.03)); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; max-height: 360px; overflow-y: auto; }
+.iq-email-view-body { white-space: pre-wrap; word-break: break-word; font-size: 0.84rem; line-height: 1.7; color: #e2e8f0; background: #0d1526; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 1rem; max-height: 360px; overflow-y: auto; }
+[data-theme="light"] .iq-email-view-body { color: #1e293b; background: #f8fafc; border-color: #e2e8f0; }
 
 .iq-ai-suggestion { width: 100%; }
 .iq-ai-label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.68rem; color: #7c5de8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
@@ -1766,6 +1767,10 @@
 .btn-sm { padding: 0.35rem 0.7rem !important; font-size: 0.78rem !important; }
 .iq-reject-btn { color: #ef4444 !important; border-color: rgba(239,68,68,0.3) !important; }
 .iq-reject-btn:hover { background: rgba(239,68,68,0.08) !important; }
+.iq-view-btn { background: rgba(99,102,241,0.12) !important; color: #818cf8 !important; border: 1px solid rgba(99,102,241,0.25) !important; }
+.iq-view-btn:hover { background: rgba(99,102,241,0.2) !important; }
+[data-theme="light"] .iq-view-btn { background: #eff0ff !important; color: #4f46e5 !important; border-color: #c7d2fe !important; }
+[data-theme="light"] .iq-view-btn:hover { background: #e0e7ff !important; }
 
 /* Accept modal source block */
 .iq-accept-source {
