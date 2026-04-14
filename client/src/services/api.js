@@ -55,10 +55,11 @@ export const aiAPI = {
 
 // Inbox Queue API
 export const inboxQueueAPI = {
-    getItems:  (status = 'pending') => api.get(`/inbox-queue?status=${status}`),
-    getCount:  ()                   => api.get('/inbox-queue/count'),
-    accept:    (id, data)           => api.put(`/inbox-queue/${id}/accept`, data),
-    reject:    (id)                 => api.put(`/inbox-queue/${id}/reject`),
+    getItems:      (status = 'pending') => api.get(`/inbox-queue?status=${status}`),
+    getCount:      ()                   => api.get('/inbox-queue/count'),
+    accept:        (id, data)           => api.put(`/inbox-queue/${id}/accept`, data),
+    reject:        (id)                 => api.put(`/inbox-queue/${id}/reject`),
+    getByInwardId: (inwardId)           => api.get(`/inbox-queue/by-inward/${inwardId}`),
 };
 
 // Notifications API

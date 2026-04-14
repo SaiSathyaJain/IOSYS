@@ -16,6 +16,15 @@ inboxQueueRouter.get('/', async (c) => {
     return c.json({ success: true, items: results, pendingCount: pendingRow?.count || 0 });
 });
 
+// GET /api/inbox-queue/by-inward/:inwardId — fetch email linked to an inward entry
+inboxQueueRouter.get('/by-inward/:inwardId', async (c) => {
+    const inwardId = c.req.param('inwardId');
+    const item = await c.env.DB.prepare(
+        'SELECT * FROM inbox_queue WHERE inward_id = ?'
+    ).bind(inwardId).first();
+    return c.json({ success: true, item: item || null });
+});
+
 // GET /api/inbox-queue/count  — badge count only
 inboxQueueRouter.get('/count', async (c) => {
     const row = await c.env.DB.prepare(

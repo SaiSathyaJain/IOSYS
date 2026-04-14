@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { dashboardAPI, inwardAPI, outwardAPI, auditAPI } from '../../services/api';
+import { dashboardAPI, inwardAPI, outwardAPI, auditAPI, inboxQueueAPI } from '../../services/api';
 import {
     Hourglass, CheckCircle2, ArrowDownToLine, ArrowUpFromLine,
     Users, ChevronRight, X, Clock, TrendingUp, FileText,
     RefreshCw, Loader2, ArrowLeft, AlertCircle, Sun, Moon, Activity,
-    Search, Filter
+    Search, Filter, Mail, Calendar, Tag, User, Building2
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -62,6 +62,8 @@ function Dashboard() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [teamFilter, setTeamFilter] = useState('all');
+    const [activityModal, setActivityModal] = useState(null); // { log, entry, email }
+    const [activityLoading, setActivityLoading] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -118,6 +120,22 @@ function Dashboard() {
         } finally {
             setDetailLoading(false);
         }
+    };
+
+    const openActivityDetail = async (log) => {
+        if (!log.inward_no) return;
+        setActivityLoading(true);
+        setActivityModal({ log, entry: null, email: null });
+        const entry = allEntries.find(e => e.inwardNo === log.inward_no) || null;
+        let email = null;
+        if (entry) {
+            try {
+                const res = await inboxQueueAPI.getByInwardId(entry.id);
+                email = res.data.item || null;
+            } catch {}
+        }
+        setActivityModal({ log, entry, email });
+        setActivityLoading(false);
     };
 
     const closeTeamDetail = () => {
@@ -416,7 +434,12 @@ function Dashboard() {
                         ) : (
                             <div className="activity-feed activity-feed--scroll">
                                 {recentLogs.map(log => (
-                                    <div key={log.id} className="activity-item">
+                                    <div
+                                        key={log.id}
+                                        className={`activity-item${log.inward_no ? ' activity-item--clickable' : ''}`}
+                                        onClick={() => log.inward_no && openActivityDetail(log)}
+                                        title={log.inward_no ? 'Click to view details' : ''}
+                                    >
                                         <div className={`activity-dot activity-dot--${
                                             log.action === 'ENTRY_CREATED' ? 'created' :
                                             log.action === 'ENTRY_ASSIGNED' ? 'assigned' :
@@ -433,6 +456,7 @@ function Dashboard() {
                                                 </span>
                                             </div>
                                         </div>
+                                        {log.inward_no && <ChevronRight size={14} className="activity-chevron" />}
                                     </div>
                                 ))}
                             </div>
@@ -684,6 +708,114 @@ function Dashboard() {
                 )}
             </div>
             <ChatBot />
+
+            {/* Activity Detail Modal */}
+            {activityModal && (
+                <div className="act-modal-overlay" onClick={() => setActivityModal(null)}>
+                    <div className="act-modal" onClick={e => e.stopPropagation()}>
+                        <div className="act-modal-header">
+                            <div className="act-modal-title">
+                                <FileText size={18} />
+                                <span>{activityModal.log.inward_no}</span>
+                            </div>
+                            <button className="act-modal-close" onClick={() => setActivityModal(null)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {activityLoading ? (
+                            <div className="act-modal-loading">
+                                <Loader2 size={28} className="spin" />
+                                <span>Loading details…</span>
+                            </div>
+                        ) : (
+                            <div className="act-modal-body">
+                                {activityModal.entry ? (
+                                    <>
+                                        {/* Entry Details */}
+                                        <div className="act-section">
+                                            <div className="act-section-title">Entry Details</div>
+                                            <div className="act-fields">
+                                                <div className="act-field">
+                                                    <User size={13} />
+                                                    <span className="act-field-label">From</span>
+                                                    <span className="act-field-value">{activityModal.entry.particularsFromWhom || '-'}</span>
+                                                </div>
+                                                <div className="act-field">
+                                                    <FileText size={13} />
+                                                    <span className="act-field-label">Subject</span>
+                                                    <span className="act-field-value">{activityModal.entry.subject || '-'}</span>
+                                                </div>
+                                                <div className="act-field">
+                                                    <Mail size={13} />
+                                                    <span className="act-field-label">Means</span>
+                                                    <span className="act-field-value">{activityModal.entry.means || '-'}</span>
+                                                </div>
+                                                <div className="act-field">
+                                                    <Calendar size={13} />
+                                                    <span className="act-field-label">Received</span>
+                                                    <span className="act-field-value">{formatDate(activityModal.entry.signReceiptDatetime)}</span>
+                                                </div>
+                                                <div className="act-field">
+                                                    <Building2 size={13} />
+                                                    <span className="act-field-label">Team</span>
+                                                    <span className="act-field-value">
+                                                        {activityModal.entry.assignedTeam
+                                                            ? <span className="badge badge-team">{activityModal.entry.assignedTeam}</span>
+                                                            : <span className="badge badge-none">Unassigned</span>}
+                                                    </span>
+                                                </div>
+                                                <div className="act-field">
+                                                    <Tag size={13} />
+                                                    <span className="act-field-label">Status</span>
+                                                    <span className="act-field-value">
+                                                        <span className={`badge badge-${getStatusColor(activityModal.entry.assignmentStatus)}`}>
+                                                            {activityModal.entry.assignmentStatus || 'Unassigned'}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                                {activityModal.entry.dueDate && (
+                                                    <div className="act-field">
+                                                        <Clock size={13} />
+                                                        <span className="act-field-label">Due Date</span>
+                                                        <span className="act-field-value">{formatDate(activityModal.entry.dueDate)}</span>
+                                                    </div>
+                                                )}
+                                                {activityModal.entry.remarks && (
+                                                    <div className="act-field act-field--full">
+                                                        <FileText size={13} />
+                                                        <span className="act-field-label">Remarks</span>
+                                                        <span className="act-field-value">{activityModal.entry.remarks}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Email Body */}
+                                        {activityModal.email && (
+                                            <div className="act-section">
+                                                <div className="act-section-title">
+                                                    <Mail size={13} /> Original Email
+                                                </div>
+                                                <div className="act-email-meta">
+                                                    <span><strong>From:</strong> {activityModal.email.from_name ? `${activityModal.email.from_name} <${activityModal.email.from_email}>` : activityModal.email.from_email}</span>
+                                                    <span><strong>Received:</strong> {new Date(activityModal.email.received_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}</span>
+                                                </div>
+                                                <div className="act-email-body">{activityModal.email.body_preview || '(No body content)'}</div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="act-modal-loading">
+                                        <AlertCircle size={24} />
+                                        <span>Entry details not found</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
