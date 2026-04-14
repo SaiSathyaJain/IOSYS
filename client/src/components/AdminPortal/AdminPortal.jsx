@@ -98,6 +98,7 @@ function AdminPortal() {
     const [inboxAiLoading, setInboxAiLoading]   = useState(false);
     const [inboxQueuePage, setInboxQueuePage]   = useState(1);
     const INBOX_PAGE_SIZE = 5;
+    const [inboxViewItem, setInboxViewItem]     = useState(null); // email body viewer
 
     const TEAM_EMAILS = {
         'UG': 'coeoffice@sssihl.edu.in',
@@ -1629,7 +1630,7 @@ function AdminPortal() {
                                 <div className="inbox-queue-list">
                                     {pagedInboxItems.map(item => (
                                         <div key={item.id} className={`inbox-queue-item${inboxItems[0]?.id === item.id ? ' inbox-queue-item--latest' : ''}`}>
-                                            <div className="iq-left">
+                                            <div className="iq-left iq-left--clickable" onClick={() => setInboxViewItem(item)} title="Click to read email">
                                                 <div className="iq-from">
                                                     <span className="iq-from-name">{item.from_name || item.from_email}</span>
                                                     <span className="iq-from-email">{item.from_email}</span>
@@ -1640,6 +1641,7 @@ function AdminPortal() {
                                                 )}
                                                 <div className="iq-meta">
                                                     <span>{new Date(item.received_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                    <span className="iq-read-hint"><Mail size={11} /> Read email</span>
                                                 </div>
                                             </div>
                                             <div className="iq-right">
@@ -1689,6 +1691,49 @@ function AdminPortal() {
                             </>
                         );
                     })()}
+                </div>
+            )}
+
+            {/* Inbox Email Viewer Modal */}
+            {inboxViewItem && (
+                <div className="modal-overlay" onClick={() => setInboxViewItem(null)}>
+                    <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3><Mail size={18} /> Email</h3>
+                            <button className="modal-close" onClick={() => setInboxViewItem(null)}><X size={18} /></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="iq-email-view-header">
+                                <div className="iq-email-view-row">
+                                    <span className="iq-email-view-label">From</span>
+                                    <span className="iq-email-view-value">
+                                        {inboxViewItem.from_name
+                                            ? <><strong>{inboxViewItem.from_name}</strong> &lt;{inboxViewItem.from_email}&gt;</>
+                                            : inboxViewItem.from_email}
+                                    </span>
+                                </div>
+                                <div className="iq-email-view-row">
+                                    <span className="iq-email-view-label">Subject</span>
+                                    <span className="iq-email-view-value"><strong>{inboxViewItem.subject}</strong></span>
+                                </div>
+                                <div className="iq-email-view-row">
+                                    <span className="iq-email-view-label">Date</span>
+                                    <span className="iq-email-view-value">
+                                        {new Date(inboxViewItem.received_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="iq-email-view-body">
+                                {inboxViewItem.body_preview || '(No content available)'}
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setInboxViewItem(null)}>Close</button>
+                            <button className="btn btn-primary" onClick={() => { setInboxViewItem(null); openInboxAccept(inboxViewItem); }}>
+                                <Check size={14} /> Accept this email
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 

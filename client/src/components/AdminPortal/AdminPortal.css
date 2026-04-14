@@ -1736,6 +1736,8 @@
 }
 
 .iq-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.iq-left--clickable { cursor: pointer; border-radius: 8px; padding: 0.5rem 0.6rem; margin: -0.5rem -0.6rem; transition: background 0.15s; }
+.iq-left--clickable:hover { background: rgba(99,102,241,0.07); }
 .iq-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; flex-shrink: 0; width: 220px; }
 
 .iq-from { display: flex; flex-direction: column; gap: 0.1rem; }
@@ -1743,7 +1745,16 @@
 .iq-from-email { font-size: 0.72rem; color: var(--text-secondary); }
 .iq-subject { font-size: 0.83rem; color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .iq-preview { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.iq-meta { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.15rem; }
+.iq-meta { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.15rem; display: flex; align-items: center; gap: 0.75rem; }
+.iq-read-hint { display: flex; align-items: center; gap: 0.25rem; color: var(--primary); opacity: 0; transition: opacity 0.15s; font-size: 0.7rem; }
+.iq-left--clickable:hover .iq-read-hint { opacity: 1; }
+
+/* Email viewer modal */
+.iq-email-view-header { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem 1rem; background: rgba(99,102,241,0.06); border-radius: 8px; margin-bottom: 1rem; border: 1px solid rgba(99,102,241,0.15); }
+.iq-email-view-row { display: flex; gap: 0.75rem; font-size: 0.83rem; }
+.iq-email-view-label { min-width: 60px; font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; padding-top: 0.1rem; }
+.iq-email-view-value { color: var(--text-primary); flex: 1; line-height: 1.4; }
+.iq-email-view-body { white-space: pre-wrap; word-break: break-word; font-size: 0.84rem; line-height: 1.7; color: var(--text-primary); background: var(--input-bg, rgba(255,255,255,0.03)); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; max-height: 360px; overflow-y: auto; }
 
 .iq-ai-suggestion { width: 100%; }
 .iq-ai-label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.68rem; color: #7c5de8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
