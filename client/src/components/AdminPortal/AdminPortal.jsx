@@ -1630,7 +1630,7 @@ function AdminPortal() {
                                 <div className="inbox-queue-list">
                                     {pagedInboxItems.map(item => (
                                         <div key={item.id} className={`inbox-queue-item${inboxItems[0]?.id === item.id ? ' inbox-queue-item--latest' : ''}`}>
-                                            <div className="iq-left iq-left--clickable" onClick={() => setInboxViewItem(item)} title="Click to read email">
+                                            <div className="iq-left">
                                                 <div className="iq-from">
                                                     <span className="iq-from-name">{item.from_name || item.from_email}</span>
                                                     <span className="iq-from-email">{item.from_email}</span>
@@ -1641,7 +1641,6 @@ function AdminPortal() {
                                                 )}
                                                 <div className="iq-meta">
                                                     <span>{new Date(item.received_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                                    <span className="iq-read-hint"><Mail size={11} /> Read email</span>
                                                 </div>
                                             </div>
                                             <div className="iq-right">
@@ -1654,6 +1653,9 @@ function AdminPortal() {
                                                     </div>
                                                 </div>
                                                 <div className="iq-actions">
+                                                    <button className="btn btn-secondary btn-sm" onClick={() => setInboxViewItem(item)}>
+                                                        <Mail size={13} /> View
+                                                    </button>
                                                     <button className="btn btn-primary btn-sm" onClick={() => openInboxAccept(item)} disabled={inboxAiLoading === item.id}>
                                                         {inboxAiLoading === item.id
                                                             ? <><Loader2 size={13} className="spin" /> AI…</>
