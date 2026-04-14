@@ -19,9 +19,24 @@ inboxQueueRouter.get('/', async (c) => {
 // GET /api/inbox-queue/by-inward/:inwardId — fetch email linked to an inward entry
 inboxQueueRouter.get('/by-inward/:inwardId', async (c) => {
     const inwardId = c.req.param('inwardId');
-    const item = await c.env.DB.prepare(
+
+    // First try exact link via inward_id
+    let item = await c.env.DB.prepare(
         'SELECT * FROM inbox_queue WHERE inward_id = ?'
     ).bind(inwardId).first();
+
+    // Fallback: match by subject using the inward entry's subject
+    if (!item) {
+        const inwardEntry = await c.env.DB.prepare(
+            'SELECT subject FROM inward WHERE id = ?'
+        ).bind(inwardId).first();
+        if (inwardEntry?.subject) {
+            item = await c.env.DB.prepare(
+                'SELECT * FROM inbox_queue WHERE LOWER(subject) = LOWER(?) ORDER BY created_at DESC LIMIT 1'
+            ).bind(inwardEntry.subject).first();
+        }
+    }
+
     return c.json({ success: true, item: item || null });
 });
 
