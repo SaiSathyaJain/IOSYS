@@ -199,7 +199,7 @@ export async function pollInbox(env) {
 
             // Extract body
             const bodyText    = extractBodyText(detail.payload || {});
-            const bodyPreview = bodyText.slice(0, 800).trim();
+            const bodyPreview = bodyText.slice(0, 5000).trim();
 
             // AI field extraction (optional — doesn't block if it fails)
             const aiFields = await extractFieldsWithAI(
