@@ -99,6 +99,7 @@ Return ONLY the JSON object:`;
         : 'https://openrouter.ai/api/v1/chat/completions';
     const apiKey  = useGroq ? env.GROQ_API_KEY : env.OPENROUTER_API_KEY;
     const model   = useGroq ? 'llama3-8b-8192' : 'nvidia/nemotron-3-nano-30b-a3b:free';
+    console.log(`[InboxPoller] AI provider: ${useGroq ? 'Groq (llama3-8b-8192)' : 'OpenRouter'}`);
 
     if (!apiKey) return {};
 
@@ -156,6 +157,7 @@ export async function pollInbox(env) {
     const listData = await listRes.json();
     const messages = listData.messages || [];
     result.total = messages.length;
+    console.log(`[InboxPoller] Found ${messages.length} unread email(s) matching query`);
 
     for (const msg of messages) {
         try {

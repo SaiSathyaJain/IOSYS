@@ -156,7 +156,7 @@ export default {
     async scheduled(event, env, ctx) {
         if (event.cron === '30 5 * * 6') {
             ctx.waitUntil(sendWeeklyReport(env));
-        } else if (event.cron === '*/5 * * * *') {
+        } else if (event.cron === '*/30 * * * *') {
             ctx.waitUntil(
                 pollInbox(env).catch(err => console.error('Scheduled inbox poll error:', err.message))
             );

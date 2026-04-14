@@ -78,6 +78,13 @@ inwardRouter.post('/', async (c) => {
             'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
         ).bind('ENTRY_CREATED', 'Admin', `Admin created inward entry ${inwardNo}`, inwardNo).run();
 
+        // Auto-clear any pending inbox_queue item with matching subject
+        if (subject) {
+            await c.env.DB.prepare(
+                "UPDATE inbox_queue SET status = 'accepted', inward_id = ? WHERE status = 'pending' AND LOWER(subject) = LOWER(?)"
+            ).bind(id, subject).run();
+        }
+
         return c.json({
             success: true,
             message: 'Inward entry created successfully',
