@@ -1152,7 +1152,7 @@ function AdminPortal() {
                                 initial="initial"
                                 animate="animate"
                             >
-                                {filteredEntries.slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry) => (
+                                {filteredEntries.slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry, index) => (
                                     <motion.tr
                                         key={entry.id}
                                         className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''}
