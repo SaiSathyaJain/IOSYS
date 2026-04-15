@@ -54,6 +54,25 @@ function AdminPortal() {
         setClosingModal(which);
         setTimeout(() => { setClosingModal(null); fn(); }, 190);
     };
+
+    // Close topmost open modal on Escape
+    useEffect(() => {
+        const onEsc = (e) => {
+            if (e.key !== 'Escape') return;
+            if (inboxAcceptItem)   { setInboxAcceptItem(null); return; }
+            if (inboxViewItem)     { setInboxViewItem(null); return; }
+            if (showModal)         { closeWithAnimation('details', () => setShowModal(false)); return; }
+            if (showReassignModal) { closeWithAnimation('reassign', () => setShowReassignModal(false)); return; }
+            if (showNotesForm)     { closeWithAnimation('notes', () => setShowNotesForm(false)); return; }
+            if (createSuccess)     { closeWithAnimation('createSuccess', () => setCreateSuccess(null)); return; }
+            if (assignSuccess)     { closeWithAnimation('assignSuccess', () => setAssignSuccess(null)); return; }
+            if (showForm)          { closeWithAnimation('form', () => { setShowForm(false); resetForm(); }); return; }
+            if (showEmailModal)    { setShowEmailModal(false); setEmailPasteText(''); }
+        };
+        document.addEventListener('keydown', onEsc);
+        return () => document.removeEventListener('keydown', onEsc);
+    }, [inboxAcceptItem, inboxViewItem, showModal, showReassignModal, showNotesForm, createSuccess, assignSuccess, showForm, showEmailModal]);
+
     const [reassignData, setReassignData] = useState({
         assignedTeam: '',
         assignedToEmail: '',

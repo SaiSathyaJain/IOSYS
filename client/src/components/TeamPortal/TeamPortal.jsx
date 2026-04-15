@@ -49,6 +49,20 @@ function TeamPortal() {
         ackRec: '', crossNo: '', receiptNo: '', remarks: ''
     });
 
+    // Close topmost open modal on Escape
+    useEffect(() => {
+        const onEsc = (e) => {
+            if (e.key !== 'Escape') return;
+            if (completeModal)    { setCompleteModal(null); return; }
+            if (remarksModal)     { setRemarksModal(null); return; }
+            if (showInwardModal)  { setShowInwardModal(false); return; }
+            if (showDetailsModal) { setShowDetailsModal(false); return; }
+            if (showForm)         { setShowForm(false); resetForm(); }
+        };
+        document.addEventListener('keydown', onEsc);
+        return () => document.removeEventListener('keydown', onEsc);
+    }, [completeModal, remarksModal, showInwardModal, showDetailsModal, showForm]);
+
     useEffect(() => {
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
         document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');

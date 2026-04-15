@@ -303,6 +303,17 @@ function ChatBot() {
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    // Close chatbot / model picker on Escape
+    useEffect(() => {
+        const onEsc = (e) => {
+            if (e.key !== 'Escape') return;
+            if (showModelPicker) { setShowModelPicker(false); return; }
+            if (open)            { setOpen(false); }
+        };
+        document.addEventListener('keydown', onEsc);
+        return () => document.removeEventListener('keydown', onEsc);
+    }, [open, showModelPicker]);
+
     const scrollChips = (dir) => {
         if (chipsRef.current) {
             chipsRef.current.scrollBy({ left: dir * 160, behavior: 'smooth' });

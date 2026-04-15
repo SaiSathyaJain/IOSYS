@@ -62,6 +62,13 @@ function Dashboard() {
     const [activityModal, setActivityModal] = useState(null); // { log, entry, email }
     const [activityLoading, setActivityLoading] = useState(false);
 
+    // Close activity modal on Escape
+    useEffect(() => {
+        const onEsc = (e) => { if (e.key === 'Escape') setActivityModal(null); };
+        document.addEventListener('keydown', onEsc);
+        return () => document.removeEventListener('keydown', onEsc);
+    }, []);
+
     useEffect(() => {
         loadData();
         const user = localStorage.getItem('adminUser');
