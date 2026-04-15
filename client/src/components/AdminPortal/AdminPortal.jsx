@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -118,6 +118,16 @@ function AdminPortal() {
         return () => document.removeEventListener('keydown', onEsc);
     }, [inboxAcceptItem, inboxViewItem, showModal, showReassignModal, showNotesForm, createSuccess, assignSuccess, showForm, showEmailModal]);
 
+    // Track previous inbox count to detect new arrivals
+    const prevInboxCountRef = useRef(null);
+
+    // Request browser notification permission once (admin only)
+    useEffect(() => {
+        if (isAdmin && 'Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
+
     const TEAM_EMAILS = {
         'UG': 'coeoffice@sssihl.edu.in',
         'PG/PRO': 'coeoffice@sssihl.edu.in',
@@ -182,8 +192,23 @@ function AdminPortal() {
         setInboxLoading(true);
         try {
             const res = await inboxQueueAPI.getItems('pending');
-            setInboxItems(res.data.items || []);
-            setInboxCount(res.data.pendingCount || 0);
+            const newItems = res.data.items || [];
+            const newCount = res.data.pendingCount || 0;
+
+            // Fire browser notification if new emails arrived since last check
+            if (prevInboxCountRef.current !== null && newCount > prevInboxCountRef.current) {
+                const added = newCount - prevInboxCountRef.current;
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('New Email in Inbox Queue', {
+                        body: `${added} new email${added > 1 ? 's' : ''} arrived and ${added > 1 ? 'are' : 'is'} waiting for review.`,
+                        icon: '/favicon.ico',
+                    });
+                }
+            }
+            prevInboxCountRef.current = newCount;
+
+            setInboxItems(newItems);
+            setInboxCount(newCount);
             setInboxQueuePage(1);
         } catch (err) {
             console.error('Error loading inbox queue:', err);
@@ -1647,7 +1672,7 @@ function AdminPortal() {
                             <>
                                 <div className="inbox-queue-list">
                                     {pagedInboxItems.map(item => (
-                                        <div key={item.id} className={`inbox-queue-item${inboxItems[0]?.id === item.id ? ' inbox-queue-item--latest' : ''}`}>
+                                        <div key={item.id} className={`inbox-queue-item${new Date(item.created_at) > new Date(Date.now() - 30 * 60 * 1000) ? ' inbox-queue-item--latest' : ''}`}>
                                             <div className="iq-left">
                                                 <div className="iq-from">
                                                     <span className="iq-from-name">{item.from_name || item.from_email}</span>
