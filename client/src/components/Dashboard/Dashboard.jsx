@@ -7,8 +7,6 @@ import {
     RefreshCw, Loader2, ArrowLeft, AlertCircle, Sun, Moon, Activity,
     Search, Filter, Mail, Calendar, Tag, User, Building2
 } from 'lucide-react';
-import {
-} from 'recharts';
 import ChatBot from '../ChatBot/ChatBot';
 import './Dashboard.css';
 
