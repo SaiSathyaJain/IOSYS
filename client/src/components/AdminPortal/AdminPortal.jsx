@@ -61,8 +61,11 @@ function AdminPortal() {
         assignmentInstructions: '',
         dueDate: ''
     });
+    const MANUAL_INWARD_MEANS = ['Post', 'Hand Delivery', 'Courier'];
+
     const [formData, setFormData] = useState({
         means: '',
+        inwardNo: '',
         particularsFromWhom: '',
         subject: '',
         signReceiptDateTime: new Date().toISOString(),
@@ -432,7 +435,7 @@ function AdminPortal() {
 
     const resetForm = () => {
         setFormData({
-            means: '', particularsFromWhom: '', subject: '',
+            means: '', inwardNo: '', particularsFromWhom: '', subject: '',
             signReceiptDateTime: new Date().toISOString(), assignedTeam: '', assignedToEmail: '',
             assignmentInstructions: '', dueDate: '', remarks: ''
         });
@@ -945,7 +948,7 @@ function AdminPortal() {
                                 <div className="grid-2">
                                     <div className="form-group">
                                         <label className="form-label">Means *</label>
-                                        <select name="means" className="form-select" value={formData.means} onChange={handleChange} required>
+                                        <select name="means" className="form-select" value={formData.means} onChange={e => { handleChange(e); if (!MANUAL_INWARD_MEANS.includes(e.target.value)) setFormData(prev => ({ ...prev, inwardNo: '' })); }} required>
                                             <option value="">Select...</option>
                                             <option value="Post">Post</option>
                                             <option value="Email">Email</option>
@@ -972,6 +975,22 @@ function AdminPortal() {
                                         />
                                     </div>
                                 </div>
+
+                                {MANUAL_INWARD_MEANS.includes(formData.means) && (
+                                    <div className="form-group">
+                                        <label className="form-label">Inward No. *</label>
+                                        <input
+                                            type="text"
+                                            name="inwardNo"
+                                            className="form-input"
+                                            value={formData.inwardNo}
+                                            onChange={handleChange}
+                                            required
+                                            placeholder="e.g. INW/15/04/2026-0042"
+                                            style={{ fontFamily: 'monospace' }}
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="form-group">
                                     <label className="form-label">From Whom *</label>

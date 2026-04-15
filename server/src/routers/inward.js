@@ -39,19 +39,27 @@ inwardRouter.post('/', async (c) => {
     try {
         const body = await c.req.json();
         const {
-            means, particularsFromWhom, subject,
+            means, inwardNo: manualInwardNo, particularsFromWhom, subject,
             signReceiptDateTime, fileReference,
             assignedTeam, assignedToEmail, assignmentInstructions, dueDate, remarks
         } = body;
 
-        // Generate inward number: INW/DD/MM/YYYY-0000 (global sequential counter)
-        const entryDate = new Date(signReceiptDateTime);
-        const dd   = entryDate.getDate().toString().padStart(2, '0');
-        const mm   = (entryDate.getMonth() + 1).toString().padStart(2, '0');
-        const yyyy = entryDate.getFullYear();
-        const countResult = await c.env.DB.prepare('SELECT COUNT(*) as count FROM inward').first();
-        const nextCount = (countResult.count || 0) + 1;
-        const inwardNo = `INW/${dd}/${mm}/${yyyy}-${nextCount.toString().padStart(4, '0')}`;
+        const MANUAL_MEANS = ['Post', 'Hand Delivery', 'Courier'];
+
+        let inwardNo;
+        if (MANUAL_MEANS.includes(means) && manualInwardNo?.trim()) {
+            // Use the admin-supplied inward number for physical mail
+            inwardNo = manualInwardNo.trim();
+        } else {
+            // Auto-generate: INW/DD/MM/YYYY-0000 (global sequential counter)
+            const entryDate = new Date(signReceiptDateTime);
+            const dd   = entryDate.getDate().toString().padStart(2, '0');
+            const mm   = (entryDate.getMonth() + 1).toString().padStart(2, '0');
+            const yyyy = entryDate.getFullYear();
+            const countResult = await c.env.DB.prepare('SELECT COUNT(*) as count FROM inward').first();
+            const nextCount = (countResult.count || 0) + 1;
+            inwardNo = `INW/${dd}/${mm}/${yyyy}-${nextCount.toString().padStart(4, '0')}`;
+        }
 
         const assignmentStatus = assignedTeam ? 'Pending' : 'Unassigned';
         const assignmentDate = assignedTeam ? new Date().toISOString() : null;
