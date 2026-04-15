@@ -54,25 +54,6 @@ function AdminPortal() {
         setClosingModal(which);
         setTimeout(() => { setClosingModal(null); fn(); }, 190);
     };
-
-    // Close topmost open modal on Escape
-    useEffect(() => {
-        const onEsc = (e) => {
-            if (e.key !== 'Escape') return;
-            if (inboxAcceptItem)   { setInboxAcceptItem(null); return; }
-            if (inboxViewItem)     { setInboxViewItem(null); return; }
-            if (showModal)         { closeWithAnimation('details', () => setShowModal(false)); return; }
-            if (showReassignModal) { closeWithAnimation('reassign', () => setShowReassignModal(false)); return; }
-            if (showNotesForm)     { closeWithAnimation('notes', () => setShowNotesForm(false)); return; }
-            if (createSuccess)     { closeWithAnimation('createSuccess', () => setCreateSuccess(null)); return; }
-            if (assignSuccess)     { closeWithAnimation('assignSuccess', () => setAssignSuccess(null)); return; }
-            if (showForm)          { closeWithAnimation('form', () => setShowForm(false)); return; }
-            if (showEmailModal)    { setShowEmailModal(false); }
-        };
-        document.addEventListener('keydown', onEsc);
-        return () => document.removeEventListener('keydown', onEsc);
-    }, [inboxAcceptItem, inboxViewItem, showModal, showReassignModal, showNotesForm, createSuccess, assignSuccess, showForm, showEmailModal]);
-
     const [reassignData, setReassignData] = useState({
         assignedTeam: '',
         assignedToEmail: '',
@@ -118,6 +99,24 @@ function AdminPortal() {
     const [inboxQueuePage, setInboxQueuePage]   = useState(1);
     const INBOX_PAGE_SIZE = 5;
     const [inboxViewItem, setInboxViewItem]     = useState(null); // email body viewer
+
+    // Close topmost open modal on Escape — placed after all modal state declarations
+    useEffect(() => {
+        const onEsc = (e) => {
+            if (e.key !== 'Escape') return;
+            if (inboxAcceptItem)   { setInboxAcceptItem(null); return; }
+            if (inboxViewItem)     { setInboxViewItem(null); return; }
+            if (showModal)         { closeWithAnimation('details', () => setShowModal(false)); return; }
+            if (showReassignModal) { closeWithAnimation('reassign', () => setShowReassignModal(false)); return; }
+            if (showNotesForm)     { closeWithAnimation('notes', () => setShowNotesForm(false)); return; }
+            if (createSuccess)     { closeWithAnimation('createSuccess', () => setCreateSuccess(null)); return; }
+            if (assignSuccess)     { closeWithAnimation('assignSuccess', () => setAssignSuccess(null)); return; }
+            if (showForm)          { closeWithAnimation('form', () => setShowForm(false)); return; }
+            if (showEmailModal)    { setShowEmailModal(false); }
+        };
+        document.addEventListener('keydown', onEsc);
+        return () => document.removeEventListener('keydown', onEsc);
+    }, [inboxAcceptItem, inboxViewItem, showModal, showReassignModal, showNotesForm, createSuccess, assignSuccess, showForm, showEmailModal]);
 
     const TEAM_EMAILS = {
         'UG': 'coeoffice@sssihl.edu.in',
