@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -816,7 +817,13 @@ function AdminPortal() {
     };
 
     return (
-        <div className="ap-page-wrapper">
+        <motion.div
+            className="ap-page-wrapper"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+        >
             {/* Top Navbar */}
             <nav className="ap-top-nav">
                 <div className="ap-nav-left">
@@ -1054,7 +1061,9 @@ function AdminPortal() {
                 </div>
             )}
 
-            {adminPage === 'registers' && <>
+            <AnimatePresence mode="wait">
+            {adminPage === 'registers' && (
+            <motion.div key="registers" style={{ width: '100%' }} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
             {/* Entries Table */}
             <div className="card">
                 <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -1138,9 +1147,17 @@ function AdminPortal() {
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {filteredEntries.slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry, index) => (
-                                    <tr key={entry.id} className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''} style={{ animationDelay: `${index * 0.04}s` }}>
+                            <motion.tbody
+                                variants={{ animate: { transition: { staggerChildren: 0.04 } } }}
+                                initial="initial"
+                                animate="animate"
+                            >
+                                {filteredEntries.slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry) => (
+                                    <motion.tr
+                                        key={entry.id}
+                                        className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''}
+                                        variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0, transition: { duration: 0.15 } } }}
+                                    >
                                         <td>{(inwardPage - 1) * INWARD_PAGE_SIZE + index + 1}</td>
                                         <td>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDatetime)}</div>
@@ -1191,9 +1208,9 @@ function AdminPortal() {
                                                 </>)}
                                             </div>
                                         </td>
-                                    </tr>
+                                    </motion.tr>
                                 ))}
-                            </tbody>
+                            </motion.tbody>
                         </table>
                         {filteredEntries.length > INWARD_PAGE_SIZE && (() => {
                             const totalPages = Math.ceil(filteredEntries.length / INWARD_PAGE_SIZE);
@@ -1553,11 +1570,10 @@ function AdminPortal() {
                 </div>
             )}
 
-            </>}
+            </motion.div>)}
 
-            {/* Audit Log Section */}
             {adminPage === 'auditlog' && (
-                <div className="card">
+                <motion.div key="auditlog" className="card" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                     <div className="card-header">
                         <h3 className="card-title">
                             <ClipboardList size={20} /> Audit Log
@@ -1586,9 +1602,16 @@ function AdminPortal() {
                                         <th>Entry Ref</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <motion.tbody
+                                    variants={{ animate: { transition: { staggerChildren: 0.04 } } }}
+                                    initial="initial"
+                                    animate="animate"
+                                >
                                     {auditLogs.map(log => (
-                                        <tr key={log.id}>
+                                        <motion.tr
+                                            key={log.id}
+                                            variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0, transition: { duration: 0.15 } } }}
+                                        >
                                             <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                                                 {new Date(log.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
                                             </td>
@@ -1609,9 +1632,9 @@ function AdminPortal() {
                                             <td style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--primary)' }}>
                                                 {log.inward_no || '-'}
                                             </td>
-                                        </tr>
+                                        </motion.tr>
                                     ))}
-                                </tbody>
+                                </motion.tbody>
                             </table>
                             {auditTotalPages > 1 && (() => {
                                 const pct = auditTotalPages > 1 ? ((auditPage - 1) / (auditTotalPages - 1)) * 100 : 0;
@@ -1639,12 +1662,11 @@ function AdminPortal() {
                             })()}
                         </div>
                     )}
-                </div>
+                </motion.div>
             )}
 
-            {/* Inbox Review Queue */}
             {adminPage === 'inbox' && (
-                <div className="card animate-fade">
+                <motion.div key="inbox" className="card" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                     <div className="card-header">
                         <h3 className="card-title">
                             <Mail size={20} /> Inbox Review Queue
@@ -1671,8 +1693,14 @@ function AdminPortal() {
                         return (
                             <>
                                 <div className="inbox-queue-list">
-                                    {pagedInboxItems.map(item => (
-                                        <div key={item.id} className={`inbox-queue-item${new Date(item.created_at) > new Date(Date.now() - 30 * 60 * 1000) ? ' inbox-queue-item--latest' : ''}`}>
+                                    {pagedInboxItems.map((item, i) => (
+                                        <motion.div
+                                            key={item.id}
+                                            className={`inbox-queue-item${new Date(item.created_at) > new Date(Date.now() - 30 * 60 * 1000) ? ' inbox-queue-item--latest' : ''}`}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: i * 0.06, duration: 0.16 }}
+                                        >
                                             <div className="iq-left">
                                                 <div className="iq-from">
                                                     <span className="iq-from-name">{item.from_name || item.from_email}</span>
@@ -1709,7 +1737,7 @@ function AdminPortal() {
                                                     </button>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     ))}
                                 </div>
                                 {iqTotalPages > 1 && (
@@ -1736,8 +1764,9 @@ function AdminPortal() {
                             </>
                         );
                     })()}
-                </div>
+                </motion.div>
             )}
+            </AnimatePresence>
 
             {/* Inbox Email Viewer Modal */}
             {inboxViewItem && (
@@ -1859,7 +1888,7 @@ function AdminPortal() {
                 </div>
             )}
         </div>
-        </div>
+        </motion.div>
     );
 }
 

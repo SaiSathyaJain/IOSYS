@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { BookOpen, Users, Building, ArrowLeft, Sun, Moon } from 'lucide-react';
 import './TeamSelection.css';
 
@@ -19,7 +20,13 @@ const TeamSelection = () => {
     ];
 
     return (
-        <div className="team-selection">
+        <motion.div
+            className="team-selection"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+        >
 
             {/* Navbar */}
             <header className="selection-header">
@@ -68,7 +75,7 @@ const TeamSelection = () => {
                     ))}
                 </div>
             </main>
-        </div>
+        </motion.div>
     );
 };
 

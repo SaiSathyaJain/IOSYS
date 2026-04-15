@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { outwardAPI, inwardAPI, dashboardAPI } from '../../services/api';
 import {
     Clock, CheckCircle2, ArrowRight, Calendar, Plus, X,
@@ -339,7 +340,13 @@ function TeamPortal() {
     ];
 
     return (
-        <div className={`tp-app${isDarkMode ? ' dark' : ''}`}>
+        <motion.div
+            className={`tp-app${isDarkMode ? ' dark' : ''}`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+        >
             {/* ── Sidebar ── */}
             <aside className="tp-sidebar">
                 <div className="tp-sidebar-logo">
@@ -394,10 +401,11 @@ function TeamPortal() {
                 </div>
 
                 <div className="tp-content">
+                <AnimatePresence mode="wait">
 
                 {/* ── PROFILE page ── */}
                 {activePage === 'profile' && (
-                    <div className="tp-card" style={{maxWidth:480}}>
+                    <motion.div key="profile" className="tp-card" style={{maxWidth:480}} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                         <div className="tp-card-header">
                             <div className="tp-card-title-row"><User size={16} className="tp-icon-muted"/><h3>Team Profile</h3></div>
                         </div>
@@ -410,12 +418,12 @@ function TeamPortal() {
                             <div className="detail-item"><label>Outward Sent</label><span>{teamStats?.totalOutward || 0}</span></div>
                             <div className="detail-item"><label>Completion Rate</label><span>{completionRate}%</span></div>
                         </div>
-                    </div>
+                    </motion.div>
                 )}
 
                 {/* ── COMPLETED page ── */}
                 {activePage === 'completed' && (
-                    <div className="tp-card">
+                    <motion.div key="completed" className="tp-card" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                         <div className="tp-card-header">
                             <div className="tp-card-title-row">
                                 <CheckCircle2 size={16} className="tp-icon-muted"/>
@@ -433,9 +441,9 @@ function TeamPortal() {
                         ) : getFilteredCompleted().length === 0 ? (
                             <div className="tp-center-state"><CheckCircle2 size={32} style={{opacity:0.3}}/><p>{completedSearch ? 'No matches found.' : 'No completed assignments yet.'}</p></div>
                         ) : (
-                            <div className="tp-assign-list">
+                            <motion.div className="tp-assign-list" variants={{ animate: { transition: { staggerChildren: 0.05 } } }} initial="initial" animate="animate">
                                 {getFilteredCompleted().map(entry => (
-                                    <div key={entry.id} className="tp-assign-card">
+                                    <motion.div key={entry.id} className="tp-assign-card" variants={{ initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0, transition: { duration: 0.16 } } }}>
                                         <div className="tp-ac-row">
                                             <div className="tp-ac-badges">
                                                 <span className="tp-inward-no">{entry.inwardNo}</span>
@@ -448,16 +456,16 @@ function TeamPortal() {
                                         <div className="tp-ac-actions">
                                             <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))}
-                            </div>
+                            </motion.div>
                         )}
-                    </div>
+                    </motion.div>
                 )}
 
                 {/* ── PENDING page ── */}
                 {activePage === 'pending' && (
-                    <div className="tp-card">
+                    <motion.div key="pending" className="tp-card" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                         <div className="tp-card-header">
                             <div className="tp-card-title-row">
                                 <Clock size={16} className="tp-icon-muted"/>
@@ -486,9 +494,9 @@ function TeamPortal() {
                         ) : displayedPending.length === 0 ? (
                             <div className="tp-center-state"><CheckCircle2 size={32} style={{opacity:0.3}}/><p>{pendingSearch ? 'No matches found.' : `No ${pendingFilter !== 'all' ? pendingFilter : 'pending'} assignments.`}</p></div>
                         ) : (
-                            <div className="tp-assign-list">
+                            <motion.div className="tp-assign-list" variants={{ animate: { transition: { staggerChildren: 0.05 } } }} initial="initial" animate="animate">
                                 {displayedPending.map(entry => (
-                                    <div key={entry.id} className={`tp-assign-card${isOverdue(entry.dueDate)?' overdue':isDueSoon(entry.dueDate)?' due-soon':''}`}>
+                                    <motion.div key={entry.id} className={`tp-assign-card${isOverdue(entry.dueDate)?' overdue':isDueSoon(entry.dueDate)?' due-soon':''}`} variants={{ initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0, transition: { duration: 0.16 } } }}>
                                         <div className="tp-ac-row">
                                             <div className="tp-ac-badges">
                                                 <span className="tp-inward-no">{entry.inwardNo}</span>
@@ -509,21 +517,21 @@ function TeamPortal() {
                                             <button className="tp-ac-btn complete" onClick={() => handleMarkComplete(entry.id)}>MARK COMPLETE</button>
                                             <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>FORWARD</button>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))}
                                 {totalFiltered > showLimit && (
                                     <button className="tp-load-more" onClick={() => setShowLimit(showLimit + 5)}>
                                         Showing {showLimit} of {totalFiltered} — Load more
                                     </button>
                                 )}
-                            </div>
+                            </motion.div>
                         )}
-                    </div>
+                    </motion.div>
                 )}
 
                 {/* ── OUTWARD / HISTORY page ── */}
                 {activePage === 'history' && (
-                    <div className="tp-card">
+                    <motion.div key="history" className="tp-card" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                         <div className="tp-card-header">
                             <div className="tp-card-title-row">
                                 <Send size={16} className="tp-icon-muted"/>
@@ -610,11 +618,12 @@ function TeamPortal() {
                             </div>
                         )}
                         <div className="tp-table-footer">Showing {Math.min(outwardPage * OUTWARD_PAGE_SIZE, filteredEntries.length)} of {filteredEntries.length} results ({entries.length} total)</div>
-                    </div>
+                    </motion.div>
                 )}
 
                 {/* ── DASHBOARD page ── */}
-                {activePage === 'dashboard' && <>
+                {activePage === 'dashboard' && (
+                <motion.div key="dashboard" style={{ width: '100%' }} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                     {/* Stats */}
                     <div className="tp-stats-row">
                         <div className="tp-stat-card">
@@ -796,7 +805,8 @@ function TeamPortal() {
                         )}
                         <div className="tp-table-footer">Showing {filteredEntries.length} results of {entries.length}</div>
                     </div>
-                </>}
+                </motion.div>)}
+                </AnimatePresence>
 
                 </div>
             </main>
@@ -1083,7 +1093,7 @@ function TeamPortal() {
                     </div>
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 }
 

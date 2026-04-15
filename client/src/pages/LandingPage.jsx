@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Shield, Users, Moon, Sun } from 'lucide-react';
 import './LandingPage.css';
 
@@ -32,7 +33,13 @@ const LandingPage = () => {
     }, [isDarkMode]);
 
     return (
-        <div className={`landing-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
+        <motion.div
+            className={`landing-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+        >
             {/* Top Navigation Bar */}
             <nav className="top-nav">
                 <div className="logo-section">
@@ -107,7 +114,7 @@ const LandingPage = () => {
             <footer className="landing-footer">
                 © 2026 SSSIHL DIGITAL INFRASTRUCTURE
             </footer>
-        </div>
+        </motion.div>
     );
 };
 

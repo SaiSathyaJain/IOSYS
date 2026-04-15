@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { dashboardAPI, inwardAPI, outwardAPI, auditAPI, inboxQueueAPI } from '../../services/api';
 import {
@@ -183,7 +184,13 @@ function Dashboard() {
     }
 
     return (
-        <div className="ap-page-wrapper">
+        <motion.div
+            className="ap-page-wrapper"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+        >
             <nav className="ap-top-nav">
                 <div className="ap-nav-left">
                     <button className="ap-back-btn" onClick={() => navigate('/')} title="Back to home">
@@ -766,7 +773,7 @@ function Dashboard() {
                     </div>
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 }
 
