@@ -52,7 +52,13 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
 const PORT         = 3456;
 const REDIRECT_URI = `http://localhost:${PORT}`;
 // gmail.modify = read + list + mark-as-read + send (superset of gmail.send)
-const SCOPES       = 'https://www.googleapis.com/auth/gmail.modify';
+// spreadsheets = read/write Google Sheets
+// drive.file = create/access only files created by this app (not full Drive access)
+const SCOPES = [
+    'https://www.googleapis.com/auth/gmail.modify',
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive.file',
+].join(' ');
 
 const authUrl =
     `https://accounts.google.com/o/oauth2/v2/auth` +

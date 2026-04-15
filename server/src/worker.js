@@ -10,6 +10,7 @@ import { aiRouter } from './routers/ai.js';
 import { inboxQueueRouter } from './routers/inboxQueue.js';
 import { sendWeeklyReport } from './services/weeklyReport.js';
 import { pollInbox } from './services/inboxPoller.js';
+import { backupToSheets } from './services/backupToSheets.js';
 
 
 const app = new Hono();
@@ -88,6 +89,16 @@ app.get('/api/run-migration', async (c) => {
     }
 });
 
+// Manual trigger for Google Sheets backup — returns detailed result for diagnostics
+app.get('/api/trigger-backup', async (c) => {
+    try {
+        const result = await backupToSheets(c.env);
+        return c.json({ success: true, result });
+    } catch (e) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
 // Manual trigger for inbox poll — returns detailed result for diagnostics
 app.get('/api/trigger-inbox-poll', async (c) => {
     try {
@@ -159,6 +170,10 @@ export default {
         } else if (event.cron === '*/30 * * * *') {
             ctx.waitUntil(
                 pollInbox(env).catch(err => console.error('Scheduled inbox poll error:', err.message))
+            );
+        } else if (event.cron === '0 11 * * 6') {
+            ctx.waitUntil(
+                backupToSheets(env).catch(err => console.error('Backup error:', err.message))
             );
         }
     }

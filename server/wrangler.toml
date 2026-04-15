@@ -12,5 +12,6 @@ database_id = "21c7aa21-b60a-49d6-a7dd-e6af1f670cbf"
 [triggers]
 crons = [
   "30 5 * * 6",   # Weekly report — every Saturday at 11:00 AM IST (05:30 UTC)
-  "*/30 * * * *"  # Inbox poller — every 30 minutes
+  "*/30 * * * *", # Inbox poller — every 30 minutes
+  "0 11 * * 6"    # DB backup to Google Sheets — every Saturday at 4:30 PM IST (11:00 UTC)
 ]
