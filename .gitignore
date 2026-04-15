@@ -2,6 +2,11 @@
 node_modules/
 client/node_modules/
 worker/node_modules/
+server/node_modules/
+
+# Lock files — generated on Windows; let CI regenerate for Linux
+package-lock.json
+server/package-lock.json
 
 # Build output
 dist/
