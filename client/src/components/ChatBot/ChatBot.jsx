@@ -360,6 +360,8 @@ function ChatBot() {
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
+            let truncated = false;
+            let doneSignal = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -372,10 +374,12 @@ function ChatBot() {
                 for (const line of lines) {
                     if (!line.startsWith('data: ')) continue;
                     const data = line.slice(6).trim();
-                    if (data === '[DONE]') break;
+                    if (data === '[DONE]') { doneSignal = true; break; }
                     try {
                         const json = JSON.parse(data);
                         const delta = json.choices?.[0]?.delta?.content || '';
+                        const finishReason = json.choices?.[0]?.finish_reason;
+                        if (finishReason === 'length') truncated = true;
                         if (delta) {
                             setMessages(prev => {
                                 const last = prev[prev.length - 1];
@@ -384,6 +388,17 @@ function ChatBot() {
                         }
                     } catch { /* skip malformed chunk */ }
                 }
+                if (doneSignal) break;
+            }
+
+            if (truncated) {
+                setMessages(prev => {
+                    const last = prev[prev.length - 1];
+                    return [...prev.slice(0, -1), {
+                        ...last,
+                        content: last.content + '\n\n_...response was cut short. Try asking for fewer entries at a time._',
+                    }];
+                });
             }
         } catch {
             setMessages(prev => [...prev, {

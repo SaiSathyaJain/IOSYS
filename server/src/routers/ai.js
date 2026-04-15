@@ -183,53 +183,72 @@ aiRouter.post('/chat', async (c) => {
             return c.json({ success: false, message: 'OPENROUTER_API_KEY not configured' }, 500);
         }
 
-        // Fetch live context from DB in parallel (reduced limits to save tokens)
-        const [statsRow, teamRows, allInward, allOutward, recentLogs] = await Promise.allSettled([
-            c.env.DB.prepare(`
-                SELECT
-                    COUNT(*) as total_inward,
-                    SUM(CASE WHEN assignment_status = 'Pending' THEN 1 ELSE 0 END) as pending,
-                    SUM(CASE WHEN assignment_status = 'Completed' THEN 1 ELSE 0 END) as completed,
-                    SUM(CASE WHEN assignment_status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
-                    SUM(CASE WHEN assigned_team IS NULL OR assigned_team = '' THEN 1 ELSE 0 END) as unassigned,
-                    SUM(CASE WHEN due_date < DATE('now') AND assignment_status != 'Completed' THEN 1 ELSE 0 END) as total_overdue
-                FROM inward
-            `).first(),
-            c.env.DB.prepare(`
-                SELECT assigned_team,
-                    COUNT(*) as total,
-                    SUM(CASE WHEN assignment_status = 'Pending' THEN 1 ELSE 0 END) as pending,
-                    SUM(CASE WHEN assignment_status = 'Completed' THEN 1 ELSE 0 END) as completed,
-                    SUM(CASE WHEN assignment_status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
-                    SUM(CASE WHEN due_date < DATE('now') AND assignment_status != 'Completed' THEN 1 ELSE 0 END) as overdue
-                FROM inward
-                WHERE assigned_team IS NOT NULL AND assigned_team != ''
-                GROUP BY assigned_team
-            `).all(),
-            c.env.DB.prepare(`
-                SELECT inward_no, subject, particulars_from_whom, means,
-                       assigned_team, assignment_status, due_date,
-                       sign_receipt_datetime, file_reference, remarks
-                FROM inward ORDER BY created_at DESC LIMIT 25
-            `).all(),
-            c.env.DB.prepare(`
-                SELECT outward_no, subject, to_whom, sent_by, means,
-                       created_by_team, file_reference, postal_tariff,
-                       case_closed, linked_inward_id, sign_receipt_datetime,
-                       remarks, created_at
-                FROM outward ORDER BY created_at DESC LIMIT 15
-            `).all(),
-            c.env.DB.prepare(`
-                SELECT action, actor, description, inward_no, created_at
-                FROM audit_log ORDER BY created_at DESC LIMIT 10
-            `).all(),
-        ]);
+        // Cache DB context for 45 seconds — avoids 5 parallel D1 queries on every chat message.
+        // Key rotates every 45s so data stays reasonably fresh.
+        const ctxCache   = caches.default;
+        const ctxBucket  = Math.floor(Date.now() / 45000);
+        const ctxCacheKey = new Request(`https://iosys-internal/chat-context/${ctxBucket}`);
 
-        const stats   = statsRow.status === 'fulfilled' ? statsRow.value : {};
-        const teams   = teamRows.status === 'fulfilled' ? teamRows.value.results : [];
-        const inward  = allInward.status === 'fulfilled' ? allInward.value.results : [];
-        const outward = allOutward.status === 'fulfilled' ? allOutward.value.results : [];
-        const logs    = recentLogs.status === 'fulfilled' ? recentLogs.value.results : [];
+        let stats, teams, inward, outward, logs;
+        const cachedCtx = await ctxCache.match(ctxCacheKey);
+        if (cachedCtx) {
+            ({ stats, teams, inward, outward, logs } = await cachedCtx.json());
+        } else {
+            // Fetch live context from DB in parallel (reduced limits to save tokens)
+            const [statsRow, teamRows, allInward, allOutward, recentLogs] = await Promise.allSettled([
+                c.env.DB.prepare(`
+                    SELECT
+                        COUNT(*) as total_inward,
+                        SUM(CASE WHEN assignment_status = 'Pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN assignment_status = 'Completed' THEN 1 ELSE 0 END) as completed,
+                        SUM(CASE WHEN assignment_status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
+                        SUM(CASE WHEN assigned_team IS NULL OR assigned_team = '' THEN 1 ELSE 0 END) as unassigned,
+                        SUM(CASE WHEN due_date < DATE('now') AND assignment_status != 'Completed' THEN 1 ELSE 0 END) as total_overdue
+                    FROM inward
+                `).first(),
+                c.env.DB.prepare(`
+                    SELECT assigned_team,
+                        COUNT(*) as total,
+                        SUM(CASE WHEN assignment_status = 'Pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN assignment_status = 'Completed' THEN 1 ELSE 0 END) as completed,
+                        SUM(CASE WHEN assignment_status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
+                        SUM(CASE WHEN due_date < DATE('now') AND assignment_status != 'Completed' THEN 1 ELSE 0 END) as overdue
+                    FROM inward
+                    WHERE assigned_team IS NOT NULL AND assigned_team != ''
+                    GROUP BY assigned_team
+                `).all(),
+                c.env.DB.prepare(`
+                    SELECT inward_no, subject, particulars_from_whom, means,
+                           assigned_team, assignment_status, due_date,
+                           sign_receipt_datetime, file_reference, remarks
+                    FROM inward ORDER BY created_at DESC LIMIT 25
+                `).all(),
+                c.env.DB.prepare(`
+                    SELECT outward_no, subject, to_whom, sent_by, means,
+                           created_by_team, file_reference, postal_tariff,
+                           case_closed, linked_inward_id, sign_receipt_datetime,
+                           remarks, created_at
+                    FROM outward ORDER BY created_at DESC LIMIT 15
+                `).all(),
+                c.env.DB.prepare(`
+                    SELECT action, actor, description, inward_no, created_at
+                    FROM audit_log ORDER BY created_at DESC LIMIT 10
+                `).all(),
+            ]);
+
+            stats   = statsRow.status === 'fulfilled' ? statsRow.value : {};
+            teams   = teamRows.status === 'fulfilled' ? teamRows.value.results : [];
+            inward  = allInward.status === 'fulfilled' ? allInward.value.results : [];
+            outward = allOutward.status === 'fulfilled' ? allOutward.value.results : [];
+            logs    = recentLogs.status === 'fulfilled' ? recentLogs.value.results : [];
+
+            // Store in cache (fire-and-forget — don't block the response)
+            c.executionCtx.waitUntil(
+                ctxCache.put(ctxCacheKey, new Response(JSON.stringify({ stats, teams, inward, outward, logs }), {
+                    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=45' },
+                }))
+            );
+        }
 
         // If user mentions a specific INW number, fetch its full audit trail
         const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content || '';
@@ -411,7 +430,7 @@ Never include ENTRIES_JSON for summary tables, counts, statistics, or grouped da
                         { role: 'system', content: systemPrompt },
                         ...messages
                     ],
-                    max_tokens: 2500,
+                    max_tokens: 4096,
                     temperature: 0.4,
                     stream: true,
                 }),
