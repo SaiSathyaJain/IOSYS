@@ -1068,3 +1068,27 @@
     max-height: 260px;
     overflow-y: auto;
 }
+
+/* ── Activity Modal — light mode overrides ── */
+[data-theme="light"] .act-modal {
+    background: #ffffff;
+    border-color: rgba(0,0,0,0.1);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.15);
+}
+[data-theme="light"] .act-modal-header {
+    border-bottom-color: rgba(0,0,0,0.08);
+}
+[data-theme="light"] .act-modal-close:hover {
+    background: rgba(0,0,0,0.06);
+}
+[data-theme="light"] .act-section-title {
+    border-bottom-color: rgba(0,0,0,0.08);
+}
+[data-theme="light"] .act-email-meta {
+    background: rgba(99,102,241,0.06);
+}
+[data-theme="light"] .act-email-body {
+    background: #f8fafc;
+    border-color: rgba(0,0,0,0.08);
+    color: #1e293b;
+}
