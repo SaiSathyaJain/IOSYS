@@ -8,8 +8,6 @@ import {
     Search, Filter, Mail, Calendar, Tag, User, Building2
 } from 'lucide-react';
 import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-    ResponsiveContainer
 } from 'recharts';
 import ChatBot from '../ChatBot/ChatBot';
 import './Dashboard.css';
@@ -47,7 +45,6 @@ function Dashboard() {
     const [userPhoto, setUserPhoto] = useState(null);
     const [stats, setStats] = useState(null);
     const [teamStats, setTeamStats] = useState([]);
-    const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [teamDetail, setTeamDetail] = useState(null);
@@ -81,16 +78,14 @@ function Dashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [statsRes, teamsRes, chartRes, entriesRes, auditRes] = await Promise.allSettled([
+            const [statsRes, teamsRes, entriesRes, auditRes] = await Promise.allSettled([
                 dashboardAPI.getStats(),
                 dashboardAPI.getAllTeams(),
-                dashboardAPI.getChartData(),
                 inwardAPI.getAll(),
                 auditAPI.getLogs(1)
             ]);
             setStats(statsRes.status === 'fulfilled' ? statsRes.value.data.stats || {} : {});
             setTeamStats(teamsRes.status === 'fulfilled' ? teamsRes.value.data.teamStats || [] : []);
-            setChartData(chartRes.status === 'fulfilled' ? chartRes.value.data.chartData || [] : []);
             setAllEntries(entriesRes.status === 'fulfilled' ? entriesRes.value.data.entries || [] : []);
             setRecentLogs(auditRes.status === 'fulfilled' ? (auditRes.value.data.logs || []).slice(0, 10) : []);
         } catch (error) {
@@ -371,57 +366,8 @@ function Dashboard() {
                     </div>
                 </div>
 
-                {/* Main two-column row: Chart left, Activity right */}
-                <div className="dash-two-col">
-                    {/* Volume Analytics Chart */}
-                    <div className="dash-card dash-col-card">
-                        <div className="dash-card-header">
-                            <div className="dash-card-title">
-                                <TrendingUp size={18} />
-                                <span>Volume Analytics</span>
-                            </div>
-                            <span className="dash-card-hint">Last 6 months</span>
-                        </div>
-                        <div className="chart-area">
-                            {chartData.length === 0 || !chartData.some(d => d.inward > 0 || d.outward > 0) ? (
-                                <div className="chart-empty">No correspondence data in the last 6 months</div>
-                            ) : (
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <AreaChart data={chartData} margin={{ top: 10, right: 20, left: -16, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="gradInward" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
-                                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                                            </linearGradient>
-                                            <linearGradient id="gradOutward" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.25} />
-                                                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" vertical={false} />
-                                        <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} allowDecimals={false} domain={[0, 'dataMax + 1']} />
-                                        <Tooltip
-                                            contentStyle={{ background: '#0D1526', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.85rem', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
-                                            labelStyle={{ color: '#E2E8F0', fontWeight: 600, marginBottom: '4px' }}
-                                            itemStyle={{ color: '#94A3B8' }}
-                                            cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }}
-                                        />
-                                        <Legend
-                                            wrapperStyle={{ fontSize: '0.8rem', color: '#64748B', paddingTop: '12px' }}
-                                            iconType="circle"
-                                            iconSize={8}
-                                        />
-                                        <Area type="monotone" dataKey="inward" name="Inward" stroke="#3B82F6" strokeWidth={2.5} fill="url(#gradInward)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
-                                        <Area type="monotone" dataKey="outward" name="Outward" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#gradOutward)" dot={false} activeDot={{ r: 5, strokeWidth: 0 }} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Recent Activity Feed */}
-                    <div className="dash-card dash-col-card">
+                {/* Recent Activity Feed */}
+                <div className="dash-card">
                         <div className="dash-card-header">
                             <div className="dash-card-title">
                                 <Activity size={18} />
@@ -461,7 +407,6 @@ function Dashboard() {
                                 ))}
                             </div>
                         )}
-                    </div>
                 </div>
 
                 {/* Team Performance */}
