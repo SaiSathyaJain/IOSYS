@@ -127,10 +127,33 @@ function AdminPortal() {
 
     // Request browser notification permission once (admin only)
     useEffect(() => {
-        if (isAdmin && 'Notification' in window && Notification.permission === 'default') {
+        if (adminUser?.email === ADMIN_EMAIL && 'Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
         }
-    }, []);
+    }, [adminUser]);
+
+    // Background inbox count poll every 2 min — fires notifications on any tab
+    useEffect(() => {
+        if (adminUser?.email !== ADMIN_EMAIL) return;
+        const poll = setInterval(async () => {
+            try {
+                const res = await inboxQueueAPI.getCount();
+                const newCount = res.data.count || 0;
+                if (prevInboxCountRef.current !== null && newCount > prevInboxCountRef.current) {
+                    const added = newCount - prevInboxCountRef.current;
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('New Email in Inbox Queue', {
+                            body: `${added} new email${added > 1 ? 's' : ''} arrived and ${added > 1 ? 'are' : 'is'} waiting for review.`,
+                            icon: '/favicon.ico',
+                        });
+                    }
+                    setInboxCount(newCount);
+                }
+                prevInboxCountRef.current = newCount;
+            } catch { /* ignore */ }
+        }, 2 * 60 * 1000);
+        return () => clearInterval(poll);
+    }, [adminUser]);
 
     const TEAM_EMAILS = {
         'UG': 'coeoffice@sssihl.edu.in',
@@ -199,16 +222,6 @@ function AdminPortal() {
             const newItems = res.data.items || [];
             const newCount = res.data.pendingCount || 0;
 
-            // Fire browser notification if new emails arrived since last check
-            if (prevInboxCountRef.current !== null && newCount > prevInboxCountRef.current) {
-                const added = newCount - prevInboxCountRef.current;
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('New Email in Inbox Queue', {
-                        body: `${added} new email${added > 1 ? 's' : ''} arrived and ${added > 1 ? 'are' : 'is'} waiting for review.`,
-                        icon: '/favicon.ico',
-                    });
-                }
-            }
             prevInboxCountRef.current = newCount;
 
             setInboxItems(newItems);
@@ -1715,7 +1728,7 @@ function AdminPortal() {
                                     {pagedInboxItems.map((item, i) => (
                                         <motion.div
                                             key={item.id}
-                                            className={`inbox-queue-item${new Date(item.created_at) > new Date(Date.now() - 30 * 60 * 1000) ? ' inbox-queue-item--latest' : ''}`}
+                                            className={`inbox-queue-item${new Date(item.created_at.replace(' ', 'T') + 'Z') > new Date(Date.now() - 30 * 60 * 1000) ? ' inbox-queue-item--latest' : ''}`}
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: i * 0.06, duration: 0.16 }}
