@@ -868,7 +868,7 @@ function AdminPortal() {
                         </button>
                     </>)}
                     <div className="ap-nav-divider" />
-                    <button className="ap-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                    <button className="ap-theme-btn" onClick={() => { document.body.classList.add('theme-transitioning'); setIsDarkMode(v => !v); setTimeout(() => document.body.classList.remove('theme-transitioning'), 350); }} title="Toggle theme">
                         {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
                     </button>
                     <div className="ap-user-pill" style={{ cursor: 'pointer' }} onClick={handleLogout} title="Sign out">

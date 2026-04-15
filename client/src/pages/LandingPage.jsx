@@ -48,7 +48,7 @@ const LandingPage = () => {
                 </div>
 
                 <div className="user-section">
-                    <div className="theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)}>
+                    <div className="theme-toggle" onClick={() => { document.body.classList.add('theme-transitioning'); setIsDarkMode(v => !v); setTimeout(() => document.body.classList.remove('theme-transitioning'), 350); }}>
                         {isDarkMode ? <Sun size={18} className="theme-icon active" /> : <Moon size={18} className="theme-icon active" />}
                     </div>
                     <div className="user-profile">

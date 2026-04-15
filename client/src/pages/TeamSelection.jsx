@@ -41,7 +41,7 @@ const TeamSelection = () => {
                     </div>
                 </div>
                 <div className="sel-nav-right">
-                    <button className="theme-toggle-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+                    <button className="theme-toggle-btn" onClick={() => { document.body.classList.add('theme-transitioning'); setIsDarkMode(v => !v); setTimeout(() => document.body.classList.remove('theme-transitioning'), 350); }} title="Toggle theme">
                         {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
                     </button>
                 </div>

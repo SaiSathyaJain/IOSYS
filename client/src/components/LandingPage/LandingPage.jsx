@@ -108,7 +108,7 @@ function LandingPage() {
                     <span>SSSIHL</span>
                 </div>
                 <div className="space-actions">
-                    <button className="icon-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
+                    <button className="icon-btn" onClick={() => { document.body.classList.add('theme-transitioning'); setIsDarkMode(v => !v); setTimeout(() => document.body.classList.remove('theme-transitioning'), 350); }}>
                         {isDarkMode ? <Sun size={20} className="icon-svg" /> : <Moon size={20} className="icon-svg" />}
                     </button>
                     <div className="profile-pill">

@@ -394,7 +394,7 @@ function TeamPortal() {
                         <button className="tp-new-outward-btn" onClick={() => setShowForm(true)}>
                             <Plus size={15} /> + New Outward
                         </button>
-<button className="tp-theme-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle theme">
+<button className="tp-theme-btn" onClick={() => { document.body.classList.add('theme-transitioning'); setIsDarkMode(v => !v); setTimeout(() => document.body.classList.remove('theme-transitioning'), 350); }} title="Toggle theme">
                             {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                         </button>
                     </div>

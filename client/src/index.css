@@ -58,16 +58,18 @@
   padding: 0;
 }
 
-/* Smooth theme transitions — applies only to colour-related properties so
-   layout, transform, and opacity animations are unaffected */
-*, *::before, *::after {
+/* Smooth theme transitions — class is added by JS for ~350ms on toggle,
+   !important overrides all component-level transitions during the switch */
+body.theme-transitioning *,
+body.theme-transitioning *::before,
+body.theme-transitioning *::after {
   transition:
-    background-color 0.25s ease,
-    color            0.22s ease,
-    border-color     0.25s ease,
-    box-shadow       0.25s ease,
-    fill             0.25s ease,
-    stroke           0.25s ease;
+    background-color 0.3s ease,
+    color            0.28s ease,
+    border-color     0.3s ease,
+    box-shadow       0.3s ease,
+    fill             0.3s ease,
+    stroke           0.3s ease !important;
 }
 
 body {
