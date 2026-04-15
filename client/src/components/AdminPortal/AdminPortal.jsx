@@ -66,8 +66,8 @@ function AdminPortal() {
             if (showNotesForm)     { closeWithAnimation('notes', () => setShowNotesForm(false)); return; }
             if (createSuccess)     { closeWithAnimation('createSuccess', () => setCreateSuccess(null)); return; }
             if (assignSuccess)     { closeWithAnimation('assignSuccess', () => setAssignSuccess(null)); return; }
-            if (showForm)          { closeWithAnimation('form', () => { setShowForm(false); resetForm(); }); return; }
-            if (showEmailModal)    { setShowEmailModal(false); setEmailPasteText(''); }
+            if (showForm)          { closeWithAnimation('form', () => setShowForm(false)); return; }
+            if (showEmailModal)    { setShowEmailModal(false); }
         };
         document.addEventListener('keydown', onEsc);
         return () => document.removeEventListener('keydown', onEsc);

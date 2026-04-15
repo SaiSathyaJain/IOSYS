@@ -57,7 +57,7 @@ function TeamPortal() {
             if (remarksModal)     { setRemarksModal(null); return; }
             if (showInwardModal)  { setShowInwardModal(false); return; }
             if (showDetailsModal) { setShowDetailsModal(false); return; }
-            if (showForm)         { setShowForm(false); resetForm(); }
+            if (showForm)         { setShowForm(false); }
         };
         document.addEventListener('keydown', onEsc);
         return () => document.removeEventListener('keydown', onEsc);
