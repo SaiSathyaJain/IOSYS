@@ -230,19 +230,6 @@ export async function pollInbox(env) {
                 aiFields.remarks       || ''
             ).run();
 
-            // Mark email as read only after successful INSERT
-            await fetch(
-                `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}/modify`,
-                {
-                    method: 'POST',
-                    headers: {
-                        Authorization:  `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
-                }
-            );
-
             result.processed++;
         } catch (err) {
             result.errors.push({ messageId: msg.id, error: err.message });
