@@ -135,13 +135,21 @@ inwardRouter.post('/', async (c) => {
             // Use the admin-supplied inward number for physical mail
             inwardNo = manualInwardNo.trim();
         } else {
-            // Auto-generate: INW/DD/MM/YYYY-0000 (global sequential counter)
+            // Auto-generate: INW/DD/MM/YYYY-0000
+            // Use MAX of numeric suffix across live + deleted entries to avoid conflicts after deletion
             const entryDate = new Date(signReceiptDateTime);
             const dd   = entryDate.getDate().toString().padStart(2, '0');
             const mm   = (entryDate.getMonth() + 1).toString().padStart(2, '0');
             const yyyy = entryDate.getFullYear();
-            const countResult = await c.env.DB.prepare('SELECT COUNT(*) as count FROM inward').first();
-            const nextCount = (countResult.count || 0) + 1;
+            const maxResult = await c.env.DB.prepare(`
+                SELECT MAX(CAST(SUBSTR(inward_no, -4) AS INTEGER)) as max_seq
+                FROM (
+                    SELECT inward_no FROM inward WHERE inward_no LIKE 'INW/%'
+                    UNION ALL
+                    SELECT inward_no FROM inward_deleted WHERE inward_no LIKE 'INW/%'
+                )
+            `).first();
+            const nextCount = (maxResult.max_seq || 0) + 1;
             inwardNo = `INW/${dd}/${mm}/${yyyy}-${nextCount.toString().padStart(4, '0')}`;
         }
 
