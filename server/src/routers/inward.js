@@ -143,11 +143,7 @@ inwardRouter.post('/', async (c) => {
             const yyyy = entryDate.getFullYear();
             const maxResult = await c.env.DB.prepare(`
                 SELECT MAX(CAST(SUBSTR(inward_no, -4) AS INTEGER)) as max_seq
-                FROM (
-                    SELECT inward_no FROM inward WHERE inward_no LIKE 'INW/%'
-                    UNION ALL
-                    SELECT inward_no FROM inward_deleted WHERE inward_no LIKE 'INW/%'
-                )
+                FROM inward WHERE inward_no LIKE 'INW/%'
             `).first();
             const nextCount = (maxResult.max_seq || 0) + 1;
             inwardNo = `INW/${dd}/${mm}/${yyyy}-${nextCount.toString().padStart(4, '0')}`;
