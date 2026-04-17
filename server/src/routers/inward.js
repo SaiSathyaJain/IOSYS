@@ -152,15 +152,25 @@ inwardRouter.post('/', async (c) => {
         const assignmentStatus = assignedTeam ? 'Pending' : 'Unassigned';
         const assignmentDate = assignedTeam ? new Date().toISOString() : null;
 
+        // Compute next sequence_no across live + deleted entries so deletions don't reset the counter
+        const seqResult = await c.env.DB.prepare(`
+            SELECT MAX(seq) as max_seq FROM (
+                SELECT MAX(sequence_no) as seq FROM inward
+                UNION ALL
+                SELECT MAX(sequence_no) as seq FROM inward_deleted
+            )
+        `).first();
+        const nextSeq = (seqResult?.max_seq || 0) + 1;
+
         const result = await c.env.DB.prepare(`
             INSERT INTO inward (
-                inward_no, means, particulars_from_whom, subject,
+                sequence_no, inward_no, means, particulars_from_whom, subject,
                 sign_receipt_datetime, file_reference, assigned_team,
                 assigned_to_email, assignment_instructions, assignment_date,
                 assignment_status, due_date, remarks
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
         `).bind(
-            inwardNo, means, particularsFromWhom, subject,
+            nextSeq, inwardNo, means, particularsFromWhom, subject,
             signReceiptDateTime, fileReference || '', assignedTeam || null,
             assignedToEmail || null, assignmentInstructions || '', assignmentDate,
             assignmentStatus, dueDate || null, remarks || ''
@@ -326,16 +336,16 @@ inwardRouter.delete('/:id', async (c) => {
             return c.json({ success: false, message: 'Entry not found' }, 404);
         }
 
-        // Copy to recycle bin first
+        // Copy to recycle bin first (preserve sequence_no so it's never reused)
         await c.env.DB.prepare(`
             INSERT INTO inward_deleted (
-                original_id, inward_no, means, particulars_from_whom, subject,
+                original_id, sequence_no, inward_no, means, particulars_from_whom, subject,
                 sign_receipt_datetime, file_reference, assigned_team, assigned_to_email,
                 assignment_instructions, assignment_date, assignment_status, due_date,
                 completion_date, remarks, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
-            entry.id, entry.inward_no, entry.means, entry.particulars_from_whom, entry.subject,
+            entry.id, entry.sequence_no, entry.inward_no, entry.means, entry.particulars_from_whom, entry.subject,
             entry.sign_receipt_datetime, entry.file_reference, entry.assigned_team, entry.assigned_to_email,
             entry.assignment_instructions, entry.assignment_date, entry.assignment_status, entry.due_date,
             entry.completion_date, entry.remarks, entry.created_at, entry.updated_at

@@ -32,6 +32,7 @@ function AdminPortal() {
     const [loading, setLoading] = useState(true);
     const [tooltip, setTooltip] = useState({ text: '', x: 0, y: 0, visible: false });
     const [adminPage, setAdminPage] = useState('registers');
+    const [inwardTab, setInwardTab] = useState('all');
     const [auditLogs, setAuditLogs] = useState([]);
     const [auditPage, setAuditPage] = useState(1);
     const [auditTotalPages, setAuditTotalPages] = useState(1);
@@ -1064,7 +1065,7 @@ function AdminPortal() {
 
                                 {MANUAL_INWARD_MEANS.includes(formData.means) && (
                                     <div className="form-group">
-                                        <label className="form-label">Inward No. *</label>
+                                        <label className="form-label">Inward No.</label>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
                                             <span style={{
                                                 fontFamily: 'monospace',
@@ -1094,7 +1095,6 @@ function AdminPortal() {
                                                 className="form-input"
                                                 value={formData.inwardNo}
                                                 onChange={handleChange}
-                                                required
                                                 placeholder="0042"
                                                 style={{ fontFamily: 'monospace', borderRadius: '0 6px 6px 0', flex: 1 }}
                                             />
@@ -1196,10 +1196,24 @@ function AdminPortal() {
             {/* Entries Table */}
             <div className="card">
                 <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <h3 className="card-title">
-                        <ClipboardList size={20} /> Inward Entries
-                        <span className="entry-count">({filteredEntries.length}{filteredEntries.length !== entries.length ? ` of ${entries.length}` : ''})</span>
-                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <h3 className="card-title">
+                            <ClipboardList size={20} /> Inward Entries
+                            <span className="entry-count">{(() => { const tabFiltered = inwardTab === 'manual' ? filteredEntries.filter(e => MANUAL_INWARD_MEANS.includes(e.means)) : filteredEntries; return `(${tabFiltered.length}${tabFiltered.length !== entries.length ? ` of ${entries.length}` : ''})`; })()}</span>
+                        </h3>
+                        <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '3px' }}>
+                            <button
+                                className={`btn${inwardTab === 'all' ? ' btn-primary' : ' btn-ghost'}`}
+                                style={{ fontSize: '0.78rem', padding: '0.25rem 0.75rem' }}
+                                onClick={() => { setInwardTab('all'); setInwardPage(1); }}
+                            >All</button>
+                            <button
+                                className={`btn${inwardTab === 'manual' ? ' btn-primary' : ' btn-ghost'}`}
+                                style={{ fontSize: '0.78rem', padding: '0.25rem 0.75rem' }}
+                                onClick={() => { setInwardTab('manual'); setInwardPage(1); }}
+                            >Manual</button>
+                        </div>
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                             <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>From</span>
@@ -1281,13 +1295,13 @@ function AdminPortal() {
                                 initial="initial"
                                 animate="animate"
                             >
-                                {filteredEntries.slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry, index) => (
+                                {(inwardTab === 'manual' ? filteredEntries.filter(e => MANUAL_INWARD_MEANS.includes(e.means)) : filteredEntries).slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry, index) => (
                                     <motion.tr
                                         key={entry.id}
                                         className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''}
                                         variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0, transition: { duration: 0.15 } } }}
                                     >
-                                        <td>{(inwardPage - 1) * INWARD_PAGE_SIZE + index + 1}</td>
+                                        <td>{entry.sequenceNo ?? (inwardPage - 1) * INWARD_PAGE_SIZE + index + 1}</td>
                                         <td>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDatetime)}</div>
                                             <strong style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{entry.inwardNo}</strong>

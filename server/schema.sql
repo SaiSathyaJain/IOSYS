@@ -1,6 +1,7 @@
 -- Inward Table
 CREATE TABLE IF NOT EXISTS inward (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sequence_no INTEGER,
     inward_no TEXT UNIQUE NOT NULL,
     means TEXT,
     particulars_from_whom TEXT,
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS inward (
 CREATE TABLE IF NOT EXISTS inward_deleted (
     id                      INTEGER PRIMARY KEY AUTOINCREMENT,
     original_id             INTEGER,
+    sequence_no             INTEGER,
     inward_no               TEXT,
     means                   TEXT,
     particulars_from_whom   TEXT,
