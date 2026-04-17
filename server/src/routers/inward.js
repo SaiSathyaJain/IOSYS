@@ -102,22 +102,6 @@ inwardRouter.delete('/deleted/:id', async (c) => {
     }
 });
 
-// Get single inward entry
-inwardRouter.get('/:id', async (c) => {
-    try {
-        const id = c.req.param('id');
-        const entry = await c.env.DB.prepare('SELECT * FROM inward WHERE id = ?').bind(id).first();
-
-        if (!entry) {
-            return c.json({ success: false, message: 'Entry not found' }, 404);
-        }
-
-        return c.json({ success: true, entry: toCamelCase(entry) });
-    } catch (error) {
-        return c.json({ success: false, message: error.message }, 500);
-    }
-});
-
 // Get next suggested inward number (for manual means pre-fill)
 inwardRouter.get('/next-no', async (c) => {
     try {
@@ -132,6 +116,22 @@ inwardRouter.get('/next-no', async (c) => {
         `).first();
         const nextCount = (maxResult?.max_seq || 0) + 1;
         return c.json({ success: true, nextNo: nextCount.toString().padStart(4, '0') });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
+// Get single inward entry
+inwardRouter.get('/:id', async (c) => {
+    try {
+        const id = c.req.param('id');
+        const entry = await c.env.DB.prepare('SELECT * FROM inward WHERE id = ?').bind(id).first();
+
+        if (!entry) {
+            return c.json({ success: false, message: 'Entry not found' }, 404);
+        }
+
+        return c.json({ success: true, entry: toCamelCase(entry) });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);
     }
