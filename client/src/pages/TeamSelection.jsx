@@ -45,12 +45,11 @@ const TeamSelection = () => {
                         {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
                     </button>
                 </div>
-+            </header>
+            </header>
 
             {/* Page Title */}
             <div className="selection-title animate-stagger-1">
                 <h1>Select Workspace</h1>
-                
             </div>
 
             {/* Grid */}
