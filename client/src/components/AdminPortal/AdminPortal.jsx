@@ -1304,7 +1304,7 @@ function AdminPortal() {
                                         <td>{entry.sequenceNo ?? (inwardPage - 1) * INWARD_PAGE_SIZE + index + 1}</td>
                                         <td>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDatetime)}</div>
-                                            <strong style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{entry.inwardNo}</strong>
+                                            <strong style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{entry.inwardNo?.startsWith('NOINW-') ? '-' : entry.inwardNo}</strong>
                                         </td>
                                         <td>{entry.means || '-'}</td>
                                         <td>{entry.particularsFromWhom}</td>
@@ -1414,7 +1414,7 @@ function AdminPortal() {
                             <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
                                 <div className="detail-item">
                                     <label>Inward No.</label>
-                                    <span style={{fontFamily:'monospace',fontWeight:700,color:'var(--primary)'}}>{createSuccess.inwardNo}</span>
+                                    <span style={{fontFamily:'monospace',fontWeight:700,color:'var(--primary)'}}>{createSuccess.inwardNo?.startsWith('NOINW-') ? '-' : createSuccess.inwardNo}</span>
                                 </div>
                                 <div className="detail-item">
                                     <label>Subject</label>
@@ -1449,7 +1449,7 @@ function AdminPortal() {
                             <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
                                 <div className="detail-item">
                                     <label>Inward No.</label>
-                                    <span style={{fontFamily:'monospace',fontWeight:700,color:'var(--primary)'}}>{assignSuccess.inwardNo}</span>
+                                    <span style={{fontFamily:'monospace',fontWeight:700,color:'var(--primary)'}}>{assignSuccess.inwardNo?.startsWith('NOINW-') ? '-' : assignSuccess.inwardNo}</span>
                                 </div>
                                 <div className="detail-item">
                                     <label>Subject</label>
@@ -1488,7 +1488,7 @@ function AdminPortal() {
                             <div className="detail-grid">
                                 <div className="detail-item">
                                     <label>Inward No</label>
-                                    <span className="detail-value highlight">{selectedEntry.inwardNo}</span>
+                                    <span className="detail-value highlight">{selectedEntry.inwardNo?.startsWith('NOINW-') ? '-' : selectedEntry.inwardNo}</span>
                                 </div>
                                 <div className="detail-item">
                                     <label>Status</label>
@@ -1571,7 +1571,7 @@ function AdminPortal() {
                         <form onSubmit={handleReassign}>
                             <div className="modal-body">
                                 <p className="modal-info">
-                                    Reassigning: <strong>{selectedEntry.inwardNo}</strong> - {selectedEntry.subject}
+                                    Reassigning: <strong>{selectedEntry.inwardNo?.startsWith('NOINW-') ? '-' : selectedEntry.inwardNo}</strong> - {selectedEntry.subject}
                                 </p>
 
                                 <div className="form-group">

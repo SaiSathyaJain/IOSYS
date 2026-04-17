@@ -130,13 +130,25 @@ inwardRouter.post('/', async (c) => {
 
         const MANUAL_MEANS = ['Post', 'Hand Delivery', 'Courier'];
 
+        // sequence_no is computed first so we can use it as a unique placeholder if needed
+        const seqResultPre = await c.env.DB.prepare(`
+            SELECT MAX(seq) as max_seq FROM (
+                SELECT MAX(sequence_no) as seq FROM inward
+                UNION ALL
+                SELECT MAX(sequence_no) as seq FROM inward_deleted
+            )
+        `).first();
+        const nextSeq = (seqResultPre?.max_seq || 0) + 1;
+
         let inwardNo;
         if (MANUAL_MEANS.includes(means) && manualInwardNo?.trim()) {
-            // Use the admin-supplied inward number for physical mail
+            // Admin supplied an explicit inward number
             inwardNo = manualInwardNo.trim();
+        } else if (MANUAL_MEANS.includes(means)) {
+            // Manual means but no number given — use a unique internal placeholder (hidden in UI)
+            inwardNo = `NOINW-${nextSeq}`;
         } else {
-            // Auto-generate: INW/DD/MM/YYYY-0000
-            // Use MAX of numeric suffix across live + deleted entries to avoid conflicts after deletion
+            // Auto-generate: INW/DD/MM/YYYY-0000 for Email etc.
             const entryDate = new Date(signReceiptDateTime);
             const dd   = entryDate.getDate().toString().padStart(2, '0');
             const mm   = (entryDate.getMonth() + 1).toString().padStart(2, '0');
@@ -151,16 +163,6 @@ inwardRouter.post('/', async (c) => {
 
         const assignmentStatus = assignedTeam ? 'Pending' : 'Unassigned';
         const assignmentDate = assignedTeam ? new Date().toISOString() : null;
-
-        // Compute next sequence_no across live + deleted entries so deletions don't reset the counter
-        const seqResult = await c.env.DB.prepare(`
-            SELECT MAX(seq) as max_seq FROM (
-                SELECT MAX(sequence_no) as seq FROM inward
-                UNION ALL
-                SELECT MAX(sequence_no) as seq FROM inward_deleted
-            )
-        `).first();
-        const nextSeq = (seqResult?.max_seq || 0) + 1;
 
         const result = await c.env.DB.prepare(`
             INSERT INTO inward (
