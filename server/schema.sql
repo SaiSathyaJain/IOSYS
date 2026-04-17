@@ -19,6 +19,30 @@ CREATE TABLE IF NOT EXISTS inward (
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Recycle Bin (soft-deleted inward entries)
+CREATE TABLE IF NOT EXISTS inward_deleted (
+    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+    original_id             INTEGER,
+    inward_no               TEXT,
+    means                   TEXT,
+    particulars_from_whom   TEXT,
+    subject                 TEXT,
+    sign_receipt_datetime   TEXT,
+    file_reference          TEXT,
+    assigned_team           TEXT,
+    assigned_to_email       TEXT,
+    assignment_instructions TEXT,
+    assignment_date         TEXT,
+    assignment_status       TEXT,
+    due_date                TEXT,
+    completion_date         TEXT,
+    remarks                 TEXT,
+    created_at              TEXT,
+    updated_at              TEXT,
+    deleted_at              TEXT DEFAULT CURRENT_TIMESTAMP,
+    deleted_by              TEXT DEFAULT 'Admin'
+);
+
 -- Outward Table
 CREATE TABLE IF NOT EXISTS outward (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

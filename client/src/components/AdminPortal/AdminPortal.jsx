@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
-import { inwardAPI, dashboardAPI, outwardAPI, notesAPI, auditAPI, aiAPI, inboxQueueAPI } from '../../services/api';
+import { inwardAPI, dashboardAPI, outwardAPI, notesAPI, auditAPI, aiAPI, inboxQueueAPI, recycleBinAPI } from '../../services/api';
 import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
     Clock, CheckCircle2, AlertCircle, Calendar, Mail, User,
     FileText, RefreshCw, Eye, Edit3, ArrowDownToLine, Loader2, Download,
-    Sun, Moon, ArrowLeft, Printer, Sparkles, Trash2
+    Sun, Moon, ArrowLeft, Printer, Sparkles, Trash2, RotateCcw
 } from 'lucide-react';
 import ChatBot from '../ChatBot/ChatBot';
 import './AdminPortal.css';
@@ -92,6 +92,10 @@ function AdminPortal() {
     // AI Agent — Auto-assign
     const [autoAssignLoadingId, setAutoAssignLoadingId] = useState(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+    const [recycleBin, setRecycleBin] = useState([]);
+    const [recycleBinLoading, setRecycleBinLoading] = useState(false);
+    const [restoreLoadingId, setRestoreLoadingId] = useState(null);
+    const [permDeleteConfirmId, setPermDeleteConfirmId] = useState(null);
 
     // Inbox Queue
     const [inboxItems, setInboxItems]       = useState([]);
@@ -529,6 +533,45 @@ function AdminPortal() {
         }
     };
 
+    const loadRecycleBin = async () => {
+        setRecycleBinLoading(true);
+        try {
+            const res = await recycleBinAPI.getAll();
+            setRecycleBin(res.data.entries || []);
+        } catch (err) {
+            console.error('Failed to load recycle bin:', err);
+        } finally {
+            setRecycleBinLoading(false);
+        }
+    };
+
+    const handleRestore = async (id) => {
+        setRestoreLoadingId(id);
+        try {
+            await recycleBinAPI.restore(id);
+            setRecycleBin(prev => prev.filter(e => e.id !== id));
+            // Reload inward entries so restored entry appears
+            const res = await inwardAPI.getAll();
+            setEntries(res.data.entries);
+            setFilteredEntries(res.data.entries);
+        } catch (err) {
+            alert('Restore failed: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setRestoreLoadingId(null);
+        }
+    };
+
+    const handlePermDelete = async (id) => {
+        try {
+            await recycleBinAPI.permanentDelete(id);
+            setRecycleBin(prev => prev.filter(e => e.id !== id));
+        } catch (err) {
+            alert('Failed to permanently delete: ' + err.message);
+        } finally {
+            setPermDeleteConfirmId(null);
+        }
+    };
+
     // AI Agent: suggest team assignment for an unassigned entry
     const handleAutoAssign = async (entry) => {
         setAutoAssignLoadingId(entry.id);
@@ -886,6 +929,13 @@ function AdminPortal() {
                         <button className={`ap-nav-tab ap-nav-tab--inbox${adminPage === 'inbox' ? ' active' : ''}`} onClick={() => { setAdminPage('inbox'); loadInboxItems(); }}>
                             Inbox
                             {inboxCount > 0 && <span className="inbox-badge">{inboxCount}</span>}
+                        </button>
+                    )}
+                    {isAdmin && (
+                        <button className={`ap-nav-tab${adminPage === 'recycle' ? ' active' : ''}`} onClick={() => { setAdminPage('recycle'); loadRecycleBin(); }}>
+                            <Trash2 size={13} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
+                            Recycle Bin
+                            {recycleBin.length > 0 && <span className="inbox-badge" style={{ background: '#f87171' }}>{recycleBin.length}</span>}
                         </button>
                     )}
                 </div>
@@ -1856,6 +1906,107 @@ function AdminPortal() {
                             </>
                         );
                     })()}
+                </motion.div>
+            )}
+            {adminPage === 'recycle' && (
+                <motion.div key="recycle" style={{ width: '100%' }} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
+                <div className="card">
+                    <div className="card-header">
+                        <h3 className="card-title">
+                            <Trash2 size={20} /> Recycle Bin
+                            {recycleBin.length > 0 && <span className="entry-count">({recycleBin.length} entries)</span>}
+                        </h3>
+                        <button className="btn btn-icon-only" onClick={loadRecycleBin} disabled={recycleBinLoading} title="Refresh">
+                            <RefreshCw size={15} className={recycleBinLoading ? 'spin' : ''} />
+                        </button>
+                    </div>
+
+                    {recycleBinLoading ? (
+                        <div className="loading-state"><Loader2 size={40} className="spin" /><p>Loading…</p></div>
+                    ) : recycleBin.length === 0 ? (
+                        <div className="empty-state">
+                            <Trash2 size={48} />
+                            <p>Recycle bin is empty</p>
+                            <span>Deleted inward entries will appear here</span>
+                        </div>
+                    ) : (
+                        <div className="table-wrapper">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Inward No.</th>
+                                        <th>Date</th>
+                                        <th>Mode</th>
+                                        <th>From</th>
+                                        <th>Subject</th>
+                                        <th>Status</th>
+                                        <th>Deleted At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <motion.tbody
+                                    variants={{ animate: { transition: { staggerChildren: 0.04 } } }}
+                                    initial="initial"
+                                    animate="animate"
+                                >
+                                    {recycleBin.map(entry => (
+                                        <motion.tr
+                                            key={entry.id}
+                                            variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0, transition: { duration: 0.15 } } }}
+                                            style={{ opacity: 0.82 }}
+                                        >
+                                            <td><strong style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{entry.inwardNo}</strong></td>
+                                            <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDatetime)}</td>
+                                            <td>{entry.means || '-'}</td>
+                                            <td>{entry.particularsFromWhom || '-'}</td>
+                                            <td className="subject-cell">
+                                                <div className="subject-text"
+                                                    onMouseEnter={e => setTooltip({ text: entry.subject, x: e.clientX, y: e.clientY, visible: true })}
+                                                    onMouseMove={e => setTooltip(t => ({ ...t, x: e.clientX, y: e.clientY }))}
+                                                    onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
+                                                >{entry.subject}</div>
+                                            </td>
+                                            <td><span className="badge badge-none">{entry.assignmentStatus || '-'}</span></td>
+                                            <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                                {entry.deletedAt ? new Date(entry.deletedAt.replace(' ', 'T') + 'Z').toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                                            </td>
+                                            <td>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        className="btn-icon"
+                                                        onClick={() => handleRestore(entry.id)}
+                                                        disabled={restoreLoadingId === entry.id}
+                                                        title="Restore to register"
+                                                        style={{ color: '#4ade80' }}
+                                                    >
+                                                        {restoreLoadingId === entry.id
+                                                            ? <Loader2 size={15} className="spin" />
+                                                            : <RotateCcw size={15} />
+                                                        }
+                                                    </button>
+                                                    {permDeleteConfirmId === entry.id ? (
+                                                        <>
+                                                            <button className="btn-icon btn-icon--danger" onClick={() => handlePermDelete(entry.id)} title="Confirm permanent delete">
+                                                                <Check size={14} />
+                                                            </button>
+                                                            <button className="btn-icon" onClick={() => setPermDeleteConfirmId(null)} title="Cancel">
+                                                                <X size={14} />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <button className="btn-icon btn-icon--danger-soft" onClick={() => setPermDeleteConfirmId(entry.id)} title="Permanently delete">
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    ))}
+                                </motion.tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
                 </motion.div>
             )}
             </AnimatePresence>

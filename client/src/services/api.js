@@ -20,6 +20,13 @@ export const inwardAPI = {
     delete: (id) => api.delete(`/inward/${id}`)
 };
 
+// Recycle Bin API
+export const recycleBinAPI = {
+    getAll: () => api.get('/inward/deleted/all'),
+    restore: (id) => api.post(`/inward/deleted/${id}/restore`),
+    permanentDelete: (id) => api.delete(`/inward/deleted/${id}`)
+};
+
 // Outward API
 export const outwardAPI = {
     getAll: (team = '') => api.get(`/outward${team ? `?team=${team}` : ''}`),

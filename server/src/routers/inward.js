@@ -18,6 +18,90 @@ inwardRouter.get('/', async (c) => {
     }
 });
 
+// Get all recycle bin entries — must be before /:id to avoid route conflict
+inwardRouter.get('/deleted/all', async (c) => {
+    try {
+        const { results } = await c.env.DB.prepare(
+            'SELECT * FROM inward_deleted ORDER BY deleted_at DESC'
+        ).all();
+        return c.json({ success: true, entries: toCamelCase(results) });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
+// Restore entry from recycle bin — must be before /:id
+inwardRouter.post('/deleted/:id/restore', async (c) => {
+    try {
+        const id = c.req.param('id');
+        const deleted = await c.env.DB.prepare(
+            'SELECT * FROM inward_deleted WHERE id = ?'
+        ).bind(id).first();
+
+        if (!deleted) {
+            return c.json({ success: false, message: 'Entry not found in recycle bin' }, 404);
+        }
+
+        // Check for inward_no conflict
+        const conflict = await c.env.DB.prepare(
+            'SELECT id FROM inward WHERE inward_no = ?'
+        ).bind(deleted.inward_no).first();
+        if (conflict) {
+            return c.json({ success: false, message: `Cannot restore: inward number ${deleted.inward_no} already exists in the register` }, 409);
+        }
+
+        await c.env.DB.prepare(`
+            INSERT INTO inward (
+                inward_no, means, particulars_from_whom, subject,
+                sign_receipt_datetime, file_reference, assigned_team, assigned_to_email,
+                assignment_instructions, assignment_date, assignment_status, due_date,
+                completion_date, remarks, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+            deleted.inward_no, deleted.means, deleted.particulars_from_whom, deleted.subject,
+            deleted.sign_receipt_datetime, deleted.file_reference, deleted.assigned_team, deleted.assigned_to_email,
+            deleted.assignment_instructions, deleted.assignment_date, deleted.assignment_status, deleted.due_date,
+            deleted.completion_date, deleted.remarks, deleted.created_at, deleted.updated_at
+        ).run();
+
+        await c.env.DB.prepare('DELETE FROM inward_deleted WHERE id = ?').bind(id).run();
+
+        // Audit log
+        await c.env.DB.prepare(
+            'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+        ).bind('ENTRY_RESTORED', 'Admin', `Admin restored ${deleted.inward_no} from recycle bin`, deleted.inward_no).run();
+
+        return c.json({ success: true, message: 'Entry restored successfully' });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
+// Permanently delete from recycle bin — must be before /:id
+inwardRouter.delete('/deleted/:id', async (c) => {
+    try {
+        const id = c.req.param('id');
+        const deleted = await c.env.DB.prepare(
+            'SELECT inward_no FROM inward_deleted WHERE id = ?'
+        ).bind(id).first();
+
+        if (!deleted) {
+            return c.json({ success: false, message: 'Entry not found in recycle bin' }, 404);
+        }
+
+        await c.env.DB.prepare('DELETE FROM inward_deleted WHERE id = ?').bind(id).run();
+
+        // Audit log
+        await c.env.DB.prepare(
+            'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+        ).bind('ENTRY_PERM_DELETED', 'Admin', `Admin permanently deleted ${deleted.inward_no}`, deleted.inward_no).run();
+
+        return c.json({ success: true, message: 'Entry permanently deleted' });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
 // Get single inward entry
 inwardRouter.get('/:id', async (c) => {
     try {
@@ -228,24 +312,39 @@ inwardRouter.put('/:id/status', async (c) => {
     }
 });
 
-// Delete inward entry
+// Delete inward entry (moves to recycle bin)
 inwardRouter.delete('/:id', async (c) => {
     try {
         const id = c.req.param('id');
-        const entry = await c.env.DB.prepare('SELECT inward_no FROM inward WHERE id = ?').bind(id).first();
+        const entry = await c.env.DB.prepare('SELECT * FROM inward WHERE id = ?').bind(id).first();
 
         if (!entry) {
             return c.json({ success: false, message: 'Entry not found' }, 404);
         }
+
+        // Copy to recycle bin first
+        await c.env.DB.prepare(`
+            INSERT INTO inward_deleted (
+                original_id, inward_no, means, particulars_from_whom, subject,
+                sign_receipt_datetime, file_reference, assigned_team, assigned_to_email,
+                assignment_instructions, assignment_date, assignment_status, due_date,
+                completion_date, remarks, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+            entry.id, entry.inward_no, entry.means, entry.particulars_from_whom, entry.subject,
+            entry.sign_receipt_datetime, entry.file_reference, entry.assigned_team, entry.assigned_to_email,
+            entry.assignment_instructions, entry.assignment_date, entry.assignment_status, entry.due_date,
+            entry.completion_date, entry.remarks, entry.created_at, entry.updated_at
+        ).run();
 
         await c.env.DB.prepare('DELETE FROM inward WHERE id = ?').bind(id).run();
 
         // Audit log
         await c.env.DB.prepare(
             'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
-        ).bind('ENTRY_DELETED', 'Admin', `Admin deleted inward entry ${entry.inward_no}`, entry.inward_no).run();
+        ).bind('ENTRY_DELETED', 'Admin', `Admin moved ${entry.inward_no} to recycle bin`, entry.inward_no).run();
 
-        return c.json({ success: true, message: 'Entry deleted successfully' });
+        return c.json({ success: true, message: 'Entry moved to recycle bin' });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);
     }
