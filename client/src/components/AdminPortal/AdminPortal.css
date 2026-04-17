@@ -1681,6 +1681,25 @@
     border-color: rgba(91, 69, 212, 0.2);
 }
 
+/* Delete button variants */
+.btn-icon--danger-soft {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.2);
+}
+.btn-icon--danger-soft:hover {
+    background: rgba(248, 113, 113, 0.12);
+    border-color: rgba(248, 113, 113, 0.4);
+    color: #ef4444;
+}
+.btn-icon--danger {
+    color: #fff;
+    background: rgba(239, 68, 68, 0.75);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+.btn-icon--danger:hover {
+    background: rgba(239, 68, 68, 0.9);
+}
+
 /* Email paste modal */
 .agent-email-hint {
     font-size: 0.82rem;

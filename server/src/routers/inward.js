@@ -227,3 +227,26 @@ inwardRouter.put('/:id/status', async (c) => {
         return c.json({ success: false, message: error.message }, 500);
     }
 });
+
+// Delete inward entry
+inwardRouter.delete('/:id', async (c) => {
+    try {
+        const id = c.req.param('id');
+        const entry = await c.env.DB.prepare('SELECT inward_no FROM inward WHERE id = ?').bind(id).first();
+
+        if (!entry) {
+            return c.json({ success: false, message: 'Entry not found' }, 404);
+        }
+
+        await c.env.DB.prepare('DELETE FROM inward WHERE id = ?').bind(id).run();
+
+        // Audit log
+        await c.env.DB.prepare(
+            'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+        ).bind('ENTRY_DELETED', 'Admin', `Admin deleted inward entry ${entry.inward_no}`, entry.inward_no).run();
+
+        return c.json({ success: true, message: 'Entry deleted successfully' });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});

@@ -9,7 +9,7 @@ import {
     Inbox, Plus, ClipboardList, Check, X, Search, Filter,
     Clock, CheckCircle2, AlertCircle, Calendar, Mail, User,
     FileText, RefreshCw, Eye, Edit3, ArrowDownToLine, Loader2, Download,
-    Sun, Moon, ArrowLeft, Printer, Sparkles
+    Sun, Moon, ArrowLeft, Printer, Sparkles, Trash2
 } from 'lucide-react';
 import ChatBot from '../ChatBot/ChatBot';
 import './AdminPortal.css';
@@ -91,6 +91,7 @@ function AdminPortal() {
 
     // AI Agent — Auto-assign
     const [autoAssignLoadingId, setAutoAssignLoadingId] = useState(null);
+    const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
     // Inbox Queue
     const [inboxItems, setInboxItems]       = useState([]);
@@ -513,6 +514,18 @@ function AdminPortal() {
             alert('AI extraction failed: ' + (err.response?.data?.message || err.message));
         } finally {
             setEmailAnalyzing(false);
+        }
+    };
+
+    const handleDeleteEntry = async (id) => {
+        try {
+            await inwardAPI.delete(id);
+            setEntries(prev => prev.filter(e => e.id !== id));
+            setFilteredEntries(prev => prev.filter(e => e.id !== id));
+        } catch (err) {
+            alert('Failed to delete entry: ' + err.message);
+        } finally {
+            setDeleteConfirmId(null);
         }
     };
 
@@ -1270,6 +1283,20 @@ function AdminPortal() {
                                                     <button className="btn-icon" onClick={() => openReassignModal(entry)} title={entry.assignedTeam ? 'Reassign' : 'Assign'}>
                                                         <Edit3 size={16} />
                                                     </button>
+                                                    {deleteConfirmId === entry.id ? (
+                                                        <>
+                                                            <button className="btn-icon btn-icon--danger" onClick={() => handleDeleteEntry(entry.id)} title="Confirm delete">
+                                                                <Check size={14} />
+                                                            </button>
+                                                            <button className="btn-icon" onClick={() => setDeleteConfirmId(null)} title="Cancel">
+                                                                <X size={14} />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <button className="btn-icon btn-icon--danger-soft" onClick={() => setDeleteConfirmId(entry.id)} title="Delete entry">
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    )}
                                                 </>)}
                                             </div>
                                         </td>
