@@ -387,6 +387,7 @@ function AdminPortal() {
                 setShowForm(false);
                 resetForm();
                 loadData();
+                setCreateSuccess({ inwardNo, subject: formData.subject });
                 try {
                     const aiRes = await aiAPI.suggestAssign({
                         subject: formData.subject,
