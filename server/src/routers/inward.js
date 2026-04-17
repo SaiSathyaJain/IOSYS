@@ -118,6 +118,25 @@ inwardRouter.get('/:id', async (c) => {
     }
 });
 
+// Get next suggested inward number (for manual means pre-fill)
+inwardRouter.get('/next-no', async (c) => {
+    try {
+        const maxResult = await c.env.DB.prepare(`
+            SELECT MAX(seq) as max_seq FROM (
+                SELECT MAX(CAST(SUBSTR(inward_no, INSTR(inward_no, '-') + 1, 4) AS INTEGER)) as seq
+                FROM inward WHERE inward_no LIKE 'INW/%'
+                UNION ALL
+                SELECT MAX(CAST(SUBSTR(inward_no, INSTR(inward_no, '-') + 1, 4) AS INTEGER)) as seq
+                FROM inward_deleted WHERE inward_no LIKE 'INW/%'
+            )
+        `).first();
+        const nextCount = (maxResult?.max_seq || 0) + 1;
+        return c.json({ success: true, nextNo: nextCount.toString().padStart(4, '0') });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
 // Create new inward entry
 inwardRouter.post('/', async (c) => {
     try {
@@ -154,10 +173,15 @@ inwardRouter.post('/', async (c) => {
             const mm   = (entryDate.getMonth() + 1).toString().padStart(2, '0');
             const yyyy = entryDate.getFullYear();
             const maxResult = await c.env.DB.prepare(`
-                SELECT MAX(CAST(SUBSTR(inward_no, -4) AS INTEGER)) as max_seq
-                FROM inward WHERE inward_no LIKE 'INW/%'
+                SELECT MAX(seq) as max_seq FROM (
+                    SELECT MAX(CAST(SUBSTR(inward_no, INSTR(inward_no, '-') + 1, 4) AS INTEGER)) as seq
+                    FROM inward WHERE inward_no LIKE 'INW/%'
+                    UNION ALL
+                    SELECT MAX(CAST(SUBSTR(inward_no, INSTR(inward_no, '-') + 1, 4) AS INTEGER)) as seq
+                    FROM inward_deleted WHERE inward_no LIKE 'INW/%'
+                )
             `).first();
-            const nextCount = (maxResult.max_seq || 0) + 1;
+            const nextCount = (maxResult?.max_seq || 0) + 1;
             inwardNo = `INW/${dd}/${mm}/${yyyy}-${nextCount.toString().padStart(4, '0')}`;
         }
 

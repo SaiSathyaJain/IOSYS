@@ -13,6 +13,7 @@ const api = axios.create({
 export const inwardAPI = {
     getAll: () => api.get('/inward'),
     get: (id) => api.get(`/inward/${id}`),
+    getNextNo: () => api.get('/inward/next-no'),
     create: (data) => api.post('/inward', data),
     assign: (id, data) => api.put(`/inward/${id}/assign`, data),
     updateStatus: (id, status, fileReference, actor) => api.put(`/inward/${id}/status`, { assignmentStatus: status, ...(fileReference ? { fileReference } : {}), ...(actor ? { actor } : {}) }),

@@ -67,6 +67,7 @@ function AdminPortal() {
     const [formData, setFormData] = useState({
         means: '',
         inwardNo: '',
+        inwardNoSuffix: '',
         particularsFromWhom: '',
         subject: '',
         signReceiptDateTime: new Date().toISOString(),
@@ -365,7 +366,8 @@ function AdminPortal() {
                 const mm = (d.getMonth() + 1).toString().padStart(2, '0');
                 const yyyy = d.getFullYear();
                 const prefix = `INW/${dd}/${mm}/${yyyy}-`;
-                submitData = { ...formData, inwardNo: prefix + formData.inwardNo.trim() };
+                const suffix = formData.inwardNoSuffix?.trim() ? `-${formData.inwardNoSuffix.trim()}` : '';
+                submitData = { ...formData, inwardNo: prefix + formData.inwardNo.trim() + suffix };
             }
             const response = await inwardAPI.create(submitData);
             const newId      = response.data.id;
@@ -464,7 +466,7 @@ function AdminPortal() {
 
     const resetForm = () => {
         setFormData({
-            means: '', inwardNo: '', particularsFromWhom: '', subject: '',
+            means: '', inwardNo: '', inwardNoSuffix: '', particularsFromWhom: '', subject: '',
             signReceiptDateTime: new Date().toISOString(), assignedTeam: '', assignedToEmail: '',
             assignmentInstructions: '', dueDate: '', remarks: ''
         });
@@ -1035,7 +1037,7 @@ function AdminPortal() {
                                 <div className="grid-2">
                                     <div className="form-group">
                                         <label className="form-label">Means *</label>
-                                        <select name="means" className="form-select" value={formData.means} onChange={e => { handleChange(e); if (!MANUAL_INWARD_MEANS.includes(e.target.value)) setFormData(prev => ({ ...prev, inwardNo: '' })); }} required>
+                                        <select name="means" className="form-select" value={formData.means} onChange={async e => { handleChange(e); if (MANUAL_INWARD_MEANS.includes(e.target.value)) { try { const res = await inwardAPI.getNextNo(); setFormData(prev => ({ ...prev, inwardNo: res.data.nextNo, inwardNoSuffix: '' })); } catch {} } else { setFormData(prev => ({ ...prev, inwardNo: '', inwardNoSuffix: '' })); } }} required>
                                             <option value="">Select...</option>
                                             <option value="Post">Post</option>
                                             <option value="Email">Email</option>
@@ -1066,39 +1068,78 @@ function AdminPortal() {
                                 {MANUAL_INWARD_MEANS.includes(formData.means) && (
                                     <div className="form-group">
                                         <label className="form-label">Inward No.</label>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
-                                            <span style={{
-                                                fontFamily: 'monospace',
-                                                padding: '0 10px',
-                                                height: '38px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                background: 'var(--input-bg, rgba(255,255,255,0.05))',
-                                                border: '1px solid var(--border-color, rgba(255,255,255,0.15))',
-                                                borderRight: 'none',
-                                                borderRadius: '6px 0 0 6px',
-                                                color: 'var(--text-secondary, #94a3b8)',
-                                                whiteSpace: 'nowrap',
-                                                fontSize: '13px',
-                                            }}>
-                                                {formData.signReceiptDateTime ? (() => {
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {/* Main number: prefix + editable number */}
+                                            <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                                                <span style={{
+                                                    fontFamily: 'monospace',
+                                                    padding: '0 10px',
+                                                    height: '38px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    background: 'var(--input-bg, rgba(255,255,255,0.05))',
+                                                    border: '1px solid var(--border-color, rgba(255,255,255,0.15))',
+                                                    borderRight: 'none',
+                                                    borderRadius: '6px 0 0 6px',
+                                                    color: 'var(--text-secondary, #94a3b8)',
+                                                    whiteSpace: 'nowrap',
+                                                    fontSize: '13px',
+                                                }}>
+                                                    {formData.signReceiptDateTime ? (() => {
+                                                        const d = new Date(formData.signReceiptDateTime);
+                                                        const dd = d.getDate().toString().padStart(2, '0');
+                                                        const mm = (d.getMonth() + 1).toString().padStart(2, '0');
+                                                        const yyyy = d.getFullYear();
+                                                        return `INW/${dd}/${mm}/${yyyy}-`;
+                                                    })() : 'INW/DD/MM/YYYY-'}
+                                                </span>
+                                                <input
+                                                    type="text"
+                                                    name="inwardNo"
+                                                    className="form-input"
+                                                    value={formData.inwardNo}
+                                                    onChange={handleChange}
+                                                    placeholder="0113"
+                                                    style={{ fontFamily: 'monospace', borderRadius: '0 6px 6px 0', width: '80px' }}
+                                                />
+                                            </div>
+                                            {/* Optional suffix */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
+                                                <span style={{
+                                                    fontFamily: 'monospace',
+                                                    padding: '0 8px',
+                                                    height: '38px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    background: 'var(--input-bg, rgba(255,255,255,0.05))',
+                                                    border: '1px solid var(--border-color, rgba(255,255,255,0.15))',
+                                                    borderRight: 'none',
+                                                    borderRadius: '6px 0 0 6px',
+                                                    color: 'var(--text-secondary, #94a3b8)',
+                                                    fontSize: '13px',
+                                                }}>-</span>
+                                                <input
+                                                    type="text"
+                                                    name="inwardNoSuffix"
+                                                    className="form-input"
+                                                    value={formData.inwardNoSuffix}
+                                                    onChange={handleChange}
+                                                    placeholder="10 (optional)"
+                                                    style={{ fontFamily: 'monospace', borderRadius: '0 6px 6px 0', width: '110px' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        {formData.inwardNo && (
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px', fontFamily: 'monospace' }}>
+                                                Preview: {formData.signReceiptDateTime ? (() => {
                                                     const d = new Date(formData.signReceiptDateTime);
                                                     const dd = d.getDate().toString().padStart(2, '0');
                                                     const mm = (d.getMonth() + 1).toString().padStart(2, '0');
                                                     const yyyy = d.getFullYear();
-                                                    return `INW/${dd}/${mm}/${yyyy}-`;
-                                                })() : 'INW/DD/MM/YYYY-'}
-                                            </span>
-                                            <input
-                                                type="text"
-                                                name="inwardNo"
-                                                className="form-input"
-                                                value={formData.inwardNo}
-                                                onChange={handleChange}
-                                                placeholder="0042"
-                                                style={{ fontFamily: 'monospace', borderRadius: '0 6px 6px 0', flex: 1 }}
-                                            />
-                                        </div>
+                                                    return `INW/${dd}/${mm}/${yyyy}-${formData.inwardNo}${formData.inwardNoSuffix?.trim() ? `-${formData.inwardNoSuffix.trim()}` : ''}`;
+                                                })() : formData.inwardNo}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
