@@ -149,23 +149,13 @@ inwardRouter.post('/', async (c) => {
 
         const MANUAL_MEANS = ['Post', 'Hand Delivery', 'Courier'];
 
-        // sequence_no is computed first so we can use it as a unique placeholder if needed
-        const seqResultPre = await c.env.DB.prepare(`
-            SELECT MAX(seq) as max_seq FROM (
-                SELECT MAX(sequence_no) as seq FROM inward
-                UNION ALL
-                SELECT MAX(sequence_no) as seq FROM inward_deleted
-            )
-        `).first();
-        const nextSeq = (seqResultPre?.max_seq || 0) + 1;
-
         let inwardNo;
         if (MANUAL_MEANS.includes(means) && manualInwardNo?.trim()) {
             // Admin supplied an explicit inward number
             inwardNo = manualInwardNo.trim();
         } else if (MANUAL_MEANS.includes(means)) {
-            // Manual means but no number given — use a unique internal placeholder (hidden in UI)
-            inwardNo = `NOINW-${nextSeq}`;
+            // Manual means but no number given — placeholder; uses id after insert (no sequence consumed)
+            inwardNo = null; // will be set after insert using the row id
         } else {
             // Auto-generate: INW/DD/MM/YYYY-0000 for Email etc.
             const entryDate = new Date(signReceiptDateTime);
@@ -188,6 +178,22 @@ inwardRouter.post('/', async (c) => {
         const assignmentStatus = assignedTeam ? 'Pending' : 'Unassigned';
         const assignmentDate = assignedTeam ? new Date().toISOString() : null;
 
+        // sequence_no only counts real entries (not NOINW placeholders)
+        const isNoinw = inwardNo === null;
+        let nextSeq = null;
+        if (!isNoinw) {
+            const seqResult = await c.env.DB.prepare(`
+                SELECT MAX(seq) as max_seq FROM (
+                    SELECT MAX(sequence_no) as seq FROM inward WHERE inward_no NOT LIKE 'NOINW-%'
+                    UNION ALL
+                    SELECT MAX(sequence_no) as seq FROM inward_deleted WHERE inward_no NOT LIKE 'NOINW-%'
+                )
+            `).first();
+            nextSeq = (seqResult?.max_seq || 0) + 1;
+        }
+
+        // Insert with a temporary placeholder for NOINW — will be updated with real id after insert
+        const tempInwardNo = isNoinw ? `NOINW-TEMP-${Date.now()}` : inwardNo;
         const result = await c.env.DB.prepare(`
             INSERT INTO inward (
                 sequence_no, inward_no, means, particulars_from_whom, subject,
@@ -196,7 +202,7 @@ inwardRouter.post('/', async (c) => {
                 assignment_status, due_date, remarks
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
         `).bind(
-            nextSeq, inwardNo, means, particularsFromWhom, subject,
+            nextSeq, tempInwardNo, means, particularsFromWhom, subject,
             signReceiptDateTime, fileReference || '', assignedTeam || null,
             assignedToEmail || null, assignmentInstructions || '', assignmentDate,
             assignmentStatus, dueDate || null, remarks || ''
@@ -204,6 +210,12 @@ inwardRouter.post('/', async (c) => {
 
         const insertedEntry = toCamelCase(result);
         const id = insertedEntry.id;
+
+        // For NOINW entries, update inward_no to use the stable row id
+        if (isNoinw) {
+            inwardNo = `NOINW-${id}`;
+            await c.env.DB.prepare('UPDATE inward SET inward_no = ? WHERE id = ?').bind(inwardNo, id).run();
+        }
 
         // Audit log
         await c.env.DB.prepare(
