@@ -2232,7 +2232,7 @@ function AdminPortal() {
                 </div>
             )}
 
-            <ChatBot onFindEntry={handleFindEntry} />
+            <ChatBot onFindEntry={handleFindEntry} storageKey="iosys_chat_admin" />
 
             {/* Subject Tooltip */}
             {tooltip.visible && (

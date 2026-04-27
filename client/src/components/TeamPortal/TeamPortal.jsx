@@ -8,6 +8,7 @@ import {
     ArrowUpFromLine, ArrowLeft, Loader2, AlertTriangle, Link2, Lock,
     Sun, Moon, LayoutDashboard, Send, History, User, Download
 } from 'lucide-react';
+import ChatBot from '../ChatBot/ChatBot';
 import './TeamPortal.css';
 
 const TEAM_MAP = { 'ug': 'UG', 'pg-pro': 'PG/PRO', 'phd': 'PhD' };
@@ -1093,6 +1094,8 @@ function TeamPortal() {
                     </div>
                 </div>
             )}
+
+            <ChatBot storageKey="iosys_chat_team" />
         </motion.div>
     );
 }

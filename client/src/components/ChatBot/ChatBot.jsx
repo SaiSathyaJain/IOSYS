@@ -338,13 +338,11 @@ function MessageContent({ content, onSend, onFindEntry }) {
     );
 }
 
-const CHAT_STORAGE_KEY = 'iosys_chat_messages';
-
-function ChatBot({ onFindEntry }) {
+function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages' }) {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState(() => {
         try {
-            const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+            const saved = localStorage.getItem(storageKey);
             if (saved) return JSON.parse(saved);
         } catch { /* ignore */ }
         return [INITIAL_MESSAGE];
@@ -361,8 +359,8 @@ function ChatBot({ onFindEntry }) {
 
     // Persist chat history to localStorage
     useEffect(() => {
-        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
-    }, [messages]);
+        localStorage.setItem(storageKey, JSON.stringify(messages));
+    }, [messages, storageKey]);
 
     // Close model picker when clicking outside
     useEffect(() => {
@@ -497,7 +495,7 @@ function ChatBot({ onFindEntry }) {
     const resetChat = () => {
         setMessages([INITIAL_MESSAGE]);
         setInput('');
-        localStorage.removeItem(CHAT_STORAGE_KEY);
+        localStorage.removeItem(storageKey);
     };
 
     return (
