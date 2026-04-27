@@ -1059,6 +1059,45 @@
     -webkit-backdrop-filter: none;
 }
 
+[data-theme="dark"] .modal-header {
+    background: rgba(91, 124, 255, 0.08);
+    border-bottom-color: rgba(255,255,255,0.08);
+    border-top-color: var(--primary);
+}
+
+[data-theme="dark"] .modal-header h3 {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .modal-footer {
+    background: #0b1120;
+    border-top-color: rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .modal-body {
+    background: #0f172a;
+}
+
+[data-theme="dark"] .btn-close {
+    color: #94a3b8;
+    background: rgba(255,255,255,0.05);
+}
+
+[data-theme="dark"] .btn-close:hover {
+    background: rgba(255,255,255,0.12);
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .btn.btn-secondary {
+    background: rgba(255,255,255,0.07);
+    color: #cbd5e1;
+    border-color: rgba(255,255,255,0.12);
+}
+
+[data-theme="dark"] .btn.btn-secondary:hover {
+    background: rgba(255,255,255,0.12);
+}
+
 [data-theme="light"] .modal {
     background: #ffffff;
     border-color: #d1d9e6;
