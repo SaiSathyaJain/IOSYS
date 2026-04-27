@@ -668,6 +668,48 @@
     background: #fef2f2;
 }
 
+/* Highlighted row — jump-to from chatbot */
+.table tr.highlighted-row td {
+    background: rgba(91, 69, 212, 0.12);
+    animation: row-highlight-fade 4s ease forwards;
+}
+[data-theme="light"] .table tr.highlighted-row td {
+    background: rgba(91, 69, 212, 0.07);
+}
+@keyframes row-highlight-fade {
+    0%   { background: rgba(91, 69, 212, 0.22); }
+    60%  { background: rgba(91, 69, 212, 0.12); }
+    100% { background: transparent; }
+}
+
+/* Reminder banners */
+.reminder-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1rem;
+    margin-bottom: 0.5rem;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 8px;
+    font-size: 0.83rem;
+}
+.reminder-banner-icon { font-size: 1rem; flex-shrink: 0; }
+.reminder-banner-text { flex: 1; color: var(--text-primary); }
+.reminder-banner-no { color: #b45309; font-family: monospace; font-size: 0.78rem; }
+[data-theme="dark"] .reminder-banner-no { color: #fbbf24; }
+.reminder-banner-dismiss {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.reminder-banner-dismiss:hover { background: rgba(0,0,0,0.07); color: #64748b; }
+
 .subject-cell {
     max-width: 250px;
 }

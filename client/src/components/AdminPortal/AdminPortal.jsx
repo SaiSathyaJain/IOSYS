@@ -112,6 +112,10 @@ function AdminPortal() {
     const INBOX_PAGE_SIZE = 5;
     const [inboxViewItem, setInboxViewItem]     = useState(null); // email body viewer
 
+    // ChatBot — jump to entry & reminder banner
+    const [highlightedInwardNo, setHighlightedInwardNo] = useState(null);
+    const [dueReminderBanners, setDueReminderBanners] = useState([]);
+
     // Close topmost open modal on Escape — placed after all modal state declarations
     useEffect(() => {
         const onEsc = (e) => {
@@ -180,6 +184,13 @@ function AdminPortal() {
         if (user) {
             try { setUserPhoto(JSON.parse(user).picture); } catch (e) {}
         }
+        // Check for due reminders
+        try {
+            const reminders = JSON.parse(localStorage.getItem('iosys_reminders') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            const due = reminders.filter(r => !r.dismissed && r.dueDate <= today);
+            if (due.length > 0) setDueReminderBanners(due);
+        } catch { /* ignore */ }
     }, []);
 
     useEffect(() => {
@@ -626,6 +637,25 @@ function AdminPortal() {
         });
     };
 
+    const handleFindEntry = (inwardNo) => {
+        setAdminPage('registers');
+        setInwardTab('all');
+        setSearchTerm(inwardNo);
+        setInwardPage(1);
+        setHighlightedInwardNo(inwardNo);
+        setTimeout(() => setHighlightedInwardNo(null), 4000);
+    };
+
+    const dismissReminderBanner = (id) => {
+        setDueReminderBanners(prev => prev.filter(r => r.id !== id));
+        try {
+            const all = JSON.parse(localStorage.getItem('iosys_reminders') || '[]');
+            localStorage.setItem('iosys_reminders', JSON.stringify(
+                all.map(r => r.id === id ? { ...r, dismissed: true } : r)
+            ));
+        } catch { /* ignore */ }
+    };
+
     const openDetailsModal = (entry) => {
         setSelectedEntry(entry);
         setShowModal(true);
@@ -982,6 +1012,18 @@ function AdminPortal() {
             </nav>
 
         <div className="admin-portal animate-fade">
+            {/* Reminder banners */}
+            {dueReminderBanners.map(r => (
+                <div key={r.id} className="reminder-banner">
+                    <span className="reminder-banner-icon">🔔</span>
+                    <span className="reminder-banner-text">
+                        <strong>Reminder due:</strong> {r.note}
+                        {r.entryNo && <span className="reminder-banner-no"> ({r.entryNo})</span>}
+                    </span>
+                    <button className="reminder-banner-dismiss" onClick={() => dismissReminderBanner(r.id)}>✕</button>
+                </div>
+            ))}
+
             {/* Header */}
             <div className="page-header">
                 <h2 className="page-title"><Inbox className="icon-svg" /> Admin Portal</h2>
@@ -1341,7 +1383,10 @@ function AdminPortal() {
                                 {(inwardTab === 'manual' ? filteredEntries.filter(e => MANUAL_INWARD_MEANS.includes(e.means)) : filteredEntries).slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry, index) => (
                                     <motion.tr
                                         key={entry.id}
-                                        className={isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : ''}
+                                        className={[
+                                            isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : '',
+                                            highlightedInwardNo && entry.inwardNo === highlightedInwardNo ? 'highlighted-row' : '',
+                                        ].filter(Boolean).join(' ')}
                                         variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0, transition: { duration: 0.15 } } }}
                                     >
                                         <td>{entry.sequenceNo ?? (inwardPage - 1) * INWARD_PAGE_SIZE + index + 1}</td>
@@ -2187,7 +2232,7 @@ function AdminPortal() {
                 </div>
             )}
 
-            <ChatBot />
+            <ChatBot onFindEntry={handleFindEntry} />
 
             {/* Subject Tooltip */}
             {tooltip.visible && (

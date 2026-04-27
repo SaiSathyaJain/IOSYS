@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu, Bell, ExternalLink } from 'lucide-react';
 
 const SEARCH_STEPS = [
     { icon: Database, label: 'Fetching live data…'      },
@@ -110,10 +110,53 @@ const OUTWARD_FIELDS = [
     { key: 'file',    label: 'File'    },
 ];
 
-function EntryCard({ entry }) {
+function ReminderForm({ entry, onSave, onCancel }) {
+    const [date, setDate] = useState('');
+    const [note, setNote] = useState('');
+    const minDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+    const handleSave = () => {
+        if (!date) return;
+        const reminder = {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            entryNo: entry.no,
+            entrySubject: entry.subject || '',
+            note: note.trim() || `Follow up on ${entry.no}`,
+            dueDate: date,
+            createdAt: new Date().toISOString(),
+            dismissed: false,
+        };
+        const existing = JSON.parse(localStorage.getItem('iosys_reminders') || '[]');
+        localStorage.setItem('iosys_reminders', JSON.stringify([...existing, reminder]));
+        onSave();
+    };
+
+    return (
+        <div className="chatbot-reminder-form">
+            <div className="chatbot-reminder-form-title"><Bell size={12} /> Set reminder for {entry.no}</div>
+            <input type="date" className="chatbot-reminder-date" min={minDate} value={date} onChange={e => setDate(e.target.value)} />
+            <input type="text" className="chatbot-reminder-note" placeholder="Note (optional)" value={note} onChange={e => setNote(e.target.value)} maxLength={120} />
+            <div className="chatbot-reminder-actions">
+                <button className="chatbot-reminder-cancel" onClick={onCancel}>Cancel</button>
+                <button className="chatbot-reminder-save" onClick={handleSave} disabled={!date}><Bell size={11} /> Save</button>
+            </div>
+        </div>
+    );
+}
+
+function EntryCard({ entry, onFindEntry }) {
+    const [showReminderForm, setShowReminderForm] = useState(false);
+    const [reminderSaved, setReminderSaved] = useState(false);
     const type   = entry.type === 'outward' ? 'outward' : 'inward';
     const schema = type === 'outward' ? OUTWARD_FIELDS : INWARD_FIELDS;
     const fields = schema.filter(f => entry[f.key] && entry[f.key] !== '');
+    const isInward = type === 'inward' && entry.no?.startsWith('INW/');
+
+    const handleReminderSaved = () => {
+        setShowReminderForm(false);
+        setReminderSaved(true);
+        setTimeout(() => setReminderSaved(false), 3000);
+    };
 
     return (
         <div className={`chatbot-entry-card chatbot-entry-card--${type}`}>
@@ -142,6 +185,22 @@ function EntryCard({ entry }) {
                     </div>
                 ))}
             </div>
+            <div className="chatbot-entry-actions">
+                {isInward && onFindEntry && (
+                    <button className="chatbot-entry-action-btn" onClick={() => onFindEntry(entry.no)} title="Jump to this entry in the table">
+                        <ExternalLink size={11} /> View in table
+                    </button>
+                )}
+                {isInward && !reminderSaved && (
+                    <button className="chatbot-entry-action-btn chatbot-entry-action-btn--reminder" onClick={() => setShowReminderForm(v => !v)} title="Set a follow-up reminder">
+                        <Bell size={11} /> Remind me
+                    </button>
+                )}
+                {reminderSaved && <span className="chatbot-reminder-saved">✓ Reminder set</span>}
+            </div>
+            {showReminderForm && (
+                <ReminderForm entry={entry} onSave={handleReminderSaved} onCancel={() => setShowReminderForm(false)} />
+            )}
         </div>
     );
 }
@@ -254,7 +313,7 @@ function MarkdownBlock({ text }) {
 }
 
 // Render assistant message: markdown text + optional entry cards + load more button
-function MessageContent({ content, onSend }) {
+function MessageContent({ content, onSend, onFindEntry }) {
     const { text, entries, showing, total } = parseAIReply(content);
     const hasMore = showing !== null && total !== null && showing < total;
     const nextStart = showing + 1;
@@ -268,7 +327,7 @@ function MessageContent({ content, onSend }) {
         <div className="chatbot-message-content">
             {text && <MarkdownBlock text={text} />}
             {entries.filter(e => e.no || e.subject || e.from || e.to).map((entry, i) => (
-                <EntryCard key={i} entry={entry} />
+                <EntryCard key={i} entry={entry} onFindEntry={onFindEntry} />
             ))}
             {hasMore && (
                 <button className="chatbot-load-more" onClick={handleShowMore}>
@@ -279,9 +338,17 @@ function MessageContent({ content, onSend }) {
     );
 }
 
-function ChatBot() {
+const CHAT_STORAGE_KEY = 'iosys_chat_messages';
+
+function ChatBot({ onFindEntry }) {
     const [open, setOpen] = useState(false);
-    const [messages, setMessages] = useState([INITIAL_MESSAGE]);
+    const [messages, setMessages] = useState(() => {
+        try {
+            const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+            if (saved) return JSON.parse(saved);
+        } catch { /* ignore */ }
+        return [INITIAL_MESSAGE];
+    });
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [streaming, setStreaming] = useState(false);
@@ -291,6 +358,11 @@ function ChatBot() {
     const inputRef = useRef(null);
     const chipsRef = useRef(null);
     const modelPickerRef = useRef(null);
+
+    // Persist chat history to localStorage
+    useEffect(() => {
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    }, [messages]);
 
     // Close model picker when clicking outside
     useEffect(() => {
@@ -425,6 +497,7 @@ function ChatBot() {
     const resetChat = () => {
         setMessages([INITIAL_MESSAGE]);
         setInput('');
+        localStorage.removeItem(CHAT_STORAGE_KEY);
     };
 
     return (
@@ -507,7 +580,7 @@ function ChatBot() {
                                 )}
                                 {msg.role === 'assistant' ? (
                                     <div className="chatbot-bubble chatbot-bubble--assistant">
-                                        <MessageContent content={msg.content} onSend={sendMessage} />
+                                        <MessageContent content={msg.content} onSend={sendMessage} onFindEntry={onFindEntry} />
                                     </div>
                                 ) : (
                                     <div className="chatbot-bubble chatbot-bubble--user">
