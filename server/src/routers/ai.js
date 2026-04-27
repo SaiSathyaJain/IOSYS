@@ -50,8 +50,35 @@ Return ONLY the JSON object:`;
 
         if (!groqRes.ok) {
             const errText = await groqRes.text();
-            console.error('Groq extract error:', groqRes.status, errText);
-            return c.json({ success: false, message: 'AI service error' }, 500);
+            console.error('OpenRouter extract error:', groqRes.status, errText);
+            // Try a fallback model
+            const fallbackRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
+                    'X-Title': 'IOSYS Assistant',
+                },
+                body: JSON.stringify({
+                    model: 'openai/gpt-oss-20b:free',
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 300,
+                    temperature: 0.1,
+                }),
+            });
+            if (!fallbackRes.ok) {
+                return c.json({ success: false, message: 'AI service unavailable. Please try again later.' }, 500);
+            }
+            const fallbackData = await fallbackRes.json();
+            const raw2 = fallbackData.choices?.[0]?.message?.content || '';
+            const jsonStr2 = raw2.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            try {
+                const fields = JSON.parse(jsonStr2);
+                return c.json({ success: true, fields });
+            } catch {
+                return c.json({ success: false, message: 'AI returned invalid JSON. Try with clearer text.' }, 500);
+            }
         }
 
         const groqData = await groqRes.json();
@@ -118,34 +145,66 @@ Return ONLY valid JSON — no explanation, no markdown:
   "reasoning": "One sentence explaining the team choice"
 }`;
 
-        const agentHeaders = { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
-        if (!useGroq) {
-            agentHeaders['HTTP-Referer'] = 'https://iosys.coeofficeinward.workers.dev';
-            agentHeaders['X-Title'] = 'IOSYS Agent';
-        }
-
-        const res = await fetch(
-            useGroq
-                ? 'https://api.groq.com/openai/v1/chat/completions'
-                : 'https://openrouter.ai/api/v1/chat/completions',
-            {
+        // Use Groq if available, otherwise try multiple OpenRouter models with fallback
+        let raw = '';
+        if (useGroq) {
+            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
-                headers: agentHeaders,
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: useGroq ? 'llama3-8b-8192' : 'nvidia/nemotron-3-nano-30b-a3b:free',
+                    model: 'llama3-8b-8192',
                     messages: [{ role: 'user', content: prompt }],
                     max_tokens: 250,
                     temperature: 0.1,
                 }),
+            });
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error('Groq agent error:', res.status, errText);
+                return c.json({ success: false, message: 'AI service error' }, 500);
             }
-        );
-
-        if (!res.ok) {
-            return c.json({ success: false, message: 'AI service error' }, 500);
+            const data = await res.json();
+            raw = data.choices?.[0]?.message?.content || '';
+        } else {
+            const FALLBACK_MODELS = [
+                'nvidia/nemotron-3-nano-30b-a3b:free',
+                'openai/gpt-oss-20b:free',
+                'nvidia/nemotron-3-super-120b-a12b:free',
+                'openai/gpt-oss-120b:free',
+            ];
+            const orHeaders = {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
+                'X-Title': 'IOSYS Agent',
+            };
+            let succeeded = false;
+            for (const tryModel of FALLBACK_MODELS) {
+                const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: orHeaders,
+                    body: JSON.stringify({
+                        model: tryModel,
+                        messages: [{ role: 'user', content: prompt }],
+                        max_tokens: 250,
+                        temperature: 0.1,
+                    }),
+                });
+                if (!res.ok) {
+                    const errText = await res.text();
+                    console.error(`Agent model ${tryModel} failed:`, res.status, errText);
+                    continue;
+                }
+                const data = await res.json();
+                raw = data.choices?.[0]?.message?.content || '';
+                succeeded = true;
+                break;
+            }
+            if (!succeeded) {
+                return c.json({ success: false, message: 'All AI models are currently unavailable. Please try again later.' }, 500);
+            }
         }
 
-        const data = await res.json();
-        const raw = data.choices?.[0]?.message?.content || '';
         const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
         let suggestion;
