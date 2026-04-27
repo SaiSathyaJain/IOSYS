@@ -1457,134 +1457,123 @@ function AdminPortal() {
                                 <button className="bulk-results-close" onClick={() => setBulkResults(null)}>✕</button>
                             </div>
                         )}
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    {isAdmin && (
-                                        <th style={{ width: '36px' }}>
-                                            <input type="checkbox"
-                                                title="Select all unassigned on this page"
-                                                onChange={e => {
-                                                    const pageEntries = (inwardTab === 'manual' ? filteredEntries.filter(e => MANUAL_INWARD_MEANS.includes(e.means)) : filteredEntries).slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).filter(e => !e.assignedTeam);
-                                                    setSelectedIds(prev => {
-                                                        const next = new Set(prev);
-                                                        pageEntries.forEach(e => e.checked ? next.delete(e.id) : (e.checked = true));
-                                                        if (e.target.checked) pageEntries.forEach(e => next.add(e.id));
-                                                        else pageEntries.forEach(e => next.delete(e.id));
-                                                        return next;
-                                                    });
-                                                }}
-                                            />
-                                        </th>
-                                    )}
-                                    <th>Sl.No.</th>
-                                    <th>Date of Inward</th>
-                                    <th>Mode</th>
-                                    <th>From</th>
-                                    <th>Particulars</th>
-                                    <th>Assigned To</th>
-                                    <th>File Ref</th>
-                                    <th>Remarks</th>
-                                    <th>Signature</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <motion.tbody
-                                variants={{ animate: { transition: { staggerChildren: 0.04 } } }}
-                                initial="initial"
-                                animate="animate"
-                            >
-                                {(inwardTab === 'manual' ? filteredEntries.filter(e => MANUAL_INWARD_MEANS.includes(e.means)) : filteredEntries).slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).map((entry, index) => (
-                                    <motion.tr
-                                        key={entry.id}
-                                        className={[
-                                            isOverdue(entry.dueDate, entry.assignmentStatus) ? 'overdue-row' : '',
-                                            highlightedInwardNo && entry.inwardNo === highlightedInwardNo ? 'highlighted-row' : '',
-                                        ].filter(Boolean).join(' ')}
-                                        variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0, transition: { duration: 0.15 } } }}
-                                    >
-                                        {isAdmin && (
-                                            <td style={{ width: '36px' }}>
-                                                {!entry.assignedTeam && (
-                                                    <input type="checkbox"
-                                                        checked={selectedIds.has(entry.id)}
-                                                        onChange={e => setSelectedIds(prev => {
-                                                            const next = new Set(prev);
-                                                            e.target.checked ? next.add(entry.id) : next.delete(entry.id);
-                                                            return next;
-                                                        })}
-                                                    />
+                        <div className="inward-list">
+                            {/* Header strip */}
+                            <div className="inward-list-header">
+                                {isAdmin && <span className="ilh-check" />}
+                                <span className="ilh-seq">#</span>
+                                <span className="ilh-entry">Entry / Date</span>
+                                <span className="ilh-spacer" />
+                                <span className="ilh-team">Team · Status</span>
+                                <span className="ilh-actions">Actions</span>
+                            </div>
+
+                            {(() => {
+                                const pagedEntries = (inwardTab === 'manual' ? filteredEntries.filter(e => MANUAL_INWARD_MEANS.includes(e.means)) : filteredEntries).slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE);
+                                return pagedEntries.map((entry, index) => {
+                                    const seq = entry.sequenceNo ?? (inwardPage - 1) * INWARD_PAGE_SIZE + index + 1;
+                                    const inwardNo = entry.inwardNo?.startsWith('NOINW-') ? '-' : entry.inwardNo;
+                                    const overdue = isOverdue(entry.dueDate, entry.assignmentStatus);
+                                    const highlighted = highlightedInwardNo && entry.inwardNo === highlightedInwardNo;
+                                    const statusKey = (entry.assignmentStatus || 'unassigned').toLowerCase().replace(/\s+/g, '-');
+                                    return (
+                                        <motion.div
+                                            key={entry.id}
+                                            className={['inward-card', overdue ? 'inward-card--overdue' : '', highlighted ? 'inward-card--highlighted' : ''].filter(Boolean).join(' ')}
+                                            variants={{ initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0, transition: { duration: 0.14 } } }}
+                                            initial="initial"
+                                            animate="animate"
+                                        >
+                                            {/* Top row */}
+                                            <div className="ic-top">
+                                                {isAdmin && (
+                                                    <div className="ic-check">
+                                                        {!entry.assignedTeam && (
+                                                            <input type="checkbox"
+                                                                checked={selectedIds.has(entry.id)}
+                                                                onChange={e => setSelectedIds(prev => {
+                                                                    const next = new Set(prev);
+                                                                    e.target.checked ? next.add(entry.id) : next.delete(entry.id);
+                                                                    return next;
+                                                                })}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 )}
-                                            </td>
-                                        )}
-                                        <td>{entry.sequenceNo ?? (inwardPage - 1) * INWARD_PAGE_SIZE + index + 1}</td>
-                                        <td>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDatetime)}</div>
-                                            <strong style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{entry.inwardNo?.startsWith('NOINW-') ? '-' : entry.inwardNo}</strong>
-                                        </td>
-                                        <td>{entry.means || '-'}</td>
-                                        <td>{entry.particularsFromWhom}</td>
-                                        <td className="subject-cell">
-                                            <div
-                                                className="subject-text"
-                                                onMouseEnter={e => setTooltip({ text: entry.subject, x: e.clientX, y: e.clientY, visible: true })}
-                                                onMouseMove={e => setTooltip(t => ({ ...t, x: e.clientX, y: e.clientY }))}
-                                                onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
-                                            >{entry.subject}</div>
-                                        </td>
-                                        <td>
-                                            {entry.assignedTeam ? (
-                                                <span className="badge badge-team">{entry.assignedTeam}</span>
-                                            ) : (
-                                                <span className="badge badge-none">-</span>
-                                            )}
-                                        </td>
-                                        <td>{entry.fileReference || '-'}</td>
-                                        <td>{entry.remarks || '-'}</td>
-                                        <td></td>
-                                        <td>
-                                            <div className="action-buttons">
-                                                <button className="btn-icon" onClick={() => openDetailsModal(entry)} title="View Details">
-                                                    <Eye size={16} />
-                                                </button>
-                                                {isAdmin && (<>
-                                                    {!entry.assignedTeam && (
-                                                        <button
-                                                            className={`btn-icon btn-icon--ai${autoAssignLoadingId === entry.id ? ' loading' : ''}`}
-                                                            onClick={() => handleAutoAssign(entry)}
-                                                            disabled={autoAssignLoadingId === entry.id}
-                                                            title="AI: suggest team assignment"
-                                                        >
-                                                            {autoAssignLoadingId === entry.id
-                                                                ? <Loader2 size={14} className="spin" />
-                                                                : <Sparkles size={14} />
-                                                            }
-                                                        </button>
+                                                <span className="ic-seq">{seq}</span>
+                                                <span className="ic-no">{inwardNo}</span>
+                                                <div className="ic-meta">
+                                                    <span className="ic-date">{formatDate(entry.signReceiptDatetime)}</span>
+                                                    {entry.means && <span className="ic-mode">{entry.means}</span>}
+                                                    {entry.fileReference && <span className="ic-fileref">{entry.fileReference}</span>}
+                                                    {entry.dueDate && (
+                                                        <span className={`ic-due${overdue ? ' ic-due--overdue' : ''}`}>
+                                                            Due {entry.dueDate}
+                                                        </span>
                                                     )}
-                                                    <button className="btn-icon" onClick={() => openReassignModal(entry)} title={entry.assignedTeam ? 'Reassign' : 'Assign'}>
-                                                        <Edit3 size={16} />
+                                                </div>
+                                                <div className="ic-badges">
+                                                    {entry.assignedTeam
+                                                        ? <span className="badge badge-team">{entry.assignedTeam}</span>
+                                                        : <span className="ic-unassigned">Unassigned</span>
+                                                    }
+                                                    <span className={`badge badge-status badge-status--${statusKey}`}>
+                                                        {entry.assignmentStatus || 'Unassigned'}
+                                                    </span>
+                                                </div>
+                                                <div className="ic-actions">
+                                                    <button className="btn-icon" onClick={() => openDetailsModal(entry)} title="View Details">
+                                                        <Eye size={15} />
                                                     </button>
-                                                    {deleteConfirmId === entry.id ? (
-                                                        <>
-                                                            <button className="btn-icon btn-icon--danger" onClick={() => handleDeleteEntry(entry.id)} title="Confirm delete">
-                                                                <Check size={14} />
+                                                    {isAdmin && (<>
+                                                        {!entry.assignedTeam && (
+                                                            <button
+                                                                className={`btn-icon btn-icon--ai${autoAssignLoadingId === entry.id ? ' loading' : ''}`}
+                                                                onClick={() => handleAutoAssign(entry)}
+                                                                disabled={autoAssignLoadingId === entry.id}
+                                                                title="AI: suggest team assignment"
+                                                            >
+                                                                {autoAssignLoadingId === entry.id ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
                                                             </button>
-                                                            <button className="btn-icon" onClick={() => setDeleteConfirmId(null)} title="Cancel">
-                                                                <X size={14} />
-                                                            </button>
-                                                        </>
-                                                    ) : (
-                                                        <button className="btn-icon btn-icon--danger-soft" onClick={() => setDeleteConfirmId(entry.id)} title="Delete entry">
-                                                            <Trash2 size={15} />
+                                                        )}
+                                                        <button className="btn-icon" onClick={() => openReassignModal(entry)} title={entry.assignedTeam ? 'Reassign' : 'Assign'}>
+                                                            <Edit3 size={15} />
                                                         </button>
-                                                    )}
-                                                </>)}
+                                                        {deleteConfirmId === entry.id ? (
+                                                            <>
+                                                                <button className="btn-icon btn-icon--danger" onClick={() => handleDeleteEntry(entry.id)} title="Confirm delete"><Check size={13} /></button>
+                                                                <button className="btn-icon" onClick={() => setDeleteConfirmId(null)} title="Cancel"><X size={13} /></button>
+                                                            </>
+                                                        ) : (
+                                                            <button className="btn-icon btn-icon--danger-soft" onClick={() => setDeleteConfirmId(entry.id)} title="Delete entry"><Trash2 size={14} /></button>
+                                                        )}
+                                                    </>)}
+                                                </div>
                                             </div>
-                                        </td>
-                                    </motion.tr>
-                                ))}
-                            </motion.tbody>
-                        </table>
+                                            {/* Bottom row */}
+                                            <div className="ic-bottom">
+                                                <span className="ic-from">{entry.particularsFromWhom}</span>
+                                                <span className="ic-arrow">→</span>
+                                                <span
+                                                    className="ic-subject"
+                                                    onMouseEnter={e => setTooltip({ text: entry.subject, x: e.clientX, y: e.clientY, visible: true })}
+                                                    onMouseMove={e => setTooltip(t => ({ ...t, x: e.clientX, y: e.clientY }))}
+                                                    onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
+                                                >{entry.subject}</span>
+                                                {entry.remarks && (
+                                                    <span
+                                                        className="ic-remarks"
+                                                        onMouseEnter={e => setTooltip({ text: entry.remarks, x: e.clientX, y: e.clientY, visible: true })}
+                                                        onMouseMove={e => setTooltip(t => ({ ...t, x: e.clientX, y: e.clientY }))}
+                                                        onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
+                                                    >{entry.remarks}</span>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    );
+                                });
+                            })()}
+                        </div>
                         {filteredEntries.length > INWARD_PAGE_SIZE && (() => {
                             const totalPages = Math.ceil(filteredEntries.length / INWARD_PAGE_SIZE);
                             const pct = totalPages > 1 ? ((inwardPage - 1) / (totalPages - 1)) * 100 : 0;
