@@ -57,6 +57,7 @@ function AdminPortal() {
         setTimeout(() => { setClosingModal(null); fn(); }, 190);
     };
     const [reassignData, setReassignData] = useState({
+        subject: '',
         assignedTeam: '',
         assignedToEmail: '',
         assignmentInstructions: '',
@@ -633,6 +634,7 @@ function AdminPortal() {
     const openReassignModal = (entry) => {
         setSelectedEntry(entry);
         setReassignData({
+            subject: entry.subject || '',
             assignedTeam: entry.assignedTeam || '',
             assignedToEmail: entry.assignedToEmail || '',
             assignmentInstructions: entry.assignmentInstructions || '',
@@ -1604,7 +1606,7 @@ function AdminPortal() {
                 <div className={`modal-overlay${closingModal === 'reassign' ? ' closing' : ''}`} onClick={() => closeWithAnimation('reassign', () => setShowReassignModal(false))}>
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3><Edit3 size={20} /> {selectedEntry?.assignedTeam ? 'Reassign Entry' : 'Assign Entry'}</h3>
+                            <h3><Edit3 size={20} /> Edit Entry</h3>
                             <button className="btn-close" onClick={() => closeWithAnimation('reassign', () => setShowReassignModal(false))}>
                                 <X size={20} />
                             </button>
@@ -1612,8 +1614,15 @@ function AdminPortal() {
                         <form onSubmit={handleReassign}>
                             <div className="modal-body">
                                 <p className="modal-info">
-                                    Reassigning: <strong>{selectedEntry.inwardNo?.startsWith('NOINW-') ? '-' : selectedEntry.inwardNo}</strong> - {selectedEntry.subject}
+                                    Editing: <strong>{selectedEntry.inwardNo?.startsWith('NOINW-') ? '-' : selectedEntry.inwardNo}</strong>
                                 </p>
+
+                                <div className="form-group">
+                                    <label className="form-label">Subject *</label>
+                                    <input type="text" name="subject" className="form-input"
+                                        value={reassignData.subject} onChange={handleReassignChange}
+                                        required placeholder="Subject" />
+                                </div>
 
                                 <div className="form-group">
                                     <label className="form-label">Assign to Team *</label>

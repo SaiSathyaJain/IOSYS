@@ -241,7 +241,7 @@ inwardRouter.put('/:id/assign', async (c) => {
     try {
         const id = c.req.param('id');
         const body = await c.req.json();
-        const { assignedTeam, assignedToEmail, assignmentInstructions, dueDate } = body;
+        const { subject, assignedTeam, assignedToEmail, assignmentInstructions, dueDate } = body;
 
         const existing = await c.env.DB.prepare('SELECT * FROM inward WHERE id = ?').bind(id).first();
         if (!existing) {
@@ -253,12 +253,13 @@ inwardRouter.put('/:id/assign', async (c) => {
 
         await c.env.DB.prepare(`
             UPDATE inward SET
+                subject = COALESCE(?, subject),
                 assigned_team = ?, assigned_to_email = ?,
                 assignment_instructions = ?, assignment_date = ?,
                 assignment_status = 'Pending', due_date = ?, updated_at = ?
             WHERE id = ?
         `).bind(
-            assignedTeam, assignedToEmail, assignmentInstructions,
+            subject || null, assignedTeam, assignedToEmail, assignmentInstructions,
             assignmentDate, dueDate, updatedAt, id
         ).run();
 
