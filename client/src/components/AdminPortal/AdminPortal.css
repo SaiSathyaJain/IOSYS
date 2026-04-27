@@ -970,17 +970,23 @@
 /* Bottom row */
 .ic-bottom {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.4rem;
     padding-left: calc(24px + 2rem + 0.55rem + 0.55rem);
     font-size: 0.82rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    min-width: 0;
 }
 .ic-from {
     color: var(--text-secondary);
-    white-space: nowrap;
-    flex-shrink: 0;
     font-size: 0.79rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+    flex-shrink: 0;
+    cursor: default;
 }
 .ic-arrow {
     color: var(--text-secondary);
@@ -992,6 +998,9 @@
     font-weight: 500;
     flex: 1;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     cursor: default;
     line-height: 1.45;
 }
