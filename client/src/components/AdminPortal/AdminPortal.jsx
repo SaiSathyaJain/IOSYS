@@ -94,6 +94,14 @@ function AdminPortal() {
 
     // AI Agent — Auto-assign
     const [autoAssignLoadingId, setAutoAssignLoadingId] = useState(null);
+
+    // Bulk auto-assign
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [bulkAssigning, setBulkAssigning] = useState(false);
+    const [bulkResults, setBulkResults] = useState(null); // { done, failed }
+
+    // Duplicate detection
+    const [duplicateWarnings, setDuplicateWarnings] = useState([]);
     const [deleteConfirmId, setDeleteConfirmId] = useState(null);
     const [recycleBin, setRecycleBin] = useState([]);
     const [recycleBinLoading, setRecycleBinLoading] = useState(false);
@@ -483,6 +491,7 @@ function AdminPortal() {
             assignmentInstructions: '', dueDate: '', remarks: ''
         });
         setSmartFillResult(null);
+        setDuplicateWarnings([]);
     };
 
     const handleSmartFill = async () => {
@@ -613,6 +622,59 @@ function AdminPortal() {
         } finally {
             setAutoAssignLoadingId(null);
         }
+    };
+
+    const checkDuplicates = (sender, subject) => {
+        if (!sender.trim() || !subject.trim()) { setDuplicateWarnings([]); return; }
+        const stopWords = new Set(['the','a','an','of','in','to','for','on','at','by','is','are','was','were','and','or','with','from','re','regarding','reg']);
+        const tokenize = str => str.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
+        const senderTokens  = new Set(tokenize(sender));
+        const subjectTokens = new Set(tokenize(subject));
+        const matches = entries.filter(e => {
+            const eSender  = tokenize(e.particularsFromWhom || '');
+            const eSubject = tokenize(e.subject || '');
+            const senderHit  = eSender.some(w => senderTokens.has(w));
+            const subjectHits = eSubject.filter(w => subjectTokens.has(w)).length;
+            return senderHit && subjectHits >= 2;
+        });
+        setDuplicateWarnings(matches.slice(0, 3));
+    };
+
+    const handleBulkAutoAssign = async () => {
+        const toAssign = entries.filter(e => selectedIds.has(e.id) && !e.assignedTeam);
+        if (toAssign.length === 0) return;
+        setBulkAssigning(true);
+        setBulkResults(null);
+        let done = 0, failed = 0;
+        for (const entry of toAssign) {
+            try {
+                const res = await aiAPI.suggestAssign({
+                    subject: entry.subject,
+                    from:    entry.particularsFromWhom,
+                    remarks: entry.remarks,
+                    means:   entry.means,
+                });
+                const s = res.data.suggestion || {};
+                if (s.assignedTeam) {
+                    await inwardAPI.assign(entry.id, {
+                        subject:                entry.subject,
+                        assignedTeam:           s.assignedTeam,
+                        assignedToEmail:        TEAM_EMAILS[s.assignedTeam] || '',
+                        assignmentInstructions: s.assignmentInstructions || '',
+                        dueDate:                s.dueDate || '',
+                    });
+                    done++;
+                } else {
+                    failed++;
+                }
+            } catch {
+                failed++;
+            }
+        }
+        setBulkResults({ done, failed });
+        setSelectedIds(new Set());
+        setBulkAssigning(false);
+        await loadData();
     };
 
     const handleChange = (e) => {
@@ -1190,8 +1252,9 @@ function AdminPortal() {
                                 <div className="form-group">
                                     <label className="form-label">From Whom *</label>
                                     <input type="text" name="particularsFromWhom" className="form-input"
-                                        value={formData.particularsFromWhom} onChange={handleChange} required
-                                        placeholder="Name or organization" />
+                                        value={formData.particularsFromWhom}
+                                        onChange={e => { handleChange(e); checkDuplicates(e.target.value, formData.subject); }}
+                                        required placeholder="Name or organization" />
                                 </div>
 
                                 <div className="form-group">
@@ -1205,8 +1268,9 @@ function AdminPortal() {
                                     </label>
                                     <div className="smart-fill-input-wrap">
                                         <input type="text" name="subject" className="form-input"
-                                            value={formData.subject} onChange={e => { handleChange(e); setSmartFillResult(null); }} required
-                                            placeholder="Type subject then click ✦ to auto-fill team, due date & remarks" />
+                                            value={formData.subject}
+                                            onChange={e => { handleChange(e); setSmartFillResult(null); checkDuplicates(formData.particularsFromWhom, e.target.value); }}
+                                            required placeholder="Type subject then click ✦ to auto-fill team, due date & remarks" />
                                         <button
                                             type="button"
                                             className={`smart-fill-btn${smartFillLoading ? ' loading' : ''}`}
@@ -1264,6 +1328,19 @@ function AdminPortal() {
                                     )}
                                 </div>
                             </div>
+                            {duplicateWarnings.length > 0 && (
+                                <div className="duplicate-warning">
+                                    <div className="duplicate-warning-title">⚠️ Possible duplicates found</div>
+                                    {duplicateWarnings.map(e => (
+                                        <div key={e.id} className="duplicate-warning-item">
+                                            <span className="duplicate-warning-no">{e.inwardNo?.startsWith('NOINW-') ? '-' : e.inwardNo}</span>
+                                            <span className="duplicate-warning-from">{e.particularsFromWhom}</span>
+                                            <span className="duplicate-warning-subject">{e.subject}</span>
+                                        </div>
+                                    ))}
+                                    <div className="duplicate-warning-hint">Review before saving to avoid duplicate entries.</div>
+                                </div>
+                            )}
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={() => closeWithAnimation('form', () => { setShowForm(false); resetForm(); })}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">
@@ -1360,9 +1437,46 @@ function AdminPortal() {
                     </div>
                 ) : (
                     <div className="table-container">
+                        {/* Bulk action bar */}
+                        {isAdmin && selectedIds.size > 0 && (
+                            <div className="bulk-action-bar">
+                                <span className="bulk-action-count"><strong>{selectedIds.size}</strong> entr{selectedIds.size === 1 ? 'y' : 'ies'} selected</span>
+                                <button className="btn btn-primary bulk-assign-btn" onClick={handleBulkAutoAssign} disabled={bulkAssigning}>
+                                    {bulkAssigning
+                                        ? <><Loader2 size={14} className="spin" /> Assigning…</>
+                                        : <><Sparkles size={14} /> AI Auto-assign {selectedIds.size}</>
+                                    }
+                                </button>
+                                <button className="btn btn-ghost" style={{ fontSize: '0.8rem' }} onClick={() => setSelectedIds(new Set())} disabled={bulkAssigning}>Clear</button>
+                            </div>
+                        )}
+                        {bulkResults && (
+                            <div className={`bulk-results ${bulkResults.failed > 0 ? 'bulk-results--warn' : 'bulk-results--ok'}`}>
+                                ✓ Auto-assigned {bulkResults.done} entr{bulkResults.done === 1 ? 'y' : 'ies'}.
+                                {bulkResults.failed > 0 && ` ${bulkResults.failed} could not be assigned (AI unclear).`}
+                                <button className="bulk-results-close" onClick={() => setBulkResults(null)}>✕</button>
+                            </div>
+                        )}
                         <table className="table">
                             <thead>
                                 <tr>
+                                    {isAdmin && (
+                                        <th style={{ width: '36px' }}>
+                                            <input type="checkbox"
+                                                title="Select all unassigned on this page"
+                                                onChange={e => {
+                                                    const pageEntries = (inwardTab === 'manual' ? filteredEntries.filter(e => MANUAL_INWARD_MEANS.includes(e.means)) : filteredEntries).slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE).filter(e => !e.assignedTeam);
+                                                    setSelectedIds(prev => {
+                                                        const next = new Set(prev);
+                                                        pageEntries.forEach(e => e.checked ? next.delete(e.id) : (e.checked = true));
+                                                        if (e.target.checked) pageEntries.forEach(e => next.add(e.id));
+                                                        else pageEntries.forEach(e => next.delete(e.id));
+                                                        return next;
+                                                    });
+                                                }}
+                                            />
+                                        </th>
+                                    )}
                                     <th>Sl.No.</th>
                                     <th>Date of Inward</th>
                                     <th>Mode</th>
@@ -1389,6 +1503,20 @@ function AdminPortal() {
                                         ].filter(Boolean).join(' ')}
                                         variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0, transition: { duration: 0.15 } } }}
                                     >
+                                        {isAdmin && (
+                                            <td style={{ width: '36px' }}>
+                                                {!entry.assignedTeam && (
+                                                    <input type="checkbox"
+                                                        checked={selectedIds.has(entry.id)}
+                                                        onChange={e => setSelectedIds(prev => {
+                                                            const next = new Set(prev);
+                                                            e.target.checked ? next.add(entry.id) : next.delete(entry.id);
+                                                            return next;
+                                                        })}
+                                                    />
+                                                )}
+                                            </td>
+                                        )}
                                         <td>{entry.sequenceNo ?? (inwardPage - 1) * INWARD_PAGE_SIZE + index + 1}</td>
                                         <td>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(entry.signReceiptDatetime)}</div>
