@@ -121,51 +121,55 @@ aiRouter.post('/agent', async (c) => {
 
         const today = new Date().toISOString().split('T')[0];
 
-        const prompt = `You are an assignment assistant for SSSIHL's Inward Document Management System.
-Determine the correct team and assignment details for this inward entry.
+        const prompt = `Classify this document and respond with ONLY a JSON object, nothing else.
 
-Teams:
-- UG: undergraduate student matters — admissions, exams, hall tickets, transcripts, bonafide, attendance, fee, certificates for UG students
-- PG/PRO: postgraduate and professional programs — M.Tech, MBA, M.Sc, M.Phil, PGDM, professional course certificates
-- PhD: doctoral research — research scholars, thesis submission, synopsis, fellowship, registration, research grants
-
-Entry details:
 From: ${from}
 Subject: ${subject}
-Remarks: ${remarks || 'None'}
-Mode: ${means || 'Not specified'}
+Remarks: ${remarks || ''}
 
-Today: ${today}
+Teams:
+UG = undergraduate (exams, hall tickets, bonafide, attendance, fee, admission, certificates for UG students)
+PG/PRO = postgraduate / professional (M.Tech, MBA, M.Sc, PGDM, professional courses)
+PhD = doctoral (research scholars, thesis, synopsis, fellowship, research grants)
 
-Return ONLY valid JSON — no explanation, no markdown:
-{
-  "assignedTeam": "UG or PG/PRO or PhD",
-  "assignmentInstructions": "Brief actionable instruction for the team (1-2 sentences, what to do with this entry)",
-  "dueDate": "YYYY-MM-DD (7 days from today for urgent/exam/deadline matters, 14 days for normal, 21 days for low priority)",
-  "reasoning": "One sentence explaining the team choice"
-}`;
+Respond with ONLY this JSON (no explanation, no markdown, no extra text):
+{"assignedTeam":"UG","assignmentInstructions":"Action for team.","dueDate":"${new Date(Date.now()+14*86400000).toISOString().split('T')[0]}","reasoning":"reason"}`;
 
-        // Use Groq if available, otherwise try multiple OpenRouter models with fallback
+        // Try Groq first (if key available), then fall back to OpenRouter models
         let raw = '';
+        let succeeded = false;
+
         if (useGroq) {
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: 'llama3-8b-8192',
-                    messages: [{ role: 'user', content: prompt }],
-                    max_tokens: 250,
-                    temperature: 0.1,
-                }),
-            });
-            if (!res.ok) {
-                const errText = await res.text();
-                console.error('Groq agent error:', res.status, errText);
-                return c.json({ success: false, message: 'AI service error' }, 500);
+            const GROQ_MODELS = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'gemma2-9b-it'];
+            for (const groqModel of GROQ_MODELS) {
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${c.env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: groqModel,
+                        messages: [{ role: 'user', content: prompt }],
+                        max_tokens: 250,
+                        temperature: 0.1,
+                    }),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const content = data.choices?.[0]?.message?.content || '';
+                    if (content.trim()) {
+                        raw = content;
+                        succeeded = true;
+                        break;
+                    }
+                } else {
+                    const errText = await res.text();
+                    console.error(`Groq model ${groqModel} error:`, res.status, errText);
+                }
             }
-            const data = await res.json();
-            raw = data.choices?.[0]?.message?.content || '';
-        } else {
+            if (!succeeded) console.error('All Groq models failed — falling back to OpenRouter');
+        }
+
+        // OpenRouter fallback (always tried if Groq failed or not configured)
+        if (!succeeded && c.env.OPENROUTER_API_KEY) {
             const FALLBACK_MODELS = [
                 'nvidia/nemotron-3-nano-30b-a3b:free',
                 'openai/gpt-oss-20b:free',
@@ -173,12 +177,11 @@ Return ONLY valid JSON — no explanation, no markdown:
                 'openai/gpt-oss-120b:free',
             ];
             const orHeaders = {
-                'Authorization': `Bearer ${apiKey}`,
+                'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
                 'Content-Type': 'application/json',
                 'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
                 'X-Title': 'IOSYS Agent',
             };
-            let succeeded = false;
             for (const tryModel of FALLBACK_MODELS) {
                 const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
@@ -196,22 +199,48 @@ Return ONLY valid JSON — no explanation, no markdown:
                     continue;
                 }
                 const data = await res.json();
-                raw = data.choices?.[0]?.message?.content || '';
+                const content = data.choices?.[0]?.message?.content || '';
+                if (!content.trim()) {
+                    console.error(`Agent model ${tryModel} returned empty content`);
+                    continue;
+                }
+                raw = content;
                 succeeded = true;
                 break;
             }
-            if (!succeeded) {
-                return c.json({ success: false, message: 'All AI models are currently unavailable. Please try again later.' }, 500);
-            }
         }
 
-        const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        if (!succeeded) {
+            return c.json({ success: false, message: 'All AI models are currently unavailable. Please try again later.' }, 500);
+        }
+
+        console.log('Agent raw response:', raw);
+
+        // Strip markdown fences, then try to extract a JSON object even if model adds surrounding text
+        let jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        // Extract first {...} block if model added prose around the JSON
+        const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+        if (jsonMatch) jsonStr = jsonMatch[0];
 
         let suggestion;
         try {
             suggestion = JSON.parse(jsonStr);
         } catch {
-            return c.json({ success: false, message: 'AI returned invalid response. Try again.' }, 500);
+            console.error('Agent JSON parse failed. Raw:', raw);
+            // Build a fallback suggestion from the text using keyword matching
+            const teamMatch = raw.match(/\b(UG|PG\/PRO|PG|PRO|PhD|phd|ug)\b/);
+            if (teamMatch) {
+                const today = new Date();
+                today.setDate(today.getDate() + 14);
+                suggestion = {
+                    assignedTeam: teamMatch[1],
+                    assignmentInstructions: 'Please review and process this entry.',
+                    dueDate: today.toISOString().split('T')[0],
+                    reasoning: 'Extracted from AI response text.',
+                };
+            } else {
+                return c.json({ success: false, message: 'AI could not determine the team. Try again.' }, 500);
+            }
         }
 
         return c.json({ success: true, suggestion });
