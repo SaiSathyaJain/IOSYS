@@ -124,6 +124,69 @@ function AdminPortal() {
     const [highlightedInwardNo, setHighlightedInwardNo] = useState(null);
     const [dueReminderBanners, setDueReminderBanners] = useState([]);
 
+    // Buddha Purnima — 28 Apr 2026, auto-hides at 21:00 IST
+    const isBuddhaPurnima = (() => {
+        const istNow = new Date(Date.now() + 5.5 * 3600000);
+        return istNow.getUTCFullYear() === 2026 && istNow.getUTCMonth() === 3 && istNow.getUTCDate() === 28 && istNow.getUTCHours() < 21;
+    })();
+    const [showFestival, setShowFestival] = useState(isBuddhaPurnima);
+    const [bpBannerDismissed, setBpBannerDismissed] = useState(false);
+    const bpCanvasRef = useRef(null);
+
+    useEffect(() => {
+        if (!showFestival) return;
+        const canvas = bpCanvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+        resize();
+        window.addEventListener('resize', resize);
+        const PETAL_COUNT = 30;
+        const petals = Array.from({ length: PETAL_COUNT }, () => ({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight - window.innerHeight,
+            r: 7 + Math.random() * 11,
+            speed: 0.5 + Math.random() * 0.9,
+            drift: (Math.random() - 0.5) * 0.5,
+            spin: (Math.random() - 0.5) * 0.035,
+            angle: Math.random() * Math.PI * 2,
+            opacity: 0.10 + Math.random() * 0.16,
+        }));
+        let raf;
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            petals.forEach(p => {
+                p.y += p.speed; p.x += p.drift; p.angle += p.spin;
+                if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width; }
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.angle);
+                ctx.globalAlpha = p.opacity;
+                ctx.beginPath();
+                ctx.ellipse(0, -p.r * 0.55, p.r * 0.42, p.r, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#f9a8d4';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(0, -p.r * 0.55, p.r * 0.22, p.r * 0.55, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#fce7f3';
+                ctx.fill();
+                ctx.restore();
+            });
+            raf = requestAnimationFrame(draw);
+        };
+        draw();
+        // auto-hide at 21:00 IST
+        const istNow = new Date(Date.now() + 5.5 * 3600000);
+        const msUntil21 = (21 * 60 - (istNow.getUTCHours() * 60 + istNow.getUTCMinutes())) * 60000;
+        let hideTimer;
+        if (msUntil21 > 0) hideTimer = setTimeout(() => setShowFestival(false), msUntil21);
+        return () => {
+            cancelAnimationFrame(raf);
+            clearTimeout(hideTimer);
+            window.removeEventListener('resize', resize);
+        };
+    }, [showFestival]);
+
     // Close topmost open modal on Escape — placed after all modal state declarations
     useEffect(() => {
         const onEsc = (e) => {
@@ -1074,6 +1137,24 @@ function AdminPortal() {
             </nav>
 
         <div className="admin-portal animate-fade">
+            {/* Buddha Purnima decoration — 28 Apr 2026 only, auto-hides at 21:00 IST */}
+            {showFestival && (
+                <>
+                    <canvas ref={bpCanvasRef} className="bp-canvas" />
+                    {!bpBannerDismissed && (
+                        <div className="bp-banner">
+                            <span className="bp-glow" />
+                            <span className="bp-lotus">🪷</span>
+                            <div className="bp-text">
+                                <span className="bp-title">Sai Ram — Buddha Purnima Greetings</span>
+                                <span className="bp-sub">May the light of the Enlightened One guide us with wisdom, peace and compassion.</span>
+                            </div>
+                            <button className="bp-dismiss" onClick={() => setBpBannerDismissed(true)} title="Dismiss">✕</button>
+                        </div>
+                    )}
+                </>
+            )}
+
             {/* Reminder banners */}
             {dueReminderBanners.map(r => (
                 <div key={r.id} className="reminder-banner">
