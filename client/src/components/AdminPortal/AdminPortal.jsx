@@ -127,7 +127,7 @@ function AdminPortal() {
     // Buddha Purnima — 28 Apr 2026, auto-hides at 21:00 IST
     const isBuddhaPurnima = (() => {
         const istNow = new Date(Date.now() + 5.5 * 3600000);
-        return istNow.getUTCFullYear() === 2026 && istNow.getUTCMonth() === 4 && istNow.getUTCDate() === 1 && istNow.getUTCHours() < 21;
+        return true; // TEMP: restore to May 1 check after testing
     })();
     const [showFestival, setShowFestival] = useState(isBuddhaPurnima);
     const [bpBannerDismissed, setBpBannerDismissed] = useState(false);
@@ -138,43 +138,154 @@ function AdminPortal() {
         const canvas = bpCanvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
+
         const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
         resize();
         window.addEventListener('resize', resize);
-        const PETAL_COUNT = 30;
-        const petals = Array.from({ length: PETAL_COUNT }, () => ({
+
+        // Mouse tracking for repulsion
+        const mouse = { x: -9999, y: -9999 };
+        const onMouseMove = (e) => { mouse.x = e.clientX; mouse.y = e.clientY; };
+        window.addEventListener('mousemove', onMouseMove);
+
+        // ── Petals ──
+        const LAYER = [
+            { scale: 0.55, speedMul: 0.55, alpha: 0.09 },
+            { scale: 0.78, speedMul: 0.78, alpha: 0.14 },
+            { scale: 1.00, speedMul: 1.00, alpha: 0.20 },
+        ];
+        const makePetal = (x, y, burst) => {
+            const l = burst ? 2 : Math.floor(Math.random() * 3);
+            return {
+                x: x ?? Math.random() * window.innerWidth,
+                y: y ?? -20 - Math.random() * window.innerHeight,
+                r: (7 + Math.random() * 11) * LAYER[l].scale,
+                speed: (0.5 + Math.random() * 0.9) * LAYER[l].speedMul,
+                swayAmp: 0.8 + Math.random() * 1.8,
+                swayFreq: 0.012 + Math.random() * 0.018,
+                swayPhase: Math.random() * Math.PI * 2,
+                flip: Math.random() * Math.PI * 2,
+                flipSpeed: 0.025 + Math.random() * 0.035,
+                angle: Math.random() * Math.PI * 2,
+                spin: (Math.random() - 0.5) * 0.02,
+                alpha: LAYER[l].alpha,
+                vx: burst ? (Math.random() - 0.5) * 6 : 0,
+                vy: burst ? -3 - Math.random() * 3 : 0,
+                layer: l,
+                isBurst: !!burst,
+                life: burst ? 1 : null,
+            };
+        };
+        const petals = Array.from({ length: 35 }, () => {
+            const p = makePetal();
+            p.y = Math.random() * window.innerHeight; // spread on init
+            return p;
+        });
+
+        // Click burst
+        const onClick = (e) => {
+            for (let i = 0; i < 14; i++) petals.push(makePetal(e.clientX, e.clientY, true));
+        };
+        window.addEventListener('click', onClick);
+
+        // ── Golden incense particles ──
+        const makeParticle = (init) => ({
             x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight - window.innerHeight,
-            r: 7 + Math.random() * 11,
-            speed: 0.5 + Math.random() * 0.9,
-            drift: (Math.random() - 0.5) * 0.5,
-            spin: (Math.random() - 0.5) * 0.035,
-            angle: Math.random() * Math.PI * 2,
-            opacity: 0.10 + Math.random() * 0.16,
-        }));
+            y: init ? Math.random() * window.innerHeight : window.innerHeight + 5,
+            vy: 0.35 + Math.random() * 0.75,
+            swayAmp: 0.4 + Math.random() * 1.0,
+            swayFreq: 0.008 + Math.random() * 0.015,
+            swayPhase: Math.random() * Math.PI * 2,
+            size: 1.2 + Math.random() * 2.2,
+            baseAlpha: 0.25 + Math.random() * 0.45,
+            sparkle: Math.random() < 0.28,
+            progress: init ? Math.random() : 0,
+        });
+        const particles = Array.from({ length: 45 }, () => makeParticle(true));
+
+        let t = 0;
         let raf;
         const draw = () => {
+            t++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            petals.forEach(p => {
-                p.y += p.speed; p.x += p.drift; p.angle += p.spin;
-                if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width; }
+
+            // Golden particles (drawn behind petals)
+            particles.forEach(p => {
+                p.progress += p.vy / canvas.height;
+                p.y -= p.vy;
+                p.x += p.swayAmp * Math.sin(p.swayFreq * t + p.swayPhase);
+                if (p.progress >= 1 || p.y < -10) { Object.assign(p, makeParticle(false)); return; }
+                const fadeIn  = Math.min(p.progress * 6, 1);
+                const fadeOut = 1 - Math.pow(p.progress, 1.6);
+                const alpha   = p.baseAlpha * fadeIn * fadeOut;
+                if (alpha <= 0.01) return;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                if (p.sparkle) {
+                    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3.5);
+                    g.addColorStop(0, '#fef9c3'); g.addColorStop(0.4, '#fbbf24'); g.addColorStop(1, 'transparent');
+                    ctx.fillStyle = g;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 3.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 0.6; ctx.globalAlpha = alpha * 0.6;
+                    const s = p.size * 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x - s, p.y); ctx.lineTo(p.x + s, p.y);
+                    ctx.moveTo(p.x, p.y - s); ctx.lineTo(p.x, p.y + s);
+                    ctx.stroke();
+                } else {
+                    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2.5);
+                    g.addColorStop(0, '#fde68a'); g.addColorStop(0.5, '#f59e0b'); g.addColorStop(1, 'transparent');
+                    ctx.fillStyle = g;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.restore();
+            });
+
+            // Petals
+            for (let i = petals.length - 1; i >= 0; i--) {
+                const p = petals[i];
+                // Sinusoidal sway
+                p.x += p.swayAmp * Math.sin(p.swayFreq * t + p.swayPhase);
+                p.y += p.speed;
+                p.angle += p.spin;
+                p.flip  += p.flipSpeed;
+                // Mouse repulsion
+                const dx = p.x - mouse.x, dy = p.y - mouse.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 130 && dist > 0) {
+                    const force = (130 - dist) / 130;
+                    p.vx += (dx / dist) * force * 2.5;
+                    p.vy += (dy / dist) * force * 2.5;
+                }
+                p.vx *= 0.90; p.vy *= 0.90;
+                p.x += p.vx;  p.y += p.vy;
+                // Burst lifecycle
+                if (p.isBurst) {
+                    p.life -= 0.007;
+                    if (p.life <= 0) { petals.splice(i, 1); continue; }
+                } else if (p.y > canvas.height + 20) {
+                    p.y = -20; p.x = Math.random() * canvas.width;
+                }
+                const alpha = p.isBurst ? p.alpha * p.life * 3 : p.alpha;
+                const flipX = Math.abs(Math.cos(p.flip)); // 3D tumble
                 ctx.save();
                 ctx.translate(p.x, p.y);
                 ctx.rotate(p.angle);
-                ctx.globalAlpha = p.opacity;
+                ctx.scale(flipX, 1);
+                ctx.globalAlpha = Math.min(alpha, 0.9);
                 ctx.beginPath();
                 ctx.ellipse(0, -p.r * 0.55, p.r * 0.42, p.r, 0, 0, Math.PI * 2);
-                ctx.fillStyle = '#f9a8d4';
-                ctx.fill();
+                ctx.fillStyle = '#f9a8d4'; ctx.fill();
                 ctx.beginPath();
                 ctx.ellipse(0, -p.r * 0.55, p.r * 0.22, p.r * 0.55, 0, 0, Math.PI * 2);
-                ctx.fillStyle = '#fce7f3';
-                ctx.fill();
+                ctx.fillStyle = '#fce7f3'; ctx.fill();
                 ctx.restore();
-            });
+            }
+
             raf = requestAnimationFrame(draw);
         };
         draw();
+
         // auto-hide at 21:00 IST
         const istNow = new Date(Date.now() + 5.5 * 3600000);
         const msUntil21 = (21 * 60 - (istNow.getUTCHours() * 60 + istNow.getUTCMinutes())) * 60000;
@@ -184,6 +295,8 @@ function AdminPortal() {
             cancelAnimationFrame(raf);
             clearTimeout(hideTimer);
             window.removeEventListener('resize', resize);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('click', onClick);
         };
     }, [showFestival]);
 
