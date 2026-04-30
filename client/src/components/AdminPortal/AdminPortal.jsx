@@ -127,7 +127,7 @@ function AdminPortal() {
     // Buddha Purnima — 28 Apr 2026, auto-hides at 21:00 IST
     const isBuddhaPurnima = (() => {
         const istNow = new Date(Date.now() + 5.5 * 3600000);
-        return true; // TEMP: remove after testing — real condition: May 1 2026 before 21:00 IST
+        return istNow.getUTCFullYear() === 2026 && istNow.getUTCMonth() === 4 && istNow.getUTCDate() === 1 && istNow.getUTCHours() < 21;
     })();
     const [showFestival, setShowFestival] = useState(isBuddhaPurnima);
     const [bpBannerDismissed, setBpBannerDismissed] = useState(false);
