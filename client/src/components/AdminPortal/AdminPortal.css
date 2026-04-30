@@ -2229,6 +2229,21 @@
     z-index: 999;
 }
 
+.bp-lottie-wrap {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 998;
+}
+
+.bp-lottie-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
+}
+
 .bp-banner {
     position: fixed;
     bottom: 2rem;
@@ -2307,3 +2322,25 @@
     transition: opacity 0.15s;
 }
 .bp-dismiss:hover { opacity: 1; }
+
+.bp-toggle {
+    position: fixed;
+    bottom: 1.2rem;
+    right: 1.2rem;
+    z-index: 1001;
+    background: rgba(120, 53, 15, 0.85);
+    border: 1px solid #fbbf24;
+    color: #fde68a;
+    font-size: 0.85rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(251,191,36,0.3);
+    transition: opacity 0.15s, box-shadow 0.15s;
+    opacity: 0.7;
+}
+.bp-toggle:hover { opacity: 1; box-shadow: 0 0 16px rgba(251,191,36,0.6); }

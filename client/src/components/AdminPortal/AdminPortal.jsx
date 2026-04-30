@@ -127,10 +127,11 @@ function AdminPortal() {
     // Buddha Purnima — 28 Apr 2026, auto-hides at 21:00 IST
     const isBuddhaPurnima = (() => {
         const istNow = new Date(Date.now() + 5.5 * 3600000);
-        return istNow.getUTCFullYear() === 2026 && istNow.getUTCMonth() === 4 && istNow.getUTCDate() === 1 && istNow.getUTCHours() < 21;
+        return true; // TEMP: restore to May 1 check after testing
     })();
     const [showFestival, setShowFestival] = useState(isBuddhaPurnima);
     const [bpBannerDismissed, setBpBannerDismissed] = useState(false);
+    const [bpPaused, setBpPaused] = useState(false);
     const bpCanvasRef = useRef(null);
 
     useEffect(() => {
@@ -178,11 +179,9 @@ function AdminPortal() {
         };
         const petals = Array.from({ length: 35 }, () => {
             const p = makePetal();
-            p.y = Math.random() * window.innerHeight; // spread on init
+            p.y = Math.random() * window.innerHeight;
             return p;
         });
-
-        // Click burst
         const onClick = (e) => {
             for (let i = 0; i < 14; i++) petals.push(makePetal(e.clientX, e.clientY, true));
         };
@@ -208,8 +207,6 @@ function AdminPortal() {
         const draw = () => {
             t++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Golden particles (drawn behind petals)
             particles.forEach(p => {
                 p.progress += p.vy / canvas.height;
                 p.y -= p.vy;
@@ -240,16 +237,13 @@ function AdminPortal() {
                 }
                 ctx.restore();
             });
-
             // Petals
             for (let i = petals.length - 1; i >= 0; i--) {
                 const p = petals[i];
-                // Sinusoidal sway
                 p.x += p.swayAmp * Math.sin(p.swayFreq * t + p.swayPhase);
                 p.y += p.speed;
                 p.angle += p.spin;
-                p.flip  += p.flipSpeed;
-                // Mouse repulsion
+                p.flip += p.flipSpeed;
                 const dx = p.x - mouse.x, dy = p.y - mouse.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < 130 && dist > 0) {
@@ -258,8 +252,7 @@ function AdminPortal() {
                     p.vy += (dy / dist) * force * 2.5;
                 }
                 p.vx *= 0.90; p.vy *= 0.90;
-                p.x += p.vx;  p.y += p.vy;
-                // Burst lifecycle
+                p.x += p.vx; p.y += p.vy;
                 if (p.isBurst) {
                     p.life -= 0.007;
                     if (p.life <= 0) { petals.splice(i, 1); continue; }
@@ -267,7 +260,7 @@ function AdminPortal() {
                     p.y = -20; p.x = Math.random() * canvas.width;
                 }
                 const alpha = p.isBurst ? p.alpha * p.life * 3 : p.alpha;
-                const flipX = Math.abs(Math.cos(p.flip)); // 3D tumble
+                const flipX = Math.abs(Math.cos(p.flip));
                 ctx.save();
                 ctx.translate(p.x, p.y);
                 ctx.rotate(p.angle);
@@ -1250,10 +1243,10 @@ function AdminPortal() {
             </nav>
 
         <div className="admin-portal animate-fade">
-            {/* Buddha Purnima decoration — 28 Apr 2026 only, auto-hides at 21:00 IST */}
+            {/* Buddha Purnima decoration — May 1 2026 only, auto-hides at 21:00 IST */}
             {showFestival && (
                 <>
-                    <canvas ref={bpCanvasRef} className="bp-canvas" />
+                    {!bpPaused && <canvas ref={bpCanvasRef} className="bp-canvas" />}
                     {!bpBannerDismissed && (
                         <div className="bp-banner">
                             <span className="bp-glow" />
@@ -1265,6 +1258,13 @@ function AdminPortal() {
                             <button className="bp-dismiss" onClick={() => setBpBannerDismissed(true)} title="Dismiss">✕</button>
                         </div>
                     )}
+                    <button
+                        className="bp-toggle"
+                        onClick={() => setBpPaused(p => !p)}
+                        title={bpPaused ? 'Resume animation' : 'Pause animation'}
+                    >
+                        {bpPaused ? '▶' : '⏸'}
+                    </button>
                 </>
             )}
 
