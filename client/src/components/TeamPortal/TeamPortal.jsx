@@ -43,6 +43,7 @@ function TeamPortal() {
     const [remarksText, setRemarksText] = useState('');
     const [selectedInwardEntry, setSelectedInwardEntry] = useState(null);
     const [completedInward, setCompletedInward] = useState([]);
+    const [nextOutwardNo, setNextOutwardNo] = useState('');
     const [formData, setFormData] = useState({
         means: '', toWhom: '', subject: '', sentBy: '',
         signReceiptDateTime: '', caseClosed: false, fileReference: '',
@@ -131,16 +132,31 @@ function TeamPortal() {
         ));
     };
 
+    const openForm = async (patch = {}) => {
+        try {
+            const res = await outwardAPI.nextNo();
+            const no = res.data?.nextNo || '';
+            setNextOutwardNo(no);
+            if (patch.linkedInwardId) {
+                const linked = pendingInward.find(e => String(e.id) === String(patch.linkedInwardId));
+                if (linked) patch.crossNo = `${linked.inwardNo} ↔ ${no}`;
+            }
+            setFormData(prev => ({ ...prev, ...patch }));
+        } catch {
+            setNextOutwardNo('');
+            setFormData(prev => ({ ...prev, ...patch }));
+        }
+        setShowForm(true);
+    };
+
     const handleProcess = (inwardEntry) => {
-        setFormData({
-            ...formData,
+        openForm({
             subject: `Re: ${inwardEntry.subject}`,
             toWhom: inwardEntry.particularsFromWhom,
             linkedInwardId: inwardEntry.id,
             createdByTeam: selectedTeam || inwardEntry.assignedTeam || '',
             fileReference: inwardEntry.fileReference || ''
         });
-        setShowForm(true);
     };
 
     const handleStatusUpdate = async (id, status) => {
@@ -261,6 +277,7 @@ function TeamPortal() {
     };
 
     const resetForm = () => {
+        setNextOutwardNo('');
         setFormData({
             means: '', toWhom: '', subject: '', sentBy: '',
             signReceiptDateTime: '', caseClosed: false, fileReference: '',
@@ -272,7 +289,16 @@ function TeamPortal() {
 
     const handleChange = (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-        setFormData({ ...formData, [e.target.name]: value });
+        const updated = { ...formData, [e.target.name]: value };
+        if (e.target.name === 'linkedInwardId') {
+            if (value) {
+                const linked = pendingInward.find(en => String(en.id) === String(value));
+                updated.crossNo = linked ? `${linked.inwardNo} ↔ ${nextOutwardNo}` : updated.crossNo;
+            } else {
+                updated.crossNo = '';
+            }
+        }
+        setFormData(updated);
     };
 
     const formatDate = (dateValue) => {
@@ -392,7 +418,7 @@ function TeamPortal() {
                                 🔔 Enable Notifications
                             </button>
                         )}
-                        <button className="tp-new-outward-btn" onClick={() => setShowForm(true)}>
+                        <button className="tp-new-outward-btn" onClick={() => openForm()}>
                             <Plus size={15} /> + New Outward
                         </button>
 <button className="tp-theme-btn" onClick={() => { document.body.classList.add('theme-transitioning'); setIsDarkMode(v => !v); setTimeout(() => document.body.classList.remove('theme-transitioning'), 350); }} title="Toggle theme">
@@ -887,8 +913,8 @@ function TeamPortal() {
                                             </select>
                                         </div>
                                         <div className="form-group">
-                                            <label className="form-label">Your Email *</label>
-                                            <input type="email" name="teamMemberEmail" className="form-input" value={formData.teamMemberEmail} onChange={handleChange} required placeholder="your@email.com"/>
+                                            <label className="form-label">Outward No.</label>
+                                            <input type="text" className="form-input tp-outward-no-preview" value={nextOutwardNo || 'Generating…'} readOnly tabIndex={-1}/>
                                         </div>
                                     </div>
                                     <div className="grid-2">
@@ -925,6 +951,13 @@ function TeamPortal() {
                                             <input type="text" name="fileReference" className="form-input" value={formData.fileReference} onChange={handleChange} required placeholder="e.g. F/2024/001"/>
                                         </div>
                                     </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Link to Inward</label>
+                                        <select name="linkedInwardId" className="form-select" value={formData.linkedInwardId} onChange={handleChange}>
+                                            <option value="">None (independent)</option>
+                                            {pendingInward.map(e => <option key={e.id} value={e.id}>{e.inwardNo} – {e.subject?.slice(0, 40)}</option>)}
+                                        </select>
+                                    </div>
                                     <div className="grid-2">
                                         <div className="form-group">
                                             <label className="form-label">Postal Tariff (Rs.)</label>
@@ -943,7 +976,10 @@ function TeamPortal() {
                                             <input type="text" name="ackRec" className="form-input" value={formData.ackRec} onChange={handleChange} placeholder="Acknowledgement received"/>
                                         </div>
                                         <div className="form-group">
-                                            <label className="form-label">Cross No.</label>
+                                            <label className="form-label" style={{display:'flex', alignItems:'center', gap:'0.4rem'}}>
+                                                Cross No.
+                                                {formData.linkedInwardId && <span className="tp-linked-badge">🔗 Linked</span>}
+                                            </label>
                                             <input type="text" name="crossNo" className="form-input" value={formData.crossNo} onChange={handleChange} placeholder="Cross reference"/>
                                         </div>
                                     </div>

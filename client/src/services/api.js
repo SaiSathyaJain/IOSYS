@@ -31,6 +31,7 @@ export const recycleBinAPI = {
 // Outward API
 export const outwardAPI = {
     getAll: (team = '') => api.get(`/outward${team ? `?team=${team}` : ''}`),
+    nextNo: () => api.get('/outward/next-no'),
     create: (data) => api.post('/outward', data),
     update: (id, data) => api.put(`/outward/${id}`, data),
     closeCase: (id) => api.put(`/outward/${id}/close`)

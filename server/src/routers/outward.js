@@ -61,6 +61,19 @@ outwardRouter.get('/', async (c) => {
     }
 });
 
+// Get next outward number (preview before creation)
+outwardRouter.get('/next-no', async (c) => {
+    try {
+        const year = new Date().getFullYear();
+        const countResult = await c.env.DB.prepare("SELECT count(*) as count FROM outward WHERE outward_no LIKE ?").bind(`OTW/${year}/%`).first();
+        const nextCount = (countResult.count || 0) + 1;
+        const nextNo = `OTW/${year}/${nextCount.toString().padStart(3, '0')}`;
+        return c.json({ success: true, nextNo });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
 // Create new outward entry
 outwardRouter.post('/', async (c) => {
     try {
