@@ -857,7 +857,6 @@
     font-weight: 700;
     color: var(--primary, #3b82f6);
     background: rgba(59,130,246,0.06);
-    cursor: default;
 }
 
 .tp-linked-badge {

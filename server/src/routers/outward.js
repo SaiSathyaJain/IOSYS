@@ -81,14 +81,16 @@ outwardRouter.post('/', async (c) => {
         const {
             means, toWhom, subject, sentBy,
             signReceiptDateTime, caseClosed, fileReference, postalTariff,
-            dueDate, linkedInwardId, createdByTeam, teamMemberEmail, remarks
+            dueDate, linkedInwardId, createdByTeam, teamMemberEmail, remarks, outwardNo: providedOutwardNo
         } = body;
 
         const year = new Date().getFullYear();
-        const countResult = await c.env.DB.prepare("SELECT count(*) as count FROM outward WHERE outward_no LIKE ?").bind(`OTW/${year}/%`).first();
-        const count = countResult.count;
-        const nextCount = count + 1;
-        const outwardNo = `OTW/${year}/${nextCount.toString().padStart(3, '0')}`;
+        let outwardNo = providedOutwardNo?.trim();
+        if (!outwardNo) {
+            const countResult = await c.env.DB.prepare("SELECT count(*) as count FROM outward WHERE outward_no LIKE ?").bind(`OTW/${year}/%`).first();
+            const nextCount = (countResult.count || 0) + 1;
+            outwardNo = `OTW/${year}/${nextCount.toString().padStart(3, '0')}`;
+        }
 
         const isCaseClosed = caseClosed ? 1 : 0;
         const tariff = postalTariff || 0;

@@ -203,7 +203,7 @@ function TeamPortal() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await outwardAPI.create(formData);
+            await outwardAPI.create({ ...formData, outwardNo: nextOutwardNo });
             if (formData.teamMemberEmail) {
                 localStorage.setItem('teamUser', JSON.stringify({ email: formData.teamMemberEmail.trim(), type: 'team' }));
             }
@@ -907,7 +907,7 @@ function TeamPortal() {
                                         </div>
                                         <div className="form-group">
                                             <label className="form-label">Outward No.</label>
-                                            <input type="text" className="form-input tp-outward-no-preview" value={nextOutwardNo || 'Generating…'} readOnly tabIndex={-1}/>
+                                            <input type="text" name="outwardNo" className="form-input tp-outward-no-preview" value={nextOutwardNo} onChange={e => setNextOutwardNo(e.target.value)} placeholder="Generating…"/>
                                         </div>
                                     </div>
                                     <div className="grid-2">
