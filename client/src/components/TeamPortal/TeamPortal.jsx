@@ -885,13 +885,6 @@ function TeamPortal() {
                                 </div>
                             )}
 
-                            <div className="tp-dl-select-wrap">
-                                <label className="tp-dl-select-label">Link to Inward</label>
-                                <select name="linkedInwardId" className="tp-dl-select" value={formData.linkedInwardId} onChange={handleChange}>
-                                    <option value="">None (independent)</option>
-                                    {pendingInward.map(e => <option key={e.id} value={e.id}>{e.inwardNo} – {e.subject?.slice(0,35)}</option>)}
-                                </select>
-                            </div>
                         </div>
 
                         {/* RIGHT PANEL — form */}
