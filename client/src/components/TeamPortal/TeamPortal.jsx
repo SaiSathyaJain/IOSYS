@@ -44,6 +44,8 @@ function TeamPortal() {
     const [selectedInwardEntry, setSelectedInwardEntry] = useState(null);
     const [completedInward, setCompletedInward] = useState([]);
     const [nextOutwardNo, setNextOutwardNo] = useState('');
+    const [ccInput, setCcInput] = useState('');
+    const [ccEntries, setCcEntries] = useState([]);
     const [formData, setFormData] = useState({
         means: '', toWhom: '', subject: '', sentBy: '',
         signReceiptDateTime: '', caseClosed: false, fileReference: '',
@@ -203,7 +205,12 @@ function TeamPortal() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await outwardAPI.create({ ...formData, outwardNo: nextOutwardNo });
+            await outwardAPI.create({
+                ...formData,
+                outwardNo: nextOutwardNo,
+                signReceiptDateTime: new Date().toISOString(),
+                cc: ccEntries.length ? JSON.stringify(ccEntries) : null
+            });
             if (formData.teamMemberEmail) {
                 localStorage.setItem('teamUser', JSON.stringify({ email: formData.teamMemberEmail.trim(), type: 'team' }));
             }
@@ -278,12 +285,28 @@ function TeamPortal() {
 
     const resetForm = () => {
         setNextOutwardNo('');
+        setCcInput('');
+        setCcEntries([]);
         setFormData({
             means: '', toWhom: '', subject: '', sentBy: '',
             signReceiptDateTime: '', caseClosed: false, fileReference: '',
             postalTariff: '', dueDate: '', linkedInwardId: '',
             createdByTeam: selectedTeam || '', teamMemberEmail: '',
             ackRec: '', crossNo: '', receiptNo: '', remarks: ''
+        });
+    };
+
+    const handleAddCC = () => {
+        if (!ccInput.trim()) return;
+        const suffix = String.fromCharCode(65 + ccEntries.length); // A, B, C...
+        setCcEntries(prev => [...prev, { name: ccInput.trim(), outwardNo: `${nextOutwardNo}-${suffix}` }]);
+        setCcInput('');
+    };
+
+    const handleRemoveCC = (idx) => {
+        setCcEntries(prev => {
+            const updated = prev.filter((_, i) => i !== idx);
+            return updated.map((e, i) => ({ ...e, outwardNo: `${nextOutwardNo}-${String.fromCharCode(65 + i)}` }));
         });
     };
 
@@ -922,10 +945,35 @@ function TeamPortal() {
                                             </select>
                                         </div>
                                         <div className="form-group">
-                                            <label className="form-label">Date & Time *</label>
-                                            <input type="datetime-local" name="signReceiptDateTime" className="form-input" value={formData.signReceiptDateTime} onChange={handleChange} required/>
+                                            <label className="form-label">CC</label>
+                                            <div className="cc-row">
+                                                <input
+                                                    type="text"
+                                                    className="form-input cc-text-input"
+                                                    value={ccInput}
+                                                    onChange={e => setCcInput(e.target.value)}
+                                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddCC(); } }}
+                                                    placeholder="Enter name..."
+                                                />
+                                                <button type="button" className="cc-arrow-btn" onClick={handleAddCC} title="Add CC">
+                                                    <ArrowRight size={15}/>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
+                                    {ccEntries.length > 0 && (
+                                        <div className="cc-entries-section">
+                                            {ccEntries.map((entry, i) => (
+                                                <div key={i} className="cc-entry-row">
+                                                    <input type="text" className="form-input cc-entry-name" value={entry.name} readOnly/>
+                                                    <input type="text" className="form-input cc-entry-no" value={entry.outwardNo} readOnly/>
+                                                    <button type="button" className="cc-remove-btn" onClick={() => handleRemoveCC(i)} title="Remove">
+                                                        <X size={13}/>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                     <div className="form-group">
                                         <label className="form-label">To Whom</label>
                                         <input type="text" name="toWhom" className="form-input" value={formData.toWhom} onChange={handleChange} placeholder="Recipient name or organization"/>

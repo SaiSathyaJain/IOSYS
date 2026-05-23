@@ -1,0 +1,1 @@
+ALTER TABLE outward ADD COLUMN cc TEXT;

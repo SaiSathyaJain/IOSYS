@@ -64,10 +64,13 @@ outwardRouter.get('/', async (c) => {
 // Get next outward number (preview before creation)
 outwardRouter.get('/next-no', async (c) => {
     try {
-        const year = new Date().getFullYear();
-        const countResult = await c.env.DB.prepare("SELECT count(*) as count FROM outward WHERE outward_no LIKE ?").bind(`OTW/${year}/%`).first();
+        const now = new Date();
+        const dd = now.getDate().toString().padStart(2, '0');
+        const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const countResult = await c.env.DB.prepare("SELECT count(*) as count FROM outward WHERE outward_no LIKE 'OTW/%'").first();
         const nextCount = (countResult.count || 0) + 1;
-        const nextNo = `OTW/${year}/${nextCount.toString().padStart(3, '0')}`;
+        const nextNo = `OTW/${dd}/${mm}/${yyyy}-${nextCount.toString().padStart(3, '0')}`;
         return c.json({ success: true, nextNo });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);
@@ -81,32 +84,36 @@ outwardRouter.post('/', async (c) => {
         const {
             means, toWhom, subject, sentBy,
             signReceiptDateTime, caseClosed, fileReference, postalTariff,
-            dueDate, linkedInwardId, createdByTeam, teamMemberEmail, remarks, outwardNo: providedOutwardNo
+            dueDate, linkedInwardId, createdByTeam, teamMemberEmail, remarks, cc, outwardNo: providedOutwardNo
         } = body;
 
-        const year = new Date().getFullYear();
+        const now = new Date();
+        const dd = now.getDate().toString().padStart(2, '0');
+        const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+        const yyyy = now.getFullYear();
         let outwardNo = providedOutwardNo?.trim();
         if (!outwardNo) {
-            const countResult = await c.env.DB.prepare("SELECT count(*) as count FROM outward WHERE outward_no LIKE ?").bind(`OTW/${year}/%`).first();
+            const countResult = await c.env.DB.prepare("SELECT count(*) as count FROM outward WHERE outward_no LIKE 'OTW/%'").first();
             const nextCount = (countResult.count || 0) + 1;
-            outwardNo = `OTW/${year}/${nextCount.toString().padStart(3, '0')}`;
+            outwardNo = `OTW/${dd}/${mm}/${yyyy}-${nextCount.toString().padStart(3, '0')}`;
         }
 
         const isCaseClosed = caseClosed ? 1 : 0;
         const tariff = postalTariff || 0;
+        const dateTime = signReceiptDateTime || new Date().toISOString();
 
         const result = await c.env.DB.prepare(`
             INSERT INTO outward (
                 outward_no, means, to_whom, subject, sent_by,
                 sign_receipt_datetime, case_closed, file_reference,
                 postal_tariff, due_date, linked_inward_id,
-                created_by_team, team_member_email, remarks
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
+                created_by_team, team_member_email, remarks, cc
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
         `).bind(
             outwardNo, means, toWhom, subject, sentBy,
-            signReceiptDateTime, isCaseClosed, fileReference || '',
+            dateTime, isCaseClosed, fileReference || '',
             tariff, dueDate || null, linkedInwardId || null,
-            createdByTeam, teamMemberEmail, remarks || ''
+            createdByTeam, teamMemberEmail, remarks || '', cc || null
         ).first();
 
         const insertedEntry = toCamelCase(result);
