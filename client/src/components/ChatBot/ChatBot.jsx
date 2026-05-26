@@ -338,7 +338,7 @@ function MessageContent({ content, onSend, onFindEntry }) {
     );
 }
 
-function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages' }) {
+function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = false }) {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState(() => {
         try {
@@ -502,7 +502,7 @@ function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages' }) {
         <>
             {/* Floating Action Button */}
             <button
-                className={`chatbot-fab${open ? ' chatbot-fab--hidden' : ''}`}
+                className={`chatbot-fab${(open || hidden) ? ' chatbot-fab--hidden' : ''}`}
                 onClick={() => setOpen(true)}
                 title="Ask AI Assistant"
             >

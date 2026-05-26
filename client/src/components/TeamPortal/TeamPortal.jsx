@@ -1172,7 +1172,7 @@ function TeamPortal() {
                 </div>
             )}
 
-            <ChatBot storageKey="iosys_chat_team" />
+            <ChatBot storageKey="iosys_chat_team" hidden={showForm || showDetailsModal || !!completeModal || !!remarksModal || showInwardModal} />
         </motion.div>
     );
 }
