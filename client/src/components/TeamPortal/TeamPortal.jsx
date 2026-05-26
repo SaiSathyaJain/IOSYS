@@ -975,6 +975,13 @@ function TeamPortal() {
                                         </div>
                                     )}
                                     <div className="form-group">
+                                        <label className="form-label">Link to Inward</label>
+                                        <select name="linkedInwardId" className="form-select" value={formData.linkedInwardId} onChange={handleChange}>
+                                            <option value="">None (independent)</option>
+                                            {pendingInward.map(e => <option key={e.id} value={e.id}>{e.inwardNo} – {e.subject?.slice(0, 40)}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
                                         <label className="form-label">To Whom</label>
                                         <input type="text" name="toWhom" className="form-input" value={formData.toWhom} onChange={handleChange} placeholder="Recipient name or organization"/>
                                     </div>
@@ -991,13 +998,6 @@ function TeamPortal() {
                                             <label className="form-label">File Reference *</label>
                                             <input type="text" name="fileReference" className="form-input" value={formData.fileReference} onChange={handleChange} required placeholder="e.g. F/2024/001"/>
                                         </div>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Link to Inward</label>
-                                        <select name="linkedInwardId" className="form-select" value={formData.linkedInwardId} onChange={handleChange}>
-                                            <option value="">None (independent)</option>
-                                            {pendingInward.map(e => <option key={e.id} value={e.id}>{e.inwardNo} – {e.subject?.slice(0, 40)}</option>)}
-                                        </select>
                                     </div>
                                     <div className="grid-2">
                                         <div className="form-group">
