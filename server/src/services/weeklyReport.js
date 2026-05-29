@@ -16,7 +16,7 @@ function buildReportHtml({ generatedDate, inwardRows, outwardRows }) {
     const isRegistrar = (to) => (to || '').toLowerCase().includes('registrar');
     const isVC = (to) => {
         const t = (to || '').toLowerCase();
-        return t.includes('vice-chancellor') || t.includes('vc');
+        return t.includes('vice-chancellor') || /\bvc\b/.test(t);
     };
 
     const notesToRegistrar = outwardRows.filter(r => isRegistrar(r.to_whom));
@@ -71,8 +71,9 @@ function buildReportHtml({ generatedDate, inwardRows, outwardRows }) {
         outwardHtml += `<tr><td colspan="6" style="${tdStyle};text-align:center;color:#94a3b8">No general outward entries</td></tr>`;
     } else {
         generalOutward.forEach((r, i) => {
+            const closedBadge = r.case_closed ? ' <span style="font-size:10px;background:#dcfce7;color:#16a34a;padding:1px 6px;border-radius:4px;font-family:sans-serif">✓ Closed</span>' : '';
             outwardHtml += `<tr>
-              <td style="${tdStyle}">${i + 1}</td>
+              <td style="${tdStyle}">${i + 1}${closedBadge}</td>
               <td style="${tdStyle};font-family:monospace;color:#10b981;font-weight:600">${r.outward_no}</td>
               <td style="${tdStyle};white-space:nowrap">${formatDate(r.sign_receipt_datetime)}</td>
               <td style="${tdStyle}">${r.subject || '—'}</td>
@@ -97,8 +98,9 @@ function buildReportHtml({ generatedDate, inwardRows, outwardRows }) {
         registrarHtml += `<tr><td colspan="5" style="${tdStyle};text-align:center;color:#94a3b8">No entries</td></tr>`;
     } else {
         notesToRegistrar.forEach((r, i) => {
+            const closedBadge = r.case_closed ? ' <span style="font-size:10px;background:#dcfce7;color:#16a34a;padding:1px 6px;border-radius:4px;font-family:sans-serif">✓ Closed</span>' : '';
             registrarHtml += `<tr>
-              <td style="${tdStyle}">${i + 1}</td>
+              <td style="${tdStyle}">${i + 1}${closedBadge}</td>
               <td style="${tdStyle};font-family:monospace;color:#f59e0b;font-weight:600">${r.outward_no}</td>
               <td style="${tdStyle};white-space:nowrap">${formatDate(r.sign_receipt_datetime)}</td>
               <td style="${tdStyle}">${r.subject || '—'}</td>
@@ -122,8 +124,9 @@ function buildReportHtml({ generatedDate, inwardRows, outwardRows }) {
         vcHtml += `<tr><td colspan="5" style="${tdStyle};text-align:center;color:#94a3b8">No entries</td></tr>`;
     } else {
         notesToVC.forEach((r, i) => {
+            const closedBadge = r.case_closed ? ' <span style="font-size:10px;background:#dcfce7;color:#16a34a;padding:1px 6px;border-radius:4px;font-family:sans-serif">✓ Closed</span>' : '';
             vcHtml += `<tr>
-              <td style="${tdStyle}">${i + 1}</td>
+              <td style="${tdStyle}">${i + 1}${closedBadge}</td>
               <td style="${tdStyle};font-family:monospace;color:#8b5cf6;font-weight:600">${r.outward_no}</td>
               <td style="${tdStyle};white-space:nowrap">${formatDate(r.sign_receipt_datetime)}</td>
               <td style="${tdStyle}">${r.subject || '—'}</td>
@@ -183,10 +186,10 @@ export async function sendWeeklyReport(env) {
          FROM inward WHERE assignment_status != 'Completed' ORDER BY id ASC`
     ).all();
 
-    // Fetch open outward entries
+    // Fetch all outward entries (open and closed)
     const { results: outwardRows } = await db.prepare(
-        `SELECT outward_no, subject, to_whom, sign_receipt_datetime, due_date, remarks
-         FROM outward WHERE case_closed = 0 ORDER BY id ASC`
+        `SELECT outward_no, subject, to_whom, sign_receipt_datetime, due_date, remarks, case_closed
+         FROM outward ORDER BY id ASC`
     ).all();
 
     const generatedDate = new Date().toLocaleDateString('en-IN', {
