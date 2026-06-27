@@ -1120,8 +1120,14 @@ function TeamPortal() {
                         </div>
                         <form onSubmit={submitMarkComplete}>
                             <div style={{padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                                <div style={{background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', gap: '0.6rem', alignItems: 'flex-start'}}>
+                                    <AlertTriangle size={15} style={{color: '#ca8a04', flexShrink: 0, marginTop: '1px'}}/>
+                                    <div style={{fontSize: '0.82rem', color: '#92400e', lineHeight: 1.5}}>
+                                        <strong>Are you sure?</strong> Please recheck the entry before proceeding. This action will move the entry to Completed and cannot be easily undone.
+                                    </div>
+                                </div>
                                 <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}>
-                                    Please enter the file reference before marking this entry as complete.
+                                    Enter the file reference to confirm completion.
                                 </p>
                                 <div className="form-group" style={{margin: 0}}>
                                     <label className="form-label">File Reference *</label>
