@@ -1161,6 +1161,7 @@ function TeamPortal() {
                                 <div className="detail-item"><label>From</label><span>{selectedInwardEntry.particularsFromWhom}</span></div>
                                 <div className="detail-item"><label>Status</label><span>{selectedInwardEntry.assignmentStatus}</span></div>
                                 <div className="detail-item"><label>Due Date</label><span>{formatDate(selectedInwardEntry.dueDate)}</span></div>
+                                {selectedInwardEntry.fileReference && <div className="detail-item"><label>File Reference</label><span>{selectedInwardEntry.fileReference}</span></div>}
                                 {selectedInwardEntry.assignmentInstructions && <div className="detail-item full"><label>Instructions</label><span>{selectedInwardEntry.assignmentInstructions}</span></div>}
                                 {selectedInwardEntry.remarks && <div className="detail-item full"><label>Remarks</label><span>{selectedInwardEntry.remarks}</span></div>}
                             </div>

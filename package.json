@@ -17,6 +17,7 @@
         "@rive-app/react-canvas": "^4.28.3",
         "@tsparticles/react": "^3.0.0",
         "@tsparticles/slim": "^3.9.1",
+        "docx": "^9.7.1",
         "lucide-react": "^0.575.0",
         "react-router-dom": "^7.13.0"
     }

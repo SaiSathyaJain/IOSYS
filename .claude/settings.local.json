@@ -18,7 +18,10 @@
       "Bash(findstr:*)",
       "Bash(npx wrangler pages project io-system variables add:*)",
       "Bash(npx wrangler d1 execute:*)",
-      "Bash(npx wrangler deploy:*)"
+      "Bash(npx wrangler deploy:*)",
+      "Bash(npm list *)",
+      "Bash(npm install *)",
+      "Bash(node gen_guide.js)"
     ]
   }
 }
