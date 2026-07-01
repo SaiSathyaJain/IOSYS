@@ -6,7 +6,7 @@ import {
     Clock, CheckCircle2, ArrowRight, Calendar, Plus, X,
     ClipboardList, Check, FileText, Search, RefreshCw, Eye,
     ArrowUpFromLine, ArrowLeft, Loader2, AlertTriangle, Link2, Lock,
-    Sun, Moon, LayoutDashboard, Send, History, User, Download
+    Sun, Moon, LayoutDashboard, Send, History, User, Download, Pencil
 } from 'lucide-react';
 import ChatBot from '../ChatBot/ChatBot';
 import './TeamPortal.css';
@@ -44,6 +44,7 @@ function TeamPortal() {
     const [selectedInwardEntry, setSelectedInwardEntry] = useState(null);
     const [completedInward, setCompletedInward] = useState([]);
     const [nextOutwardNo, setNextOutwardNo] = useState('');
+    const [editingEntry, setEditingEntry] = useState(null);
     const [ccInput, setCcInput] = useState('');
     const [ccEntries, setCcEntries] = useState([]);
     const [formData, setFormData] = useState({
@@ -151,6 +152,33 @@ function TeamPortal() {
         setShowForm(true);
     };
 
+    const openEditForm = (entry) => {
+        setEditingEntry(entry);
+        setNextOutwardNo(entry.outwardNo);
+        setCcInput('');
+        setCcEntries(entry.cc ? JSON.parse(entry.cc) : []);
+        setFormData({
+            means: entry.means || '',
+            toWhom: entry.toWhom || '',
+            subject: entry.subject || '',
+            sentBy: entry.sentBy || '',
+            signReceiptDateTime: entry.signReceiptDatetime || '',
+            caseClosed: !!entry.caseClosed,
+            fileReference: entry.fileReference || '',
+            postalTariff: entry.postalTariff || '',
+            dueDate: entry.dueDate || '',
+            linkedInwardId: entry.linkedInwardId || '',
+            createdByTeam: entry.createdByTeam || selectedTeam || '',
+            teamMemberEmail: entry.teamMemberEmail || '',
+            ackRec: entry.ackRec || '',
+            crossNo: entry.crossNo || '',
+            receiptNo: entry.receiptNo || '',
+            remarks: entry.remarks || ''
+        });
+        setShowDetailsModal(false);
+        setShowForm(true);
+    };
+
     const handleProcess = (inwardEntry) => {
         openForm({
             subject: `Re: ${inwardEntry.subject}`,
@@ -205,22 +233,27 @@ function TeamPortal() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await outwardAPI.create({
+            const payload = {
                 ...formData,
                 outwardNo: nextOutwardNo,
-                signReceiptDateTime: new Date().toISOString(),
                 cc: ccEntries.length ? JSON.stringify(ccEntries) : null
-            });
-            if (formData.teamMemberEmail) {
-                localStorage.setItem('teamUser', JSON.stringify({ email: formData.teamMemberEmail.trim(), type: 'team' }));
+            };
+            if (editingEntry) {
+                await outwardAPI.update(editingEntry.id, payload);
+                alert('Outward entry updated successfully!');
+            } else {
+                await outwardAPI.create({ ...payload, signReceiptDateTime: new Date().toISOString() });
+                if (formData.teamMemberEmail) {
+                    localStorage.setItem('teamUser', JSON.stringify({ email: formData.teamMemberEmail.trim(), type: 'team' }));
+                }
+                alert('Outward entry created successfully!');
             }
-            alert('Outward entry created successfully!');
             setShowForm(false);
             resetForm();
             loadData();
             loadEntries();
         } catch (error) {
-            alert('Error creating entry: ' + error.message);
+            alert(`Error ${editingEntry ? 'updating' : 'creating'} entry: ` + error.message);
         }
     };
 
@@ -285,6 +318,7 @@ function TeamPortal() {
 
     const resetForm = () => {
         setNextOutwardNo('');
+        setEditingEntry(null);
         setCcInput('');
         setCcEntries([]);
         setFormData({
@@ -631,6 +665,9 @@ function TeamPortal() {
                                                 <td>
                                                     <div className="tp-row-btns">
                                                         <button onClick={() => { setSelectedEntry(entry); setShowDetailsModal(true); }} title="View"><Eye size={13}/></button>
+                                                        {viewTeam === selectedTeam && (
+                                                            <button onClick={() => openEditForm(entry)} title="Edit" className="edit-btn"><Pencil size={13}/></button>
+                                                        )}
                                                         {!entry.caseClosed && viewTeam === selectedTeam && (
                                                             <button onClick={() => handleCloseCase(entry.id)} title="Close" className="close-btn"><Lock size={13}/></button>
                                                         )}
@@ -842,6 +879,9 @@ function TeamPortal() {
                                                 <td>
                                                     <div className="tp-row-btns">
                                                         <button onClick={() => { setSelectedEntry(entry); setShowDetailsModal(true); }} title="View"><Eye size={13}/></button>
+                                                        {viewTeam === selectedTeam && (
+                                                            <button onClick={() => openEditForm(entry)} title="Edit" className="edit-btn"><Pencil size={13}/></button>
+                                                        )}
                                                         {!entry.caseClosed && viewTeam === selectedTeam && (
                                                             <button onClick={() => handleCloseCase(entry.id)} title="Close" className="close-btn"><Lock size={13}/></button>
                                                         )}
@@ -913,7 +953,7 @@ function TeamPortal() {
                         {/* RIGHT PANEL — form */}
                         <div className="tp-drawer-right">
                             <div className="modal-header">
-                                <h3><Plus size={18}/> Create Outward Entry</h3>
+                                <h3>{editingEntry ? <><Pencil size={18}/> Edit Outward Entry</> : <><Plus size={18}/> Create Outward Entry</>}</h3>
                                 <button className="btn-close" onClick={() => { setShowForm(false); resetForm(); }}><X size={18}/></button>
                             </div>
                             <div className="modal-body">
@@ -1036,7 +1076,7 @@ function TeamPortal() {
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</button>
-                                <button type="submit" form="outward-form" className="btn btn-primary"><Check size={16}/> Create Outward Entry</button>
+                                <button type="submit" form="outward-form" className="btn btn-primary">{editingEntry ? <><Check size={16}/> Save Changes</> : <><Check size={16}/> Create Outward Entry</>}</button>
                             </div>
                         </div>
 
@@ -1067,6 +1107,9 @@ function TeamPortal() {
                             </div>
                         </div>
                         <div className="modal-footer">
+                            {viewTeam === selectedTeam && (
+                                <button className="btn btn-secondary" onClick={() => openEditForm(selectedEntry)}><Pencil size={16}/> Edit</button>
+                            )}
                             {!selectedEntry.caseClosed && viewTeam === selectedTeam && (
                                 <button className="btn btn-primary" onClick={() => handleCloseCase(selectedEntry.id)}><Lock size={16}/> Close Case</button>
                             )}

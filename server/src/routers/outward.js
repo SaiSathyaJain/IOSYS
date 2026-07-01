@@ -151,3 +151,42 @@ outwardRouter.post('/', async (c) => {
         return c.json({ success: false, message: error.message }, 500);
     }
 });
+
+// Update an outward entry
+outwardRouter.put('/:id', async (c) => {
+    try {
+        const id = Number(c.req.param('id'));
+        const {
+            means, toWhom, subject, sentBy, fileReference,
+            postalTariff, dueDate, linkedInwardId, createdByTeam,
+            teamMemberEmail, remarks, cc, caseClosed
+        } = await c.req.json();
+
+        const isCaseClosed = caseClosed ? 1 : 0;
+        const tariff = postalTariff || 0;
+
+        await c.env.DB.prepare(`
+            UPDATE outward SET
+                means = ?, to_whom = ?, subject = ?, sent_by = ?,
+                file_reference = ?, postal_tariff = ?, due_date = ?,
+                linked_inward_id = ?, created_by_team = ?, team_member_email = ?,
+                remarks = ?, cc = ?, case_closed = ?, updated_at = ?
+            WHERE id = ?
+        `).bind(
+            means, toWhom, subject, sentBy,
+            fileReference || '', tariff, dueDate || null,
+            linkedInwardId || null, createdByTeam, teamMemberEmail,
+            remarks || '', cc || null, isCaseClosed,
+            new Date().toISOString(), id
+        ).run();
+
+        const auditActor = createdByTeam ? `${createdByTeam} Team` : 'Team';
+        await c.env.DB.prepare(
+            'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+        ).bind('OUTWARD_UPDATED', auditActor, `${auditActor} edited outward entry id=${id}`, null).run();
+
+        return c.json({ success: true, message: 'Outward entry updated successfully' });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
