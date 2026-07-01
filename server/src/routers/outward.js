@@ -152,6 +152,31 @@ outwardRouter.post('/', async (c) => {
     }
 });
 
+// Close an outward case
+outwardRouter.put('/:id/close', async (c) => {
+    try {
+        const id = Number(c.req.param('id'));
+
+        const entry = await c.env.DB.prepare('SELECT outward_no, created_by_team FROM outward WHERE id = ?').bind(id).first();
+        if (!entry) {
+            return c.json({ success: false, message: 'Outward entry not found' }, 404);
+        }
+
+        await c.env.DB.prepare(
+            'UPDATE outward SET case_closed = 1, updated_at = ? WHERE id = ?'
+        ).bind(new Date().toISOString(), id).run();
+
+        const auditActor = entry.created_by_team ? `${entry.created_by_team} Team` : 'Team';
+        await c.env.DB.prepare(
+            'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+        ).bind('OUTWARD_CLOSED', auditActor, `${auditActor} closed outward entry ${entry.outward_no}`, null).run();
+
+        return c.json({ success: true, message: 'Case closed successfully' });
+    } catch (error) {
+        return c.json({ success: false, message: error.message }, 500);
+    }
+});
+
 // Update an outward entry
 outwardRouter.put('/:id', async (c) => {
     try {
