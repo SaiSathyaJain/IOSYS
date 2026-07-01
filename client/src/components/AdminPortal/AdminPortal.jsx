@@ -2186,7 +2186,9 @@ function AdminPortal() {
                                                     log.action === 'ENTRY_CREATED' ? 'pending' :
                                                     log.action === 'ENTRY_ASSIGNED' ? 'success' :
                                                     log.action === 'STATUS_CHANGED' ? 'warning' :
-                                                    log.action === 'OUTWARD_CREATED' ? 'team' : 'none'
+                                                    log.action === 'OUTWARD_CREATED' ? 'team' :
+                                                    log.action === 'OUTWARD_UPDATED' ? 'warning' :
+                                                    log.action === 'OUTWARD_CLOSED' ? 'success' : 'none'
                                                 }`} style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                                                     {log.action.replace(/_/g, ' ')}
                                                 </span>

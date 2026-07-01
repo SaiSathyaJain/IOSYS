@@ -177,6 +177,29 @@ outwardRouter.put('/:id/close', async (c) => {
     }
 });
 
+// Field labels for audit diff output
+const OUTWARD_FIELD_LABELS = {
+    means: 'Means',
+    to_whom: 'To Whom',
+    subject: 'Subject',
+    sent_by: 'Sent By',
+    file_reference: 'File Reference',
+    postal_tariff: 'Postal Tariff',
+    due_date: 'Due Date',
+    linked_inward_id: 'Linked Inward',
+    created_by_team: 'Team',
+    team_member_email: 'Team Email',
+    remarks: 'Remarks',
+    cc: 'CC',
+    case_closed: 'Case Closed'
+};
+
+function formatFieldValue(field, value) {
+    if (field === 'case_closed') return value ? 'Yes' : 'No';
+    if (value === null || value === undefined || value === '') return '(empty)';
+    return String(value);
+}
+
 // Update an outward entry
 outwardRouter.put('/:id', async (c) => {
     try {
@@ -187,8 +210,30 @@ outwardRouter.put('/:id', async (c) => {
             teamMemberEmail, remarks, cc, caseClosed
         } = await c.req.json();
 
+        const existing = await c.env.DB.prepare('SELECT * FROM outward WHERE id = ?').bind(id).first();
+        if (!existing) {
+            return c.json({ success: false, message: 'Outward entry not found' }, 404);
+        }
+
         const isCaseClosed = caseClosed ? 1 : 0;
         const tariff = postalTariff || 0;
+
+        const newValues = {
+            means, to_whom: toWhom, subject, sent_by: sentBy,
+            file_reference: fileReference || '', postal_tariff: tariff, due_date: dueDate || null,
+            linked_inward_id: linkedInwardId || null, created_by_team: createdByTeam, team_member_email: teamMemberEmail,
+            remarks: remarks || '', cc: cc || null, case_closed: isCaseClosed
+        };
+
+        const changes = [];
+        for (const [field, newVal] of Object.entries(newValues)) {
+            const oldVal = existing[field];
+            const normalizedOld = field === 'case_closed' ? Number(oldVal) : (oldVal ?? '');
+            const normalizedNew = field === 'case_closed' ? Number(newVal) : (newVal ?? '');
+            if (String(normalizedOld) !== String(normalizedNew)) {
+                changes.push(`${OUTWARD_FIELD_LABELS[field]}: "${formatFieldValue(field, oldVal)}" → "${formatFieldValue(field, newVal)}"`);
+            }
+        }
 
         await c.env.DB.prepare(`
             UPDATE outward SET
@@ -205,10 +250,13 @@ outwardRouter.put('/:id', async (c) => {
             new Date().toISOString(), id
         ).run();
 
-        const auditActor = createdByTeam ? `${createdByTeam} Team` : 'Team';
-        await c.env.DB.prepare(
-            'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
-        ).bind('OUTWARD_UPDATED', auditActor, `${auditActor} edited outward entry id=${id}`, null).run();
+        if (changes.length > 0) {
+            const auditActor = createdByTeam ? `${createdByTeam} Team` : 'Team';
+            const description = `${auditActor} edited outward entry ${existing.outward_no} — ${changes.join('; ')}`;
+            await c.env.DB.prepare(
+                'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+            ).bind('OUTWARD_UPDATED', auditActor, description, null).run();
+        }
 
         return c.json({ success: true, message: 'Outward entry updated successfully' });
     } catch (error) {
