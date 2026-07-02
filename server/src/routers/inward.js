@@ -241,38 +241,54 @@ inwardRouter.put('/:id/assign', async (c) => {
     try {
         const id = c.req.param('id');
         const body = await c.req.json();
-        const { subject, assignedTeam, assignedToEmail, assignmentInstructions, dueDate } = body;
+        const { subject, assignedTeam, assignedToEmail, assignmentInstructions, dueDate, inwardNo } = body;
 
         const existing = await c.env.DB.prepare('SELECT * FROM inward WHERE id = ?').bind(id).first();
         if (!existing) {
             return c.json({ success: false, message: 'Entry not found' }, 404);
         }
 
+        // If admin changed the inward number, validate uniqueness first
+        const trimmedInwardNo = inwardNo?.trim();
+        if (trimmedInwardNo && trimmedInwardNo !== existing.inward_no) {
+            const conflict = await c.env.DB.prepare(
+                'SELECT id FROM inward WHERE inward_no = ? AND id != ?'
+            ).bind(trimmedInwardNo, id).first();
+            if (conflict) {
+                return c.json({ success: false, message: `Inward number ${trimmedInwardNo} is already in use` }, 409);
+            }
+        }
+        const finalInwardNo = trimmedInwardNo || existing.inward_no;
+
         const assignmentDate = new Date().toISOString();
         const updatedAt = new Date().toISOString();
 
         await c.env.DB.prepare(`
             UPDATE inward SET
+                inward_no = ?,
                 subject = COALESCE(?, subject),
                 assigned_team = ?, assigned_to_email = ?,
                 assignment_instructions = ?, assignment_date = ?,
                 assignment_status = 'Pending', due_date = ?, updated_at = ?
             WHERE id = ?
         `).bind(
-            subject || null, assignedTeam, assignedToEmail, assignmentInstructions,
+            finalInwardNo, subject || null, assignedTeam, assignedToEmail, assignmentInstructions,
             assignmentDate, dueDate, updatedAt, id
         ).run();
 
         // Audit log
+        const inwardNoChangeNote = finalInwardNo !== existing.inward_no
+            ? ` (renumbered from ${existing.inward_no} to ${finalInwardNo})`
+            : '';
         await c.env.DB.prepare(
             'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
-        ).bind('ENTRY_ASSIGNED', 'Admin', `Admin assigned ${existing.inward_no} to ${assignedTeam} Team`, existing.inward_no).run();
+        ).bind('ENTRY_ASSIGNED', 'Admin', `Admin assigned ${finalInwardNo} to ${assignedTeam} Team${inwardNoChangeNote}`, finalInwardNo).run();
 
         // Send email + push notifications (non-blocking)
         c.executionCtx.waitUntil((async () => {
             await Promise.allSettled([
                 sendAssignmentNotification({
-                    inwardNo: existing.inward_no,
+                    inwardNo: finalInwardNo,
                     subject: existing.subject,
                     particularsFromWhom: existing.particulars_from_whom,
                     assignedTeam,
@@ -283,7 +299,7 @@ inwardRouter.put('/:id/assign', async (c) => {
 
                 sendTeamPushNotifications(c.env, c.env.DB, assignedTeam, {
                     title: `New Assignment — ${assignedTeam} Team`,
-                    body: `${existing.inward_no}: ${(existing.subject || '').slice(0, 60)}`,
+                    body: `${finalInwardNo}: ${(existing.subject || '').slice(0, 60)}`,
                     url: `https://iosys.pages.dev/team/${TEAM_SLUG[assignedTeam] || 'ug'}`
                 }).catch(err => console.error('Push notification failed:', err))
             ]);

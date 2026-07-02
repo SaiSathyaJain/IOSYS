@@ -57,6 +57,7 @@ function AdminPortal() {
         setTimeout(() => { setClosingModal(null); fn(); }, 190);
     };
     const [reassignData, setReassignData] = useState({
+        inwardNo: '',
         subject: '',
         assignedTeam: '',
         assignedToEmail: '',
@@ -649,7 +650,7 @@ function AdminPortal() {
             loadData();
         } catch (error) {
             console.error('Error reassigning:', error);
-            alert('Error reassigning: ' + error.message);
+            alert('Error reassigning: ' + (error.response?.data?.message || error.message));
         }
     };
 
@@ -895,6 +896,7 @@ function AdminPortal() {
     const openReassignModal = (entry) => {
         setSelectedEntry(entry);
         setReassignData({
+            inwardNo: entry.inwardNo?.startsWith('NOINW-') ? '' : (entry.inwardNo || ''),
             subject: entry.subject || '',
             assignedTeam: entry.assignedTeam || '',
             assignedToEmail: entry.assignedToEmail || '',
@@ -1969,9 +1971,12 @@ function AdminPortal() {
                         </div>
                         <form onSubmit={handleReassign}>
                             <div className="modal-body">
-                                <p className="modal-info">
-                                    Editing: <strong>{selectedEntry.inwardNo?.startsWith('NOINW-') ? '-' : selectedEntry.inwardNo}</strong>
-                                </p>
+                                <div className="form-group">
+                                    <label className="form-label">Inward No.</label>
+                                    <input type="text" name="inwardNo" className="form-input"
+                                        value={reassignData.inwardNo} onChange={handleReassignChange}
+                                        placeholder={selectedEntry.inwardNo?.startsWith('NOINW-') ? 'e.g. INW/01/01/2026-0001' : selectedEntry.inwardNo} />
+                                </div>
 
                                 <div className="form-group">
                                     <label className="form-label">Subject *</label>
