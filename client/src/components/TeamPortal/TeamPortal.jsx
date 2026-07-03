@@ -599,7 +599,7 @@ function TeamPortal() {
                                         <div className="tp-ac-actions">
                                             <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
                                             <button className="tp-ac-btn complete" onClick={() => handleMarkComplete(entry.id)}>MARK COMPLETE</button>
-                                            <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>FORWARD</button>
+                                            <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>OUTWARD</button>
                                         </div>
                                     </motion.div>
                                 ))}
@@ -801,7 +801,7 @@ function TeamPortal() {
                                                 <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
                                                 <button className="tp-ac-btn complete" onClick={() => handleMarkComplete(entry.id)}>MARK COMPLETE</button>
                                                 <button className="tp-ac-btn remarks" onClick={() => openRemarksModal(entry)}>REMARKS</button>
-                                                <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>FORWARD</button>
+                                                <button className="tp-ac-btn forward" onClick={() => handleProcess(entry)}>OUTWARD</button>
                                             </div>
                                         </div>
                                     ))}
