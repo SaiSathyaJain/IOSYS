@@ -1,8 +1,56 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { BookOpen, Users, Building, ArrowLeft, Sun, Moon } from 'lucide-react';
 import './TeamSelection.css';
+
+const TiltCard = ({ team, idx, onClick }) => {
+    const ref = useRef(null);
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+    const springConfig = { stiffness: 200, damping: 20, mass: 0.5 };
+    const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [10, -10]), springConfig);
+    const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-10, 10]), springConfig);
+
+    const handleMouseMove = (e) => {
+        const rect = ref.current.getBoundingClientRect();
+        x.set((e.clientX - rect.left) / rect.width - 0.5);
+        y.set((e.clientY - rect.top) / rect.height - 0.5);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    return (
+        <motion.div
+            ref={ref}
+            className="team-card glass-card interactive animate-stagger-3"
+            style={{
+                animationDelay: `${(idx * 0.1) + 0.2}s`,
+                '--team-color': team.color,
+                rotateX,
+                rotateY,
+                transformPerspective: 900,
+            }}
+            whileHover={{ scale: 1.03, y: -8 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onClick={onClick}
+        >
+            <div
+                className="team-icon-container"
+                style={{ color: team.color, boxShadow: `inset 0 0 20px ${team.color}15` }}
+            >
+                {team.icon}
+            </div>
+            <h3>{team.name}</h3>
+            <p>Enter workspace →</p>
+        </motion.div>
+    );
+};
 
 const TeamSelection = () => {
     const navigate = useNavigate();
@@ -57,21 +105,7 @@ const TeamSelection = () => {
             <main className="team-grid-container animate-stagger-2">
                 <div className="team-grid">
                     {teams.map((team, idx) => (
-                        <div
-                            key={team.id}
-                            className="team-card glass-card interactive animate-stagger-3"
-                            style={{ animationDelay: `${(idx * 0.1) + 0.2}s`, '--team-color': team.color }}
-                            onClick={() => navigate(`/team/${team.id}`)}
-                        >
-                            <div
-                                className="team-icon-container"
-                                style={{ color: team.color, boxShadow: `inset 0 0 20px ${team.color}15` }}
-                            >
-                                {team.icon}
-                            </div>
-                            <h3>{team.name}</h3>
-                            <p>Enter workspace →</p>
-                        </div>
+                        <TiltCard key={team.id} team={team} idx={idx} onClick={() => navigate(`/team/${team.id}`)} />
                     ))}
                 </div>
             </main>
