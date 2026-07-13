@@ -4,24 +4,24 @@ import './TeamSelector.css';
 
 const TEAMS = [
     {
-        slug: 'ug',
-        name: 'UG Team',
+        slug: 'upas',
+        name: 'UPAS Team',
         label: 'Undergraduate',
         description: 'Handle undergraduate student correspondence, assignments and outward entries.',
         icon: GraduationCap,
         accent: 'blue',
     },
     {
-        slug: 'pg-pro',
-        name: 'PG/PRO Team',
+        slug: 'ppas',
+        name: 'PPAS Team',
         label: 'Postgraduate & Professional',
         description: 'Manage postgraduate and professional programme-related communications.',
         icon: BookOpen,
         accent: 'amber',
     },
     {
-        slug: 'phd',
-        name: 'PhD Team',
+        slug: 'dpas',
+        name: 'DPAS Team',
         label: 'Doctorate',
         description: 'Process doctoral research correspondence and track outward entries.',
         icon: FlaskConical,

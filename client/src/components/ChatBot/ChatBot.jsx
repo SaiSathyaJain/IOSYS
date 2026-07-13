@@ -42,7 +42,7 @@ const DEFAULT_MODEL = MODELS[0].id;
 const QUICK_ACTIONS = [
     // Overview
     { label: '📋 Daily briefing',        query: 'Give me today\'s briefing — new entries today, overdue items, and team with most load' },
-    { label: '📊 Team workload',          query: 'Show team workload breakdown and compare UG, PG/PRO, UG/PG and PhD performance' },
+    { label: '📊 Team workload',          query: 'Show team workload breakdown and compare UPAS, PPAS, UPAS/PPAS and DPAS performance' },
     { label: '⚠️ Overdue entries',        query: 'Show all overdue entries sorted by how long they have been pending' },
     { label: '📥 Unassigned entries',     query: 'List all inward entries that have not been assigned to any team yet' },
     // Entry lists
@@ -57,7 +57,7 @@ const QUICK_ACTIONS = [
     // Productivity
     { label: '📝 Status report',          query: 'Generate a formal status report I can share with the COE — total entries, team breakdown, overdue count' },
     { label: '🔍 Recent activity',        query: 'Summarize the last 15 actions from the audit log' },
-    { label: '⚖️ Compare teams',          query: 'Compare UG vs PG/PRO vs UG/PG vs PhD — which team has the best completion rate and least overdue?' },
+    { label: '⚖️ Compare teams',          query: 'Compare UPAS vs PPAS vs UPAS/PPAS vs DPAS — which team has the best completion rate and least overdue?' },
 ];
 
 const INITIAL_MESSAGE = {

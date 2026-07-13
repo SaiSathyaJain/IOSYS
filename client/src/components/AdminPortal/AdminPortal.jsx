@@ -346,10 +346,10 @@ function AdminPortal() {
     }, [adminUser]);
 
     const TEAM_EMAILS = {
-        'UG': 'coeoffice@sssihl.edu.in',
-        'PG/PRO': 'coeoffice@sssihl.edu.in',
-        'UG/PG': 'coeoffice@sssihl.edu.in',
-        'PhD': 'coeoffice@sssihl.edu.in'
+        'UPAS': 'coeoffice@sssihl.edu.in',
+        'PPAS': 'coeoffice@sssihl.edu.in',
+        'UPAS/PPAS': 'coeoffice@sssihl.edu.in',
+        'DPAS': 'coeoffice@sssihl.edu.in'
     };
 
     useEffect(() => {
@@ -1498,10 +1498,10 @@ function AdminPortal() {
                                             <label className="form-label">Assign to Team</label>
                                             <select name="assignedTeam" className="form-select" value={formData.assignedTeam} onChange={handleChange}>
                                                 <option value="">Leave Unassigned</option>
-                                                <option value="UG">UG Team</option>
-                                                <option value="PG/PRO">PG/PRO Team</option>
-                                                <option value="UG/PG">UG/PG Team</option>
-                                                <option value="PhD">PhD Team</option>
+                                                <option value="UPAS">UPAS Team</option>
+                                                <option value="PPAS">PPAS Team</option>
+                                                <option value="UPAS/PPAS">UPAS/PPAS Team</option>
+                                                <option value="DPAS">DPAS Team</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1992,10 +1992,10 @@ function AdminPortal() {
                                     <select name="assignedTeam" className="form-select"
                                         value={reassignData.assignedTeam} onChange={handleReassignChange} required>
                                         <option value="">Select Team...</option>
-                                        <option value="UG">UG Team</option>
-                                        <option value="PG/PRO">PG/PRO Team</option>
-                                        <option value="UG/PG">UG/PG Team</option>
-                                        <option value="PhD">PhD Team</option>
+                                        <option value="UPAS">UPAS Team</option>
+                                        <option value="PPAS">PPAS Team</option>
+                                        <option value="UPAS/PPAS">UPAS/PPAS Team</option>
+                                        <option value="DPAS">DPAS Team</option>
                                     </select>
                                 </div>
 
@@ -2523,7 +2523,7 @@ function AdminPortal() {
                                     <select className="form-select" value={inboxAcceptData.assignedTeam || ''}
                                         onChange={e => setInboxAcceptData(p => ({ ...p, assignedTeam: e.target.value, assignedToEmail: TEAM_EMAILS[e.target.value] || '' }))}>
                                         <option value="">— No Assignment —</option>
-                                        <option>UG</option><option>PG/PRO</option><option>UG/PG</option><option>PhD</option>
+                                        <option>UPAS</option><option>PPAS</option><option>UPAS/PPAS</option><option>DPAS</option>
                                     </select>
                                 </div>
                                 <div className="form-group">

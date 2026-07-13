@@ -86,7 +86,7 @@ Body preview: ${bodyText.slice(0, 500)}
 
 Fields to extract:
 - "particularsFromWhom": sender name or organization (string)
-- "assignedTeam": which team should handle it — "UG" (undergraduate matters), "PG/PRO" (postgraduate/professional), "PhD" (doctoral research), or "" if unclear (string)
+- "assignedTeam": which team should handle it — "UPAS" (undergraduate matters), "PPAS" (postgraduate/professional), "DPAS" (doctoral research), or "" if unclear (string)
 - "dueDate": YYYY-MM-DD — 7 days from ${today} if urgent/exam-related, 14 days if normal, "" if not applicable (string)
 - "remarks": one short sentence about the key action needed, or "" (string)
 

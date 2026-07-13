@@ -282,10 +282,10 @@ function Dashboard() {
                                     </select>
                                     <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} className="filter-select">
                                         <option value="all">All Teams</option>
-                                        <option value="UG">UG Team</option>
-                                        <option value="PG/PRO">PG/PRO Team</option>
-                                        <option value="UG/PG">UG/PG Team</option>
-                                        <option value="PhD">PhD Team</option>
+                                        <option value="UPAS">UPAS Team</option>
+                                        <option value="PPAS">PPAS Team</option>
+                                        <option value="UPAS/PPAS">UPAS/PPAS Team</option>
+                                        <option value="DPAS">DPAS Team</option>
                                     </select>
                                     {isFiltering && (
                                         <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => { setSearchTerm(''); setStatusFilter('all'); setTeamFilter('all'); }}>

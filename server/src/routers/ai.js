@@ -21,7 +21,7 @@ Fields to extract:
 - "particularsFromWhom": sender name or organization (string)
 - "subject": concise subject line, max 120 chars (string)
 - "means": delivery mode — one of "Post" | "Email" | "Hand Delivery" | "Courier" | "" (string)
-- "assignedTeam": which team should handle it — "UG" (undergraduate), "PG/PRO" (postgraduate/professional), "PhD" (doctoral), or "" if unclear (string)
+- "assignedTeam": which team should handle it — "UPAS" (undergraduate), "PPAS" (postgraduate/professional), "DPAS" (doctoral), or "" if unclear (string)
 - "dueDate": suggested deadline as YYYY-MM-DD — use 7 days from ${today} if urgent, 14 days if normal, "" if not applicable (string)
 - "remarks": one short sentence capturing the key ask or action needed, or "" (string)
 
@@ -128,12 +128,12 @@ Subject: ${subject}
 Remarks: ${remarks || ''}
 
 Teams:
-UG = undergraduate (exams, hall tickets, bonafide, attendance, fee, admission, certificates for UG students)
-PG/PRO = postgraduate / professional (M.Tech, MBA, M.Sc, PGDM, professional courses)
-PhD = doctoral (research scholars, thesis, synopsis, fellowship, research grants)
+UPAS = undergraduate (exams, hall tickets, bonafide, attendance, fee, admission, certificates for UG students)
+PPAS = postgraduate / professional (M.Tech, MBA, M.Sc, PGDM, professional courses)
+DPAS = doctoral (research scholars, thesis, synopsis, fellowship, research grants)
 
 Respond with ONLY this JSON (no explanation, no markdown, no extra text):
-{"assignedTeam":"UG","assignmentInstructions":"Action for team.","dueDate":"${new Date(Date.now()+14*86400000).toISOString().split('T')[0]}","reasoning":"reason"}`;
+{"assignedTeam":"UPAS","assignmentInstructions":"Action for team.","dueDate":"${new Date(Date.now()+14*86400000).toISOString().split('T')[0]}","reasoning":"reason"}`;
 
         // Try Groq first (if key available), then fall back to OpenRouter models
         let raw = '';
@@ -228,7 +228,7 @@ Respond with ONLY this JSON (no explanation, no markdown, no extra text):
         } catch {
             console.error('Agent JSON parse failed. Raw:', raw);
             // Build a fallback suggestion from the text using keyword matching
-            const teamMatch = raw.match(/\b(UG|PG\/PRO|PG|PRO|PhD|phd|ug)\b/);
+            const teamMatch = raw.match(/\b(UPAS\/PPAS|UPAS|PPAS|DPAS|upas\/ppas|upas|ppas|dpas)\b/);
             if (teamMatch) {
                 const today = new Date();
                 today.setDate(today.getDate() + 14);
@@ -480,8 +480,8 @@ ${keywordSearchResults}
 ENTRIES_JSON format (only for #2 above):
 ENTRIES_JSON
 [
-  {"no":"INW/...","type":"inward","date":"1 Apr 2026","from":"Sender","subject":"Subject text","team":"UG","status":"Pending","due":"2026-04-15"},
-  {"no":"OTW/...","type":"outward","date":"1 Apr 2026","to":"Receiver","subject":"Subject","sentBy":"Name","team":"PhD","mode":"Email","file":"REF-1","closed":false}
+  {"no":"INW/...","type":"inward","date":"1 Apr 2026","from":"Sender","subject":"Subject text","team":"UPAS","status":"Pending","due":"2026-04-15"},
+  {"no":"OTW/...","type":"outward","date":"1 Apr 2026","to":"Receiver","subject":"Subject","sentBy":"Name","team":"DPAS","mode":"Email","file":"REF-1","closed":false}
 ]
 END_ENTRIES_JSON
 

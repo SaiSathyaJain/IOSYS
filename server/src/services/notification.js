@@ -98,9 +98,9 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
            </div>`
         : '';
 
-    const teamColor = assignedTeam === 'UG' ? '#2563eb' : assignedTeam === 'PhD' ? '#7c3aed' : assignedTeam === 'UG/PG' ? '#e91e63' : '#0891b2';
-    const teamUrlMap = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'UG/PG': 'ug-pg', 'PhD': 'phd' };
-    const portalUrl = `https://iosys.pages.dev/team/${teamUrlMap[assignedTeam] || 'ug'}`;
+    const teamColor = assignedTeam === 'UPAS' ? '#2563eb' : assignedTeam === 'DPAS' ? '#7c3aed' : assignedTeam === 'UPAS/PPAS' ? '#e91e63' : '#0891b2';
+    const teamUrlMap = { 'UPAS': 'upas', 'PPAS': 'ppas', 'UPAS/PPAS': 'upas-ppas', 'DPAS': 'dpas' };
+    const portalUrl = `https://iosys.pages.dev/team/${teamUrlMap[assignedTeam] || 'upas'}`;
 
     return `<!DOCTYPE html>
 <html lang="en">

@@ -3,7 +3,7 @@ import { toCamelCase } from '../utils/caseConverter.js';
 import { sendAssignmentNotification } from '../services/notification.js';
 import { sendTeamPushNotifications } from '../services/webPush.js';
 
-const TEAM_SLUG = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'UG/PG': 'ug-pg', 'PhD': 'phd' };
+const TEAM_SLUG = { 'UPAS': 'upas', 'PPAS': 'ppas', 'UPAS/PPAS': 'upas-ppas', 'DPAS': 'dpas' };
 
 export const inwardRouter = new Hono();
 
@@ -300,7 +300,7 @@ inwardRouter.put('/:id/assign', async (c) => {
                 sendTeamPushNotifications(c.env, c.env.DB, assignedTeam, {
                     title: `New Assignment — ${assignedTeam} Team`,
                     body: `${finalInwardNo}: ${(existing.subject || '').slice(0, 60)}`,
-                    url: `https://iosys.pages.dev/team/${TEAM_SLUG[assignedTeam] || 'ug'}`
+                    url: `https://iosys.pages.dev/team/${TEAM_SLUG[assignedTeam] || 'upas'}`
                 }).catch(err => console.error('Push notification failed:', err))
             ]);
         })());
