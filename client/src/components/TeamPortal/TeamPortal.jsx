@@ -11,7 +11,7 @@ import {
 import ChatBot from '../ChatBot/ChatBot';
 import './TeamPortal.css';
 
-const TEAM_MAP = { 'ug': 'UG', 'pg-pro': 'PG/PRO', 'phd': 'PhD' };
+const TEAM_MAP = { 'ug': 'UG', 'pg-pro': 'PG/PRO', 'ug-pg': 'UG/PG', 'phd': 'PhD' };
 
 function TeamPortal() {
     const { teamSlug } = useParams();
@@ -965,6 +965,7 @@ function TeamPortal() {
                                                 <option value="">Select Team...</option>
                                                 <option value="UG">UG Team</option>
                                                 <option value="PG/PRO">PG/PRO Team</option>
+                                                <option value="UG/PG">UG/PG Team</option>
                                                 <option value="PhD">PhD Team</option>
                                             </select>
                                         </div>

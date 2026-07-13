@@ -98,8 +98,8 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
            </div>`
         : '';
 
-    const teamColor = assignedTeam === 'UG' ? '#2563eb' : assignedTeam === 'PhD' ? '#7c3aed' : '#0891b2';
-    const teamUrlMap = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'PhD': 'phd' };
+    const teamColor = assignedTeam === 'UG' ? '#2563eb' : assignedTeam === 'PhD' ? '#7c3aed' : assignedTeam === 'UG/PG' ? '#e91e63' : '#0891b2';
+    const teamUrlMap = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'UG/PG': 'ug-pg', 'PhD': 'phd' };
     const portalUrl = `https://iosys.pages.dev/team/${teamUrlMap[assignedTeam] || 'ug'}`;
 
     return `<!DOCTYPE html>

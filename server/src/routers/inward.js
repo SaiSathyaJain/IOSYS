@@ -3,7 +3,7 @@ import { toCamelCase } from '../utils/caseConverter.js';
 import { sendAssignmentNotification } from '../services/notification.js';
 import { sendTeamPushNotifications } from '../services/webPush.js';
 
-const TEAM_SLUG = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'PhD': 'phd' };
+const TEAM_SLUG = { 'UG': 'ug', 'PG/PRO': 'pg-pro', 'UG/PG': 'ug-pg', 'PhD': 'phd' };
 
 export const inwardRouter = new Hono();
 

@@ -284,6 +284,7 @@ function Dashboard() {
                                         <option value="all">All Teams</option>
                                         <option value="UG">UG Team</option>
                                         <option value="PG/PRO">PG/PRO Team</option>
+                                        <option value="UG/PG">UG/PG Team</option>
                                         <option value="PhD">PhD Team</option>
                                     </select>
                                     {isFiltering && (
@@ -410,7 +411,7 @@ function Dashboard() {
                                                 <span className="activity-actor">{log.actor}</span>
                                                 {log.inward_no && <span className="activity-ref">{log.inward_no}</span>}
                                                 <span className="activity-time">
-                                                    {new Date(log.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
+                                                    {new Date(log.created_at.replace(' ', 'T') + 'Z').toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
                                                 </span>
                                             </div>
                                         </div>

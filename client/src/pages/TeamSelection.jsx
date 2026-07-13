@@ -16,6 +16,7 @@ const TeamSelection = () => {
     const teams = [
         { id: 'ug', name: 'UG Team', desc: 'Handle undergraduate correspondence', icon: <Users size={32} />, color: '#2196f3' },
         { id: 'pg-pro', name: 'PG/PRO Team', desc: 'Postgraduate & Professional communications', icon: <BookOpen size={32} />, color: '#ff9800' },
+        { id: 'ug-pg', name: 'UG/PG Team', desc: 'Combined undergraduate & postgraduate correspondence', icon: <Users size={32} />, color: '#e91e63' },
         { id: 'phd', name: 'PhD Team', desc: 'Doctoral research correspondence', icon: <Building size={32} />, color: '#4caf50' },
     ];
 

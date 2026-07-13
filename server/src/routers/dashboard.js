@@ -66,7 +66,7 @@ dashboardRouter.get('/team/:team', async (c) => {
 dashboardRouter.get('/teams', async (c) => {
     try {
         const db = c.env.DB;
-        const teams = ['UG', 'PG/PRO', 'PhD'];
+        const teams = ['UG', 'PG/PRO', 'UG/PG', 'PhD'];
 
         const teamStats = await Promise.all(teams.map(async (team) => {
             const [total, pending, completed] = await Promise.all([

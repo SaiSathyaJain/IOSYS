@@ -348,6 +348,7 @@ function AdminPortal() {
     const TEAM_EMAILS = {
         'UG': 'coeoffice@sssihl.edu.in',
         'PG/PRO': 'coeoffice@sssihl.edu.in',
+        'UG/PG': 'coeoffice@sssihl.edu.in',
         'PhD': 'coeoffice@sssihl.edu.in'
     };
 
@@ -1499,6 +1500,7 @@ function AdminPortal() {
                                                 <option value="">Leave Unassigned</option>
                                                 <option value="UG">UG Team</option>
                                                 <option value="PG/PRO">PG/PRO Team</option>
+                                                <option value="UG/PG">UG/PG Team</option>
                                                 <option value="PhD">PhD Team</option>
                                             </select>
                                         </div>
@@ -1992,6 +1994,7 @@ function AdminPortal() {
                                         <option value="">Select Team...</option>
                                         <option value="UG">UG Team</option>
                                         <option value="PG/PRO">PG/PRO Team</option>
+                                        <option value="UG/PG">UG/PG Team</option>
                                         <option value="PhD">PhD Team</option>
                                     </select>
                                 </div>
@@ -2181,7 +2184,7 @@ function AdminPortal() {
                                             variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0, transition: { duration: 0.15 } } }}
                                         >
                                             <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                                                {new Date(log.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
+                                                {new Date(log.created_at.replace(' ', 'T') + 'Z').toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
                                             </td>
                                             <td>
                                                 <span style={{ fontWeight: 600, fontSize: '0.82rem' }}>{log.actor}</span>
@@ -2520,7 +2523,7 @@ function AdminPortal() {
                                     <select className="form-select" value={inboxAcceptData.assignedTeam || ''}
                                         onChange={e => setInboxAcceptData(p => ({ ...p, assignedTeam: e.target.value, assignedToEmail: TEAM_EMAILS[e.target.value] || '' }))}>
                                         <option value="">— No Assignment —</option>
-                                        <option>UG</option><option>PG/PRO</option><option>PhD</option>
+                                        <option>UG</option><option>PG/PRO</option><option>UG/PG</option><option>PhD</option>
                                     </select>
                                 </div>
                                 <div className="form-group">
