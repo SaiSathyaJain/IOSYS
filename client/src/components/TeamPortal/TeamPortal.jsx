@@ -960,14 +960,8 @@ function TeamPortal() {
                                 <form id="outward-form" onSubmit={handleSubmit}>
                                     <div className="grid-2">
                                         <div className="form-group">
-                                            <label className="form-label">Your Team *</label>
-                                            <select name="createdByTeam" className="form-select" value={formData.createdByTeam} onChange={handleChange} required>
-                                                <option value="">Select Team...</option>
-                                                <option value="UPAS">UPAS Team</option>
-                                                <option value="PPAS">PPAS Team</option>
-                                                <option value="UPAS/PPAS">UPAS/PPAS Team</option>
-                                                <option value="DPAS">DPAS Team</option>
-                                            </select>
+                                            <label className="form-label">Your Team</label>
+                                            <input type="text" className="form-input tp-outward-no-preview" value={`${selectedTeam} Team`} readOnly disabled/>
                                         </div>
                                         <div className="form-group">
                                             <label className="form-label">Outward No.</label>
