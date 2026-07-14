@@ -160,6 +160,114 @@
     transition: background 0.15s;
 }
 .chatbot-icon-btn:hover { background: rgba(255, 255, 255, 0.28); }
+.chatbot-icon-btn--bell { position: relative; }
+.chatbot-bell-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    border-radius: 50px;
+    background: #ef4444;
+    border: 1.5px solid #5b45d4;
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Reminders drawer ── */
+.chatbot-reminders-drawer {
+    position: absolute;
+    top: 62px;
+    right: 0.85rem;
+    left: 0.85rem;
+    z-index: 20;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid rgba(91,69,212,0.2);
+    border-radius: 12px;
+    box-shadow: 0 10px 32px rgba(0,0,0,0.18);
+    max-height: min(340px, 70%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.chatbot-reminders-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary, #1e293b);
+    border-bottom: 1px solid var(--border-color, #f0eeff);
+    flex-shrink: 0;
+}
+.chatbot-reminders-header span { display: flex; align-items: center; gap: 0.35rem; color: #5b45d4; }
+.chatbot-reminders-header .chatbot-icon-btn { background: rgba(91,69,212,0.08); color: #5b45d4; border-color: rgba(91,69,212,0.15); }
+.chatbot-reminders-header .chatbot-icon-btn:hover { background: rgba(91,69,212,0.15); }
+.chatbot-reminders-list {
+    overflow-y: auto;
+    padding: 0.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.chatbot-reminders-empty {
+    padding: 1rem 0.5rem;
+    text-align: center;
+    font-size: 0.76rem;
+    color: #94a3b8;
+}
+.chatbot-reminder-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
+    background: rgba(91,69,212,0.05);
+    border: 1px solid rgba(91,69,212,0.1);
+}
+.chatbot-reminder-item--overdue {
+    background: rgba(239,68,68,0.07);
+    border-color: rgba(239,68,68,0.25);
+}
+.chatbot-reminder-item-main { flex: 1; min-width: 0; cursor: pointer; }
+.chatbot-reminder-item-top { display: flex; align-items: center; gap: 0.4rem; }
+.chatbot-reminder-item-no { font-family: monospace; font-size: 0.75rem; font-weight: 700; color: #5b45d4; }
+.chatbot-reminder-item-tag {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.05rem 0.35rem;
+    border-radius: 50px;
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
+}
+.chatbot-reminder-item-note { font-size: 0.75rem; color: var(--text-primary, #1e293b); margin-top: 0.15rem; }
+.chatbot-reminder-item-date { font-size: 0.68rem; color: #94a3b8; margin-top: 0.15rem; }
+.chatbot-reminder-item-dismiss {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.15rem;
+    flex-shrink: 0;
+    border-radius: 4px;
+}
+.chatbot-reminder-item-dismiss:hover { background: rgba(0,0,0,0.06); color: #64748b; }
+
+[data-theme="dark"] .chatbot-reminders-drawer { background: #16192a; border-color: rgba(91,69,212,0.3); }
+[data-theme="dark"] .chatbot-reminders-header { border-color: rgba(91,69,212,0.15); }
+[data-theme="dark"] .chatbot-reminder-item { background: rgba(91,69,212,0.1); border-color: rgba(91,69,212,0.2); }
+[data-theme="dark"] .chatbot-reminder-item--overdue { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+[data-theme="dark"] .chatbot-reminder-item-note { color: #e2e8f0; }
+[data-theme="dark"] .chatbot-reminder-item-dismiss:hover { background: rgba(255,255,255,0.08); color: #cbd5e1; }
 
 /* ── Messages Area ── */
 .chatbot-messages {
@@ -440,7 +548,7 @@
 /* ── Input row ── */
 .chatbot-input-row {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 0.5rem;
     padding: 0.65rem 0.85rem 0.85rem;
     flex-shrink: 0;
@@ -449,12 +557,17 @@
 .chatbot-input {
     flex: 1;
     border: 1.5px solid var(--border-color, #e8e2ff);
-    border-radius: 50px;
+    border-radius: 18px;
     padding: 0.55rem 1rem;
     font-size: 0.83rem;
+    font-family: inherit;
     background: var(--bg-secondary, #faf9ff);
     color: var(--text-primary, #1e293b);
     outline: none;
+    resize: none;
+    overflow-y: auto;
+    max-height: 110px;
+    line-height: 1.4;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 .chatbot-input:focus {

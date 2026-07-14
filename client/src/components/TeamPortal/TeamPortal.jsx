@@ -269,6 +269,24 @@ function TeamPortal() {
         }
     };
 
+    const handleChatReply = (inwardNo) => {
+        const found = pendingInward.find(e => e.inwardNo === inwardNo) || completedInward.find(e => e.inwardNo === inwardNo);
+        if (found) handleProcess(found);
+        else alert(`Could not find entry ${inwardNo}`);
+    };
+
+    const handleChatMarkComplete = (inwardNo) => {
+        const found = pendingInward.find(e => e.inwardNo === inwardNo);
+        if (found) handleMarkComplete(found.id);
+        else alert(`Could not find entry ${inwardNo}`);
+    };
+
+    const handleChatCloseCase = (outwardNo) => {
+        const found = entries.find(e => e.outwardNo === outwardNo);
+        if (found) handleCloseCase(found.id);
+        else alert(`Could not find entry ${outwardNo}`);
+    };
+
     const checkPushStatus = async () => {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
         if (Notification.permission === 'granted') {
@@ -1218,7 +1236,13 @@ function TeamPortal() {
                 </div>
             )}
 
-            <ChatBot storageKey="iosys_chat_team" hidden={showForm || showDetailsModal || !!completeModal || !!remarksModal || showInwardModal} />
+            <ChatBot
+                storageKey="iosys_chat_team"
+                hidden={showForm || showDetailsModal || !!completeModal || !!remarksModal || showInwardModal}
+                onReply={handleChatReply}
+                onMarkComplete={handleChatMarkComplete}
+                onCloseCase={handleChatCloseCase}
+            />
         </motion.div>
     );
 }

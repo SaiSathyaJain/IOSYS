@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu, Bell, ExternalLink } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu, Bell, ExternalLink, CheckCircle2, Users, Lock, CornerUpLeft, AlertTriangle } from 'lucide-react';
 
 const SEARCH_STEPS = [
     { icon: Database, label: 'Fetching live data…'      },
@@ -110,6 +110,69 @@ const OUTWARD_FIELDS = [
     { key: 'file',    label: 'File'    },
 ];
 
+// Reminders are stored in localStorage by ReminderForm; read them back here
+const REMINDERS_KEY = 'iosys_reminders';
+const REMINDERS_EVENT = 'iosys-reminders-updated';
+
+function loadReminders() {
+    try {
+        return JSON.parse(localStorage.getItem(REMINDERS_KEY) || '[]');
+    } catch {
+        return [];
+    }
+}
+
+function saveReminders(reminders) {
+    localStorage.setItem(REMINDERS_KEY, JSON.stringify(reminders));
+    window.dispatchEvent(new Event(REMINDERS_EVENT));
+}
+
+function todayStr() {
+    return new Date().toISOString().split('T')[0];
+}
+
+function RemindersDrawer({ reminders, onDismiss, onClose, onFindEntry }) {
+    const today = todayStr();
+    const sorted = [...reminders].sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+    return (
+        <div className="chatbot-reminders-drawer">
+            <div className="chatbot-reminders-header">
+                <span><Bell size={13} /> Reminders</span>
+                <button className="chatbot-icon-btn" onClick={onClose} title="Close"><X size={14} /></button>
+            </div>
+            <div className="chatbot-reminders-list">
+                {sorted.length === 0 && (
+                    <div className="chatbot-reminders-empty">No reminders yet. Set one from an entry card.</div>
+                )}
+                {sorted.map(r => {
+                    const overdue = r.dueDate < today;
+                    const dueToday = r.dueDate === today;
+                    return (
+                        <div key={r.id} className={`chatbot-reminder-item${overdue ? ' chatbot-reminder-item--overdue' : ''}`}>
+                            <div className="chatbot-reminder-item-main" onClick={() => onFindEntry?.(r.entryNo)}>
+                                <div className="chatbot-reminder-item-top">
+                                    <span className="chatbot-reminder-item-no">{r.entryNo}</span>
+                                    {(overdue || dueToday) && (
+                                        <span className="chatbot-reminder-item-tag">
+                                            {overdue ? 'Overdue' : 'Due today'}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="chatbot-reminder-item-note">{r.note}</div>
+                                <div className="chatbot-reminder-item-date">{r.dueDate}</div>
+                            </div>
+                            <button className="chatbot-reminder-item-dismiss" onClick={() => onDismiss(r.id)} title="Dismiss">
+                                <X size={12} />
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 function ReminderForm({ entry, onSave, onCancel }) {
     const [date, setDate] = useState('');
     const [note, setNote] = useState('');
@@ -126,8 +189,7 @@ function ReminderForm({ entry, onSave, onCancel }) {
             createdAt: new Date().toISOString(),
             dismissed: false,
         };
-        const existing = JSON.parse(localStorage.getItem('iosys_reminders') || '[]');
-        localStorage.setItem('iosys_reminders', JSON.stringify([...existing, reminder]));
+        saveReminders([...loadReminders(), reminder]);
         onSave();
     };
 
@@ -144,13 +206,15 @@ function ReminderForm({ entry, onSave, onCancel }) {
     );
 }
 
-function EntryCard({ entry, onFindEntry }) {
+function EntryCard({ entry, onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase }) {
     const [showReminderForm, setShowReminderForm] = useState(false);
     const [reminderSaved, setReminderSaved] = useState(false);
     const type   = entry.type === 'outward' ? 'outward' : 'inward';
     const schema = type === 'outward' ? OUTWARD_FIELDS : INWARD_FIELDS;
     const fields = schema.filter(f => entry[f.key] && entry[f.key] !== '');
     const isInward = type === 'inward' && entry.no?.startsWith('INW/');
+    const isOpenInward = isInward && !entry.closed && entry.status !== 'Completed';
+    const isOpenOutward = type === 'outward' && !entry.closed;
 
     const handleReminderSaved = () => {
         setShowReminderForm(false);
@@ -194,6 +258,26 @@ function EntryCard({ entry, onFindEntry }) {
                 {isInward && !reminderSaved && (
                     <button className="chatbot-entry-action-btn chatbot-entry-action-btn--reminder" onClick={() => setShowReminderForm(v => !v)} title="Set a follow-up reminder">
                         <Bell size={11} /> Remind me
+                    </button>
+                )}
+                {isOpenInward && onReply && (
+                    <button className="chatbot-entry-action-btn" onClick={() => onReply(entry.no)} title="Create an outward reply linked to this entry">
+                        <CornerUpLeft size={11} /> Reply
+                    </button>
+                )}
+                {isOpenInward && onAssignTeam && (
+                    <button className="chatbot-entry-action-btn" onClick={() => onAssignTeam(entry.no)} title="Assign or reassign this entry to a team">
+                        <Users size={11} /> Assign team
+                    </button>
+                )}
+                {isOpenInward && onMarkComplete && (
+                    <button className="chatbot-entry-action-btn" onClick={() => onMarkComplete(entry.no)} title="Mark this entry as completed">
+                        <CheckCircle2 size={11} /> Mark complete
+                    </button>
+                )}
+                {isOpenOutward && onCloseCase && (
+                    <button className="chatbot-entry-action-btn" onClick={() => onCloseCase(entry.no)} title="Close this case">
+                        <Lock size={11} /> Close case
                     </button>
                 )}
                 {reminderSaved && <span className="chatbot-reminder-saved">✓ Reminder set</span>}
@@ -313,7 +397,7 @@ function MarkdownBlock({ text }) {
 }
 
 // Render assistant message: markdown text + optional entry cards + load more button
-function MessageContent({ content, onSend, onFindEntry }) {
+function MessageContent({ content, onSend, onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase }) {
     const { text, entries, showing, total } = parseAIReply(content);
     const hasMore = showing !== null && total !== null && showing < total;
     const nextStart = showing + 1;
@@ -327,7 +411,15 @@ function MessageContent({ content, onSend, onFindEntry }) {
         <div className="chatbot-message-content">
             {text && <MarkdownBlock text={text} />}
             {entries.filter(e => e.no || e.subject || e.from || e.to).map((entry, i) => (
-                <EntryCard key={i} entry={entry} onFindEntry={onFindEntry} />
+                <EntryCard
+                    key={i}
+                    entry={entry}
+                    onFindEntry={onFindEntry}
+                    onAssignTeam={onAssignTeam}
+                    onMarkComplete={onMarkComplete}
+                    onReply={onReply}
+                    onCloseCase={onCloseCase}
+                />
             ))}
             {hasMore && (
                 <button className="chatbot-load-more" onClick={handleShowMore}>
@@ -338,7 +430,7 @@ function MessageContent({ content, onSend, onFindEntry }) {
     );
 }
 
-function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = false }) {
+function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase, storageKey = 'iosys_chat_messages', hidden = false }) {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState(() => {
         try {
@@ -352,10 +444,53 @@ function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = fal
     const [streaming, setStreaming] = useState(false);
     const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
     const [showModelPicker, setShowModelPicker] = useState(false);
+    const [showReminders, setShowReminders] = useState(false);
+    const [reminders, setReminders] = useState(() => loadReminders());
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
     const chipsRef = useRef(null);
     const modelPickerRef = useRef(null);
+    const notifiedRef = useRef(new Set());
+
+    const activeReminders = reminders.filter(r => !r.dismissed);
+    const dueCount = activeReminders.filter(r => r.dueDate <= todayStr()).length;
+
+    const dismissReminder = (id) => {
+        const next = reminders.map(r => r.id === id ? { ...r, dismissed: true } : r);
+        saveReminders(next);
+        setReminders(next);
+    };
+
+    // Refresh reminders when one is saved (this tab) or changed (another tab)
+    useEffect(() => {
+        const refresh = () => setReminders(loadReminders());
+        window.addEventListener(REMINDERS_EVENT, refresh);
+        window.addEventListener('storage', refresh);
+        return () => {
+            window.removeEventListener(REMINDERS_EVENT, refresh);
+            window.removeEventListener('storage', refresh);
+        };
+    }, []);
+
+    // Periodically check for newly-due reminders and fire a browser notification once each
+    useEffect(() => {
+        const checkDue = () => {
+            const due = loadReminders().filter(r => !r.dismissed && r.dueDate <= todayStr());
+            due.forEach(r => {
+                if (notifiedRef.current.has(r.id)) return;
+                notifiedRef.current.add(r.id);
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Reminder due', { body: `${r.entryNo}: ${r.note}` });
+                }
+            });
+        };
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+        checkDue();
+        const id = setInterval(checkDue, 5 * 60 * 1000);
+        return () => clearInterval(id);
+    }, []);
 
     // Persist chat history to localStorage
     useEffect(() => {
@@ -397,6 +532,14 @@ function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = fal
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, loading]);
+
+    // Auto-grow the input textarea as the user types multi-line prompts
+    useEffect(() => {
+        const ta = inputRef.current;
+        if (!ta) return;
+        ta.style.height = 'auto';
+        ta.style.height = `${Math.min(ta.scrollHeight, 110)}px`;
+    }, [input]);
 
     const sendMessage = async (text) => {
         const content = (text || input).trim();
@@ -444,6 +587,24 @@ function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = fal
             let truncated = false;
             let doneSignal = false;
 
+            const processLine = (line) => {
+                if (!line.startsWith('data: ')) return;
+                const data = line.slice(6).trim();
+                if (data === '[DONE]') { doneSignal = true; return; }
+                try {
+                    const json = JSON.parse(data);
+                    const delta = json.choices?.[0]?.delta?.content || '';
+                    const finishReason = json.choices?.[0]?.finish_reason;
+                    if (finishReason === 'length') truncated = true;
+                    if (delta) {
+                        setMessages(prev => {
+                            const last = prev[prev.length - 1];
+                            return [...prev.slice(0, -1), { ...last, content: last.content + delta }];
+                        });
+                    }
+                } catch { /* skip malformed chunk */ }
+            };
+
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
@@ -453,23 +614,15 @@ function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = fal
                 buffer = lines.pop(); // keep incomplete line
 
                 for (const line of lines) {
-                    if (!line.startsWith('data: ')) continue;
-                    const data = line.slice(6).trim();
-                    if (data === '[DONE]') { doneSignal = true; break; }
-                    try {
-                        const json = JSON.parse(data);
-                        const delta = json.choices?.[0]?.delta?.content || '';
-                        const finishReason = json.choices?.[0]?.finish_reason;
-                        if (finishReason === 'length') truncated = true;
-                        if (delta) {
-                            setMessages(prev => {
-                                const last = prev[prev.length - 1];
-                                return [...prev.slice(0, -1), { ...last, content: last.content + delta }];
-                            });
-                        }
-                    } catch { /* skip malformed chunk */ }
+                    processLine(line);
+                    if (doneSignal) break;
                 }
                 if (doneSignal) break;
+            }
+
+            // Flush whatever's left in the buffer — the final frame may arrive without a trailing newline
+            if (!doneSignal && buffer) {
+                processLine(buffer);
             }
 
             if (truncated) {
@@ -551,6 +704,10 @@ function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = fal
                         </div>
                     </div>
                     <div className="chatbot-header-actions">
+                        <button className="chatbot-icon-btn chatbot-icon-btn--bell" onClick={() => setShowReminders(v => !v)} title="Reminders">
+                            <Bell size={13} />
+                            {dueCount > 0 && <span className="chatbot-bell-badge">{dueCount > 9 ? '9+' : dueCount}</span>}
+                        </button>
                         <button className="chatbot-icon-btn" onClick={resetChat} title="Clear chat">
                             <RotateCcw size={13} />
                         </button>
@@ -559,6 +716,15 @@ function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = fal
                         </button>
                     </div>
                 </div>
+
+                {showReminders && (
+                    <RemindersDrawer
+                        reminders={activeReminders}
+                        onDismiss={dismissReminder}
+                        onClose={() => setShowReminders(false)}
+                        onFindEntry={onFindEntry}
+                    />
+                )}
 
                 {/* Messages */}
                 <div className="chatbot-messages">
@@ -578,7 +744,15 @@ function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = fal
                                 )}
                                 {msg.role === 'assistant' ? (
                                     <div className="chatbot-bubble chatbot-bubble--assistant">
-                                        <MessageContent content={msg.content} onSend={sendMessage} onFindEntry={onFindEntry} />
+                                        <MessageContent
+                                            content={msg.content}
+                                            onSend={sendMessage}
+                                            onFindEntry={onFindEntry}
+                                            onAssignTeam={onAssignTeam}
+                                            onMarkComplete={onMarkComplete}
+                                            onReply={onReply}
+                                            onCloseCase={onCloseCase}
+                                        />
                                     </div>
                                 ) : (
                                     <div className="chatbot-bubble chatbot-bubble--user">
@@ -624,9 +798,10 @@ function ChatBot({ onFindEntry, storageKey = 'iosys_chat_messages', hidden = fal
 
                 {/* Input row */}
                 <div className="chatbot-input-row">
-                    <input
+                    <textarea
                         ref={inputRef}
                         className="chatbot-input"
+                        rows={1}
                         placeholder="Ask anything about your data..."
                         value={input}
                         onChange={e => setInput(e.target.value)}

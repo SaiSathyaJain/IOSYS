@@ -879,6 +879,12 @@ function AdminPortal() {
         setTimeout(() => setHighlightedInwardNo(null), 4000);
     };
 
+    const handleChatAssignTeam = (inwardNo) => {
+        const found = entries.find(e => e.inwardNo === inwardNo);
+        if (found) openReassignModal(found);
+        else alert(`Could not find entry ${inwardNo}`);
+    };
+
     const dismissReminderBanner = (id) => {
         setDueReminderBanners(prev => prev.filter(r => r.id !== id));
         try {
@@ -2553,7 +2559,7 @@ function AdminPortal() {
                 </div>
             )}
 
-            <ChatBot onFindEntry={handleFindEntry} storageKey="iosys_chat_admin" />
+            <ChatBot onFindEntry={handleFindEntry} onAssignTeam={handleChatAssignTeam} storageKey="iosys_chat_admin" />
 
             {/* Subject Tooltip */}
             {tooltip.visible && (
