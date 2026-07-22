@@ -127,3 +127,7 @@ CREATE INDEX IF NOT EXISTS idx_outward_created_by_team ON outward(created_by_tea
 CREATE INDEX IF NOT EXISTS idx_notes_type ON notes(note_type);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_inbox_queue_status ON inbox_queue(status);
+CREATE INDEX IF NOT EXISTS idx_inward_subject ON inward(subject);
+CREATE INDEX IF NOT EXISTS idx_inward_particulars ON inward(particulars_from_whom);
+CREATE INDEX IF NOT EXISTS idx_outward_to_whom ON outward(to_whom);
+CREATE INDEX IF NOT EXISTS idx_outward_subject ON outward(subject);

@@ -10,7 +10,59 @@ export const inwardRouter = new Hono();
 // Get all inward entries
 inwardRouter.get('/', async (c) => {
     try {
-        const { results } = await c.env.DB.prepare('SELECT * FROM inward ORDER BY id ASC').all();
+        const { search, status, team, dateFrom, dateTo, page, limit, manualOnly } = c.req.query();
+        let where = ' WHERE 1=1';
+        const params = [];
+
+        if (search) {
+            where += ' AND (inward_no LIKE ? OR subject LIKE ? OR particulars_from_whom LIKE ?)';
+            const term = `%${search}%`;
+            params.push(term, term, term);
+        }
+        if (manualOnly === '1' || manualOnly === 'true') {
+            where += " AND means IN ('Post', 'Hand Delivery', 'Courier')";
+        }
+        if (status && status !== 'all') {
+            where += ' AND assignment_status = ?';
+            params.push(status);
+        }
+        if (team && team !== 'all') {
+            where += ' AND assigned_team = ?';
+            params.push(team);
+        }
+        if (dateFrom) {
+            where += ' AND sign_receipt_datetime >= ?';
+            params.push(dateFrom);
+        }
+        if (dateTo) {
+            const endDateTime = new Date(dateTo);
+            endDateTime.setHours(23, 59, 59, 999);
+            where += ' AND sign_receipt_datetime <= ?';
+            params.push(endDateTime.toISOString());
+        }
+
+        if (page) {
+            const lim = Math.min(parseInt(limit) || 20, 100);
+            const pageNum = Math.max(1, parseInt(page) || 1);
+            const offset = (pageNum - 1) * lim;
+
+            const countResult = await c.env.DB.prepare(`SELECT COUNT(*) as count FROM inward${where}`).bind(...params).first();
+            const total = countResult?.count || 0;
+
+            const { results } = await c.env.DB.prepare(
+                `SELECT * FROM inward${where} ORDER BY id ASC LIMIT ? OFFSET ?`
+            ).bind(...params, lim, offset).all();
+
+            return c.json({
+                success: true,
+                entries: toCamelCase(results),
+                total,
+                page: pageNum,
+                totalPages: Math.max(1, Math.ceil(total / lim))
+            });
+        }
+
+        const { results } = await c.env.DB.prepare(`SELECT * FROM inward${where} ORDER BY id ASC`).bind(...params).all();
         const entries = toCamelCase(results);
         return c.json({ success: true, entries });
     } catch (error) {

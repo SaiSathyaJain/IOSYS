@@ -6,29 +6,52 @@ export const outwardRouter = new Hono();
 // Get all outward entries
 outwardRouter.get('/', async (c) => {
     try {
-        const { team, startDate, endDate } = c.req.query();
-        let query = 'SELECT * FROM outward WHERE 1=1';
+        const { team, startDate, endDate, search, page, limit } = c.req.query();
+        let where = ' WHERE 1=1';
         const params = [];
 
         if (team) {
-            query += ' AND created_by_team = ?';
+            where += ' AND created_by_team = ?';
             params.push(team);
         }
+        if (search) {
+            where += ' AND (outward_no LIKE ? OR subject LIKE ? OR to_whom LIKE ?)';
+            const term = `%${search}%`;
+            params.push(term, term, term);
+        }
         if (startDate) {
-            query += ' AND sign_receipt_datetime >= ?';
+            where += ' AND sign_receipt_datetime >= ?';
             params.push(startDate);
         }
         if (endDate) {
             const endDateTime = new Date(endDate);
             endDateTime.setHours(23, 59, 59, 999);
-            query += ' AND sign_receipt_datetime <= ?';
+            where += ' AND sign_receipt_datetime <= ?';
             params.push(endDateTime.toISOString());
         }
 
-        query += ' ORDER BY id DESC';
+        let total = null;
+        let pageNum = null;
+        let lim = null;
+        let pagedResults;
+        if (page) {
+            lim = Math.min(parseInt(limit) || 20, 100);
+            pageNum = Math.max(1, parseInt(page) || 1);
+            const offset = (pageNum - 1) * lim;
 
-        const { results } = await c.env.DB.prepare(query).bind(...params).all();
-        let entries = toCamelCase(results);
+            const countResult = await c.env.DB.prepare(`SELECT COUNT(*) as count FROM outward${where}`).bind(...params).first();
+            total = countResult?.count || 0;
+
+            const result = await c.env.DB.prepare(
+                `SELECT * FROM outward${where} ORDER BY id DESC LIMIT ? OFFSET ?`
+            ).bind(...params, lim, offset).all();
+            pagedResults = result.results;
+        } else {
+            const result = await c.env.DB.prepare(`SELECT * FROM outward${where} ORDER BY id DESC`).bind(...params).all();
+            pagedResults = result.results;
+        }
+
+        let entries = toCamelCase(pagedResults);
 
         // Fetch linked inward details manually
         const linkedInwardIds = entries
@@ -55,6 +78,15 @@ outwardRouter.get('/', async (c) => {
             });
         }
 
+        if (page) {
+            return c.json({
+                success: true,
+                entries,
+                total,
+                page: pageNum,
+                totalPages: Math.max(1, Math.ceil(total / lim))
+            });
+        }
         return c.json({ success: true, entries });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);

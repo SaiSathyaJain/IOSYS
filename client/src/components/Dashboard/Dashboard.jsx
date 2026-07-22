@@ -109,12 +109,11 @@ function Dashboard() {
         try {
             const [detailRes, inwardRes, outwardRes] = await Promise.all([
                 dashboardAPI.getTeamStats(teamName),
-                inwardAPI.getAll(),
-                outwardAPI.getAll(teamName)
+                inwardAPI.getAll({ team: teamName }),
+                outwardAPI.getAll({ team: teamName })
             ]);
             setTeamDetail(detailRes.data.stats || {});
-            const teamInward = (inwardRes.data.entries || []).filter(e => e.assignedTeam === teamName);
-            setTeamEntries(teamInward);
+            setTeamEntries(inwardRes.data.entries || []);
             setTeamOutward(outwardRes.data.entries || []);
         } catch (error) {
             console.error('Error loading team detail:', error);

@@ -22,8 +22,10 @@ function TeamPortal() {
     const [activePage, setActivePage] = useState('dashboard');
     const [pendingFilter, setPendingFilter] = useState('all');
     const [showLimit, setShowLimit] = useState(5);
-    const [entries, setEntries] = useState([]);
     const [filteredEntries, setFilteredEntries] = useState([]);
+    const [outwardTotal, setOutwardTotal] = useState(0);
+    const [outwardTotalPages, setOutwardTotalPages] = useState(1);
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [pendingInward, setPendingInward] = useState([]);
     const [teamStats, setTeamStats] = useState(null);
     const [viewTeam, setViewTeam] = useState(selectedTeam);
@@ -75,8 +77,12 @@ function TeamPortal() {
     }, [isDarkMode]);
 
     useEffect(() => { loadData(); }, [selectedTeam]);
-    useEffect(() => { loadEntries(); }, [viewTeam]);
-    useEffect(() => { filterEntries(); }, [entries, searchTerm]);
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+        return () => clearTimeout(t);
+    }, [searchTerm]);
+    useEffect(() => { setOutwardPage(1); }, [viewTeam, debouncedSearch]);
+    useEffect(() => { loadEntries(); }, [viewTeam, debouncedSearch, outwardPage]);
     const [pushEnabled, setPushEnabled] = useState(false);
     useEffect(() => {
         if (selectedTeam) checkPushStatus();
@@ -85,10 +91,8 @@ function TeamPortal() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const inwardRes = await inwardAPI.getAll();
-            const allAssigned = (inwardRes.data.entries || []).filter(e =>
-                e.assignedTeam && (!selectedTeam || e.assignedTeam === selectedTeam)
-            );
+            const inwardRes = await inwardAPI.getAll({ team: selectedTeam || undefined });
+            const allAssigned = (inwardRes.data.entries || []).filter(e => e.assignedTeam);
             const pending = allAssigned.filter(e =>
                 e.assignmentStatus === 'Pending' || e.assignmentStatus === 'In Progress'
             );
@@ -117,22 +121,18 @@ function TeamPortal() {
 
     const loadEntries = async () => {
         try {
-            const outwardRes = await outwardAPI.getAll(viewTeam);
-            setEntries(outwardRes.data.entries || []);
+            const outwardRes = await outwardAPI.getAll({
+                team: viewTeam,
+                search: debouncedSearch || undefined,
+                page: outwardPage,
+                limit: OUTWARD_PAGE_SIZE
+            });
+            setFilteredEntries(outwardRes.data.entries || []);
+            setOutwardTotal(outwardRes.data.total || 0);
+            setOutwardTotalPages(outwardRes.data.totalPages || 1);
         } catch (error) {
             console.error('Error loading entries:', error);
         }
-    };
-
-    const filterEntries = () => {
-        setOutwardPage(1);
-        if (!searchTerm) { setFilteredEntries(entries); return; }
-        const term = searchTerm.toLowerCase();
-        setFilteredEntries(entries.filter(e =>
-            e.outwardNo?.toLowerCase().includes(term) ||
-            e.subject?.toLowerCase().includes(term) ||
-            e.toWhom?.toLowerCase().includes(term)
-        ));
     };
 
     const openForm = async (patch = {}) => {
@@ -281,10 +281,15 @@ function TeamPortal() {
         else alert(`Could not find entry ${inwardNo}`);
     };
 
-    const handleChatCloseCase = (outwardNo) => {
-        const found = entries.find(e => e.outwardNo === outwardNo);
-        if (found) handleCloseCase(found.id);
-        else alert(`Could not find entry ${outwardNo}`);
+    const handleChatCloseCase = async (outwardNo) => {
+        try {
+            const res = await outwardAPI.getAll({ team: viewTeam, search: outwardNo });
+            const found = (res.data.entries || []).find(e => e.outwardNo === outwardNo);
+            if (found) handleCloseCase(found.id);
+            else alert(`Could not find entry ${outwardNo}`);
+        } catch {
+            alert(`Could not find entry ${outwardNo}`);
+        }
     };
 
     const checkPushStatus = async () => {
@@ -638,7 +643,7 @@ function TeamPortal() {
                             <div className="tp-card-title-row">
                                 <Send size={16} className="tp-icon-muted"/>
                                 <h3>Outward History</h3>
-                                <span className="tp-count-pill">{filteredEntries.length}</span>
+                                <span className="tp-count-pill">{outwardTotal}</span>
                             </div>
                             <div className="tp-history-controls">
                                 <div className="tp-team-tabs">
@@ -667,7 +672,7 @@ function TeamPortal() {
                                         <th>TEAM</th><th>STATUS</th><th>DATE</th><th>ACTIONS</th>
                                     </tr></thead>
                                     <tbody>
-                                        {filteredEntries.slice((outwardPage - 1) * OUTWARD_PAGE_SIZE, outwardPage * OUTWARD_PAGE_SIZE).map(entry => (
+                                        {filteredEntries.map(entry => (
                                             <tr key={entry.id}>
                                                 <td className="tp-outward-link">{entry.outwardNo}</td>
                                                 <td className="tp-subject-cell">{entry.subject?.length > 50 ? entry.subject.slice(0,50)+'...' : entry.subject}</td>
@@ -695,13 +700,13 @@ function TeamPortal() {
                                         ))}
                                     </tbody>
                                 </table>
-                                {filteredEntries.length > OUTWARD_PAGE_SIZE && (() => {
-                                    const totalPages = Math.ceil(filteredEntries.length / OUTWARD_PAGE_SIZE);
+                                {outwardTotal > OUTWARD_PAGE_SIZE && (() => {
+                                    const totalPages = outwardTotalPages;
                                     const pct = totalPages > 1 ? ((outwardPage - 1) / (totalPages - 1)) * 100 : 0;
                                     return (
                                         <div className="table-pagination">
                                             <span className="table-note">
-                                                Showing {(outwardPage - 1) * OUTWARD_PAGE_SIZE + 1}–{Math.min(outwardPage * OUTWARD_PAGE_SIZE, filteredEntries.length)} of {filteredEntries.length}
+                                                Showing {(outwardPage - 1) * OUTWARD_PAGE_SIZE + 1}–{Math.min(outwardPage * OUTWARD_PAGE_SIZE, outwardTotal)} of {outwardTotal}
                                             </span>
                                             <div className="slider-pagination">
                                                 <button className="page-arrow" disabled={outwardPage === 1} onClick={() => setOutwardPage(p => p - 1)}>‹</button>
@@ -722,7 +727,7 @@ function TeamPortal() {
                                 })()}
                             </div>
                         )}
-                        <div className="tp-table-footer">Showing {Math.min(outwardPage * OUTWARD_PAGE_SIZE, filteredEntries.length)} of {filteredEntries.length} results ({entries.length} total)</div>
+                        <div className="tp-table-footer">Showing {Math.min(outwardPage * OUTWARD_PAGE_SIZE, outwardTotal)} of {outwardTotal} results</div>
                     </motion.div>
                 )}
 
@@ -839,7 +844,7 @@ function TeamPortal() {
                             <div className="tp-card-title-row">
                                 <Send size={16} className="tp-icon-muted"/>
                                 <h3>Outward History</h3>
-                                <span className="tp-count-pill">{filteredEntries.length}</span>
+                                <span className="tp-count-pill">{outwardTotal}</span>
                             </div>
                             <div className="tp-history-controls">
                                 <div className="tp-team-tabs">
@@ -909,9 +914,34 @@ function TeamPortal() {
                                         ))}
                                     </tbody>
                                 </table>
+                                {outwardTotal > OUTWARD_PAGE_SIZE && (() => {
+                                    const totalPages = outwardTotalPages;
+                                    const pct = totalPages > 1 ? ((outwardPage - 1) / (totalPages - 1)) * 100 : 0;
+                                    return (
+                                        <div className="table-pagination">
+                                            <span className="table-note">
+                                                Showing {(outwardPage - 1) * OUTWARD_PAGE_SIZE + 1}–{Math.min(outwardPage * OUTWARD_PAGE_SIZE, outwardTotal)} of {outwardTotal}
+                                            </span>
+                                            <div className="slider-pagination">
+                                                <button className="page-arrow" disabled={outwardPage === 1} onClick={() => setOutwardPage(p => p - 1)}>‹</button>
+                                                <div className="slider-wrap">
+                                                    <input
+                                                        type="range"
+                                                        className="page-slider"
+                                                        min={1} max={totalPages} value={outwardPage}
+                                                        style={{ '--pct': `${pct}%` }}
+                                                        onChange={e => setOutwardPage(Number(e.target.value))}
+                                                    />
+                                                </div>
+                                                <button className="page-arrow" disabled={outwardPage === totalPages} onClick={() => setOutwardPage(p => p + 1)}>›</button>
+                                                <span className="page-badge">{outwardPage} <span className="page-of">/ {totalPages}</span></span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
-                        <div className="tp-table-footer">Showing {filteredEntries.length} results of {entries.length}</div>
+                        <div className="tp-table-footer">Showing {Math.min(outwardPage * OUTWARD_PAGE_SIZE, outwardTotal)} of {outwardTotal} results</div>
                     </div>
                 </motion.div>)}
                 </AnimatePresence>

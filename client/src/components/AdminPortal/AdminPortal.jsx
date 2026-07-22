@@ -39,6 +39,8 @@ function AdminPortal() {
     const [auditTotal, setAuditTotal] = useState(0);
     const [auditLoading, setAuditLoading] = useState(false);
     const [inwardPage, setInwardPage] = useState(1);
+    const [inwardTotal, setInwardTotal] = useState(0);
+    const [inwardTotalPages, setInwardTotalPages] = useState(1);
     const INWARD_PAGE_SIZE = 20;
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -373,8 +375,12 @@ function AdminPortal() {
     }, []);
 
     useEffect(() => {
-        filterEntries();
-    }, [entries, searchTerm, statusFilter, teamFilter, dateFrom, dateTo]);
+        setInwardPage(1);
+    }, [statusFilter, teamFilter, dateFrom, dateTo, searchTerm, inwardTab]);
+
+    useEffect(() => {
+        loadFilteredEntries();
+    }, [statusFilter, teamFilter, dateFrom, dateTo, searchTerm, inwardTab, inwardPage]);
 
     // Auto-refresh inbox every 30 min when inbox tab is active
     useEffect(() => {
@@ -391,11 +397,11 @@ function AdminPortal() {
         try {
             const [entriesRes, statsRes] = await Promise.all([
                 inwardAPI.getAll(),
-                dashboardAPI.getStats()
+                dashboardAPI.getStats(),
+                loadFilteredEntries()
             ]);
             setEntries(entriesRes.data.entries || []);
             setStats(statsRes.data.stats || {});
-            setInwardPage(1);
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -411,6 +417,26 @@ function AdminPortal() {
             const countRes = await inboxQueueAPI.getCount();
             setInboxCount(countRes.data.count || 0);
         } catch { /* ignore */ }
+    };
+
+    const loadFilteredEntries = async () => {
+        try {
+            const res = await inwardAPI.getAll({
+                search: searchTerm || undefined,
+                status: statusFilter !== 'all' ? statusFilter : undefined,
+                team: teamFilter !== 'all' ? teamFilter : undefined,
+                dateFrom: dateFrom || undefined,
+                dateTo: dateTo || undefined,
+                manualOnly: inwardTab === 'manual' ? '1' : undefined,
+                page: inwardPage,
+                limit: INWARD_PAGE_SIZE
+            });
+            setFilteredEntries(res.data.entries || []);
+            setInwardTotal(res.data.total || 0);
+            setInwardTotalPages(res.data.totalPages || 1);
+        } catch (error) {
+            console.error('Error loading filtered entries:', error);
+        }
     };
 
     const loadInboxItems = async () => {
@@ -504,47 +530,6 @@ function AdminPortal() {
         } catch (err) {
             alert('Failed to reject: ' + (err.response?.data?.message || err.message));
         }
-    };
-
-    const filterEntries = () => {
-        let filtered = [...entries];
-
-        if (searchTerm) {
-            const term = searchTerm.toLowerCase();
-            filtered = filtered.filter(e =>
-                e.inwardNo?.toLowerCase().includes(term) ||
-                e.subject?.toLowerCase().includes(term) ||
-                e.particularsFromWhom?.toLowerCase().includes(term)
-            );
-        }
-
-        if (statusFilter !== 'all') {
-            filtered = filtered.filter(e => e.assignmentStatus === statusFilter);
-        }
-
-        if (teamFilter !== 'all') {
-            filtered = filtered.filter(e => e.assignedTeam === teamFilter);
-        }
-
-        if (dateFrom) {
-            const from = new Date(dateFrom);
-            filtered = filtered.filter(e => {
-                const d = e.signReceiptDatetime ? new Date(e.signReceiptDatetime) : null;
-                return d && d >= from;
-            });
-        }
-
-        if (dateTo) {
-            const to = new Date(dateTo);
-            to.setHours(23, 59, 59, 999);
-            filtered = filtered.filter(e => {
-                const d = e.signReceiptDatetime ? new Date(e.signReceiptDatetime) : null;
-                return d && d <= to;
-            });
-        }
-
-        setFilteredEntries(filtered);
-        setInwardPage(1);
     };
 
     const handleSubmit = async (e) => {
@@ -722,6 +707,7 @@ function AdminPortal() {
             await inwardAPI.delete(id);
             setEntries(prev => prev.filter(e => e.id !== id));
             setFilteredEntries(prev => prev.filter(e => e.id !== id));
+            setInwardTotal(prev => Math.max(0, prev - 1));
         } catch (err) {
             alert('Failed to delete entry: ' + err.message);
         } finally {
@@ -747,9 +733,7 @@ function AdminPortal() {
             await recycleBinAPI.restore(id);
             setRecycleBin(prev => prev.filter(e => e.id !== id));
             // Reload inward entries so restored entry appears
-            const res = await inwardAPI.getAll();
-            setEntries(res.data.entries);
-            setFilteredEntries(res.data.entries);
+            await loadData();
         } catch (err) {
             alert('Restore failed: ' + (err.response?.data?.message || err.message));
         } finally {
@@ -1565,7 +1549,7 @@ function AdminPortal() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <h3 className="card-title">
                             <ClipboardList size={20} /> Inward Entries
-                            <span className="entry-count">{(() => { const tabFiltered = inwardTab === 'manual' ? filteredEntries.filter(e => MANUAL_INWARD_MEANS.includes(e.means)) : filteredEntries; return `(${tabFiltered.length}${tabFiltered.length !== entries.length ? ` of ${entries.length}` : ''})`; })()}</span>
+                            <span className="entry-count">({inwardTotal}{inwardTotal !== entries.length ? ` of ${entries.length}` : ''})</span>
                         </h3>
                         <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '3px' }}>
                             <button
@@ -1673,7 +1657,7 @@ function AdminPortal() {
                             </div>
 
                             {(() => {
-                                const pagedEntries = (inwardTab === 'manual' ? filteredEntries.filter(e => MANUAL_INWARD_MEANS.includes(e.means)) : filteredEntries).slice((inwardPage - 1) * INWARD_PAGE_SIZE, inwardPage * INWARD_PAGE_SIZE);
+                                const pagedEntries = filteredEntries;
                                 return pagedEntries.map((entry, index) => {
                                     const seq = entry.sequenceNo ?? (inwardPage - 1) * INWARD_PAGE_SIZE + index + 1;
                                     const inwardNo = entry.inwardNo?.startsWith('NOINW-') ? '-' : entry.inwardNo;
@@ -1778,13 +1762,13 @@ function AdminPortal() {
                                 });
                             })()}
                         </div>
-                        {filteredEntries.length > INWARD_PAGE_SIZE && (() => {
-                            const totalPages = Math.ceil(filteredEntries.length / INWARD_PAGE_SIZE);
+                        {inwardTotal > INWARD_PAGE_SIZE && (() => {
+                            const totalPages = inwardTotalPages;
                             const pct = totalPages > 1 ? ((inwardPage - 1) / (totalPages - 1)) * 100 : 0;
                             return (
                                 <div className="table-pagination">
                                     <span className="table-note">
-                                        Showing {(inwardPage - 1) * INWARD_PAGE_SIZE + 1}–{Math.min(inwardPage * INWARD_PAGE_SIZE, filteredEntries.length)} of {filteredEntries.length}
+                                        Showing {(inwardPage - 1) * INWARD_PAGE_SIZE + 1}–{Math.min(inwardPage * INWARD_PAGE_SIZE, inwardTotal)} of {inwardTotal}
                                     </span>
                                     <div className="slider-pagination">
                                         <button className="page-arrow" disabled={inwardPage === 1} onClick={() => setInwardPage(p => p - 1)}>‹</button>

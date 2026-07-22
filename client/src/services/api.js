@@ -11,7 +11,7 @@ const api = axios.create({
 
 // Inward API
 export const inwardAPI = {
-    getAll: () => api.get('/inward'),
+    getAll: (params = {}) => api.get('/inward', { params }),
     get: (id) => api.get(`/inward/${id}`),
     getNextNo: () => api.get('/inward/next-no'),
     create: (data) => api.post('/inward', data),
@@ -30,7 +30,7 @@ export const recycleBinAPI = {
 
 // Outward API
 export const outwardAPI = {
-    getAll: (team = '') => api.get(`/outward${team ? `?team=${team}` : ''}`),
+    getAll: (params = {}) => api.get('/outward', { params }),
     nextNo: () => api.get('/outward/next-no'),
     create: (data) => api.post('/outward', data),
     update: (id, data) => api.put(`/outward/${id}`, data),
