@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './UpdateNotifier.css';
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
+const LAST_SEEN_KEY = 'iosys_last_seen_version';
 
 function UpdateNotifier() {
     const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -17,11 +18,22 @@ function UpdateNotifier() {
                 const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
                 if (!res.ok) return;
                 const data = await res.json();
+
                 if (baselineVersion.current === null) {
                     baselineVersion.current = data.version;
+                    const lastSeen = localStorage.getItem(LAST_SEEN_KEY);
+                    if (lastSeen && lastSeen !== data.version) {
+                        // Browser last visited an older version — an update shipped since then
+                        localStorage.setItem(LAST_SEEN_KEY, data.version);
+                        setUpdateAvailable(true);
+                    } else if (!lastSeen) {
+                        localStorage.setItem(LAST_SEEN_KEY, data.version);
+                    }
                     return;
                 }
+
                 if (data.version !== baselineVersion.current) {
+                    localStorage.setItem(LAST_SEEN_KEY, data.version);
                     setUpdateAvailable(true);
                 }
             } catch {
