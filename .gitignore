@@ -11,6 +11,7 @@ server/package-lock.json
 # Build output
 dist/
 client/dist/
+client/public/version.json
 
 # Wrangler state
 .wrangler/

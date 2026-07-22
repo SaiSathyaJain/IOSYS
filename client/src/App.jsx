@@ -5,6 +5,7 @@ import AdminPortal from './components/AdminPortal/AdminPortal'
 import Dashboard from './components/Dashboard/Dashboard'
 import TeamSelection from './pages/TeamSelection'
 import TeamPortal from './components/TeamPortal/TeamPortal'
+import UpdateNotifier from './components/UpdateNotifier/UpdateNotifier'
 import './index.css'
 
 function AnimatedRoutes() {
@@ -26,6 +27,7 @@ function App() {
   return (
     <BrowserRouter>
       <AnimatedRoutes />
+      <UpdateNotifier />
     </BrowserRouter>
   )
 }

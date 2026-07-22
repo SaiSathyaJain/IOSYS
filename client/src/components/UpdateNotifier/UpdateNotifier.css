@@ -1,0 +1,96 @@
+.update-notifier {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    width: 320px;
+    max-width: calc(100vw - 2rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.1rem;
+    border-radius: 14px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.45);
+    font-family: var(--font-sans);
+    animation: update-notifier-in 0.3s ease-out;
+}
+
+@keyframes update-notifier-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.update-notifier-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--accent-glow);
+    color: var(--accent-color);
+    flex-shrink: 0;
+}
+
+.update-notifier-text h3 {
+    margin: 0 0 0.25rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.update-notifier-text p {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+.update-notifier-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.update-notifier-btn {
+    padding: 0.4rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.update-notifier-btn.secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--panel-border);
+}
+
+.update-notifier-btn.secondary:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+.update-notifier-btn.primary {
+    background: var(--accent-color);
+    color: #fff;
+}
+
+.update-notifier-btn.primary:hover {
+    background: var(--accent-hover);
+}
+
+@media (max-width: 480px) {
+    .update-notifier {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        width: auto;
+    }
+}
