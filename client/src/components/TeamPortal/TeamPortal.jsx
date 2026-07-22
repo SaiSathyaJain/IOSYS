@@ -45,6 +45,11 @@ function TeamPortal() {
     const [remarksText, setRemarksText] = useState('');
     const [selectedInwardEntry, setSelectedInwardEntry] = useState(null);
     const [completedInward, setCompletedInward] = useState([]);
+    const [completedTotal, setCompletedTotal] = useState(0);
+    const [completedTotalPages, setCompletedTotalPages] = useState(1);
+    const [completedPage, setCompletedPage] = useState(1);
+    const [debouncedCompletedSearch, setDebouncedCompletedSearch] = useState('');
+    const COMPLETED_PAGE_SIZE = 10;
     const [nextOutwardNo, setNextOutwardNo] = useState('');
     const [editingEntry, setEditingEntry] = useState(null);
     const [ccInput, setCcInput] = useState('');
@@ -83,6 +88,12 @@ function TeamPortal() {
     }, [searchTerm]);
     useEffect(() => { setOutwardPage(1); }, [viewTeam, debouncedSearch]);
     useEffect(() => { loadEntries(); }, [viewTeam, debouncedSearch, outwardPage]);
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedCompletedSearch(completedSearch), 300);
+        return () => clearTimeout(t);
+    }, [completedSearch]);
+    useEffect(() => { setCompletedPage(1); }, [selectedTeam, debouncedCompletedSearch]);
+    useEffect(() => { loadCompletedInward(); }, [selectedTeam, debouncedCompletedSearch, completedPage]);
     const [pushEnabled, setPushEnabled] = useState(false);
     useEffect(() => {
         if (selectedTeam) checkPushStatus();
@@ -96,9 +107,7 @@ function TeamPortal() {
             const pending = allAssigned.filter(e =>
                 e.assignmentStatus === 'Pending' || e.assignmentStatus === 'In Progress'
             );
-            const completed = allAssigned.filter(e => e.assignmentStatus === 'Completed');
             setPendingInward(pending);
-            setCompletedInward(completed);
             if (selectedTeam) {
                 const statsRes = await dashboardAPI.getTeamStats(selectedTeam);
                 setTeamStats(statsRes.data.stats || {});
@@ -116,6 +125,23 @@ function TeamPortal() {
             console.error('Error loading data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadCompletedInward = async () => {
+        try {
+            const res = await inwardAPI.getAll({
+                team: selectedTeam || undefined,
+                status: 'Completed',
+                search: debouncedCompletedSearch || undefined,
+                page: completedPage,
+                limit: COMPLETED_PAGE_SIZE
+            });
+            setCompletedInward(res.data.entries || []);
+            setCompletedTotal(res.data.total || 0);
+            setCompletedTotalPages(res.data.totalPages || 1);
+        } catch (error) {
+            console.error('Error loading completed entries:', error);
         }
     };
 
@@ -193,6 +219,7 @@ function TeamPortal() {
         try {
             await inwardAPI.updateStatus(id, status);
             loadData();
+            loadCompletedInward();
         } catch (error) {
             alert('Error updating status: ' + error.message);
         }
@@ -209,6 +236,7 @@ function TeamPortal() {
             await inwardAPI.updateStatus(completeModal, 'Completed', completeFileRef, `${selectedTeam} Team`);
             setCompleteModal(null);
             loadData();
+            loadCompletedInward();
         } catch (error) {
             alert('Error marking complete: ' + error.message);
         }
@@ -225,6 +253,7 @@ function TeamPortal() {
             await inwardAPI.updateRemarks(remarksModal.id, remarksText, `${selectedTeam} Team`);
             setRemarksModal(null);
             loadData();
+            loadCompletedInward();
         } catch (error) {
             alert('Error saving remarks: ' + error.message);
         }
@@ -269,10 +298,17 @@ function TeamPortal() {
         }
     };
 
-    const handleChatReply = (inwardNo) => {
+    const handleChatReply = async (inwardNo) => {
         const found = pendingInward.find(e => e.inwardNo === inwardNo) || completedInward.find(e => e.inwardNo === inwardNo);
-        if (found) handleProcess(found);
-        else alert(`Could not find entry ${inwardNo}`);
+        if (found) { handleProcess(found); return; }
+        try {
+            const res = await inwardAPI.getAll({ team: selectedTeam || undefined, search: inwardNo });
+            const serverFound = (res.data.entries || []).find(e => e.inwardNo === inwardNo);
+            if (serverFound) handleProcess(serverFound);
+            else alert(`Could not find entry ${inwardNo}`);
+        } catch {
+            alert(`Could not find entry ${inwardNo}`);
+        }
     };
 
     const handleChatMarkComplete = (inwardNo) => {
@@ -426,8 +462,6 @@ function TeamPortal() {
         return applyInwardSearch(base, pendingSearch);
     };
 
-    const getFilteredCompleted = () => applyInwardSearch(completedInward, completedSearch);
-
     const overdueCount     = pendingInward.filter(e => isOverdue(e.dueDate)).length;
     const displayedPending = getFilteredPending().slice(0, showLimit);
     const totalFiltered   = getFilteredPending().length;
@@ -535,7 +569,7 @@ function TeamPortal() {
                             <div className="tp-card-title-row">
                                 <CheckCircle2 size={16} className="tp-icon-muted"/>
                                 <h3>Completed Assignments</h3>
-                                <span className="tp-count-pill">{completedInward.length}</span>
+                                <span className="tp-count-pill">{completedTotal}</span>
                             </div>
                             <div className="tp-search-wrap">
                                 <Search size={13}/>
@@ -545,27 +579,54 @@ function TeamPortal() {
                         </div>
                         {loading ? (
                             <div className="tp-center-state"><Loader2 size={24} className="spin"/></div>
-                        ) : getFilteredCompleted().length === 0 ? (
+                        ) : completedInward.length === 0 ? (
                             <div className="tp-center-state"><CheckCircle2 size={32} style={{opacity:0.3}}/><p>{completedSearch ? 'No matches found.' : 'No completed assignments yet.'}</p></div>
                         ) : (
-                            <motion.div className="tp-assign-list" variants={{ animate: { transition: { staggerChildren: 0.05 } } }} initial="initial" animate="animate">
-                                {getFilteredCompleted().map(entry => (
-                                    <motion.div key={entry.id} className="tp-assign-card" variants={{ initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0, transition: { duration: 0.16 } } }}>
-                                        <div className="tp-ac-row">
-                                            <div className="tp-ac-badges">
-                                                <span className="tp-inward-no">{entry.inwardNo}</span>
-                                                <span className="tp-team-chip">{entry.assignedTeam}</span>
+                            <>
+                                <motion.div className="tp-assign-list" variants={{ animate: { transition: { staggerChildren: 0.05 } } }} initial="initial" animate="animate">
+                                    {completedInward.map(entry => (
+                                        <motion.div key={entry.id} className="tp-assign-card" variants={{ initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0, transition: { duration: 0.16 } } }}>
+                                            <div className="tp-ac-row">
+                                                <div className="tp-ac-badges">
+                                                    <span className="tp-inward-no">{entry.inwardNo}</span>
+                                                    <span className="tp-team-chip">{entry.assignedTeam}</span>
+                                                </div>
+                                                <span className="tp-status-chip" style={{background:'#d1fae5',color:'#065f46'}}>COMPLETED</span>
                                             </div>
-                                            <span className="tp-status-chip" style={{background:'#d1fae5',color:'#065f46'}}>COMPLETED</span>
+                                            <h4 className="tp-ac-subject">{entry.subject}</h4>
+                                            <p className="tp-ac-from">From: <strong>{entry.particularsFromWhom}</strong></p>
+                                            <div className="tp-ac-actions">
+                                                <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                                {completedTotal > COMPLETED_PAGE_SIZE && (() => {
+                                    const totalPages = completedTotalPages;
+                                    const pct = totalPages > 1 ? ((completedPage - 1) / (totalPages - 1)) * 100 : 0;
+                                    return (
+                                        <div className="table-pagination">
+                                            <span className="table-note">
+                                                Showing {(completedPage - 1) * COMPLETED_PAGE_SIZE + 1}–{Math.min(completedPage * COMPLETED_PAGE_SIZE, completedTotal)} of {completedTotal}
+                                            </span>
+                                            <div className="slider-pagination">
+                                                <button className="page-arrow" disabled={completedPage === 1} onClick={() => setCompletedPage(p => p - 1)}>‹</button>
+                                                <div className="slider-wrap">
+                                                    <input
+                                                        type="range"
+                                                        className="page-slider"
+                                                        min={1} max={totalPages} value={completedPage}
+                                                        style={{ '--pct': `${pct}%` }}
+                                                        onChange={e => setCompletedPage(Number(e.target.value))}
+                                                    />
+                                                </div>
+                                                <button className="page-arrow" disabled={completedPage === totalPages} onClick={() => setCompletedPage(p => p + 1)}>›</button>
+                                                <span className="page-badge">{completedPage} <span className="page-of">/ {totalPages}</span></span>
+                                            </div>
                                         </div>
-                                        <h4 className="tp-ac-subject">{entry.subject}</h4>
-                                        <p className="tp-ac-from">From: <strong>{entry.particularsFromWhom}</strong></p>
-                                        <div className="tp-ac-actions">
-                                            <button className="tp-ac-btn view" onClick={() => { setSelectedInwardEntry(entry); setShowInwardModal(true); }}>VIEW DETAILS</button>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </motion.div>
+                                    );
+                                })()}
+                            </>
                         )}
                     </motion.div>
                 )}
