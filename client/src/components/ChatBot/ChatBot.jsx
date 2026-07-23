@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu, Bell, ExternalLink, CheckCircle2, Users, Lock, CornerUpLeft, AlertTriangle } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu, Bell, ExternalLink, CheckCircle2, Users, Lock, CornerUpLeft, AlertTriangle, ClipboardList, BarChart3, Inbox, Upload, Hourglass, TrendingUp, User, Filter, Timer, FolderTree, FileText, Scale, Check } from 'lucide-react';
 
 const SEARCH_STEPS = [
     { icon: Database, label: 'Fetching live data…'      },
@@ -41,23 +41,23 @@ const DEFAULT_MODEL = MODELS[0].id;
 
 const QUICK_ACTIONS = [
     // Overview
-    { label: '📋 Daily briefing',        query: 'Give me today\'s briefing — new entries today, overdue items, and team with most load' },
-    { label: '📊 Team workload',          query: 'Show team workload breakdown and compare UPAS, PPAS, UPAS/PPAS and DPAS performance' },
-    { label: '⚠️ Overdue entries',        query: 'Show all overdue entries sorted by how long they have been pending' },
-    { label: '📥 Unassigned entries',     query: 'List all inward entries that have not been assigned to any team yet' },
+    { icon: ClipboardList, label: 'Daily briefing',    query: 'Give me today\'s briefing — new entries today, overdue items, and team with most load' },
+    { icon: BarChart3,     label: 'Team workload',      query: 'Show team workload breakdown and compare UPAS, PPAS, UPAS/PPAS and DPAS performance' },
+    { icon: AlertTriangle, label: 'Overdue entries',    query: 'Show all overdue entries sorted by how long they have been pending' },
+    { icon: Inbox,         label: 'Unassigned entries', query: 'List all inward entries that have not been assigned to any team yet' },
     // Entry lists
-    { label: '📤 Outward entries',        query: 'List all outward entries' },
-    { label: '⏳ Pending entries',        query: 'List all pending inward entries' },
+    { icon: Upload,        label: 'Outward entries',    query: 'List all outward entries' },
+    { icon: Hourglass,     label: 'Pending entries',    query: 'List all pending inward entries' },
     // Analysis
-    { label: '📈 Inward trend',           query: 'Is our inward volume increasing or decreasing? Which period had the most entries?' },
-    { label: '👤 Top senders',            query: 'Who sends us the most correspondence? Group entries by sender and show counts' },
-    { label: '🏎️ Bottlenecks',            query: 'Which entries have been pending the longest? Show the top 10 oldest unresolved entries' },
-    { label: '⏱️ SLA analysis',           query: 'How long does each team typically take to complete entries? Calculate average turnaround time' },
-    { label: '🗂️ Entry categories',       query: 'Classify inward entries by subject category (exam, certificate, attendance, etc.) and show counts' },
+    { icon: TrendingUp,    label: 'Inward trend',       query: 'Is our inward volume increasing or decreasing? Which period had the most entries?' },
+    { icon: User,          label: 'Top senders',        query: 'Who sends us the most correspondence? Group entries by sender and show counts' },
+    { icon: Filter,        label: 'Bottlenecks',        query: 'Which entries have been pending the longest? Show the top 10 oldest unresolved entries' },
+    { icon: Timer,         label: 'SLA analysis',       query: 'How long does each team typically take to complete entries? Calculate average turnaround time' },
+    { icon: FolderTree,    label: 'Entry categories',   query: 'Classify inward entries by subject category (exam, certificate, attendance, etc.) and show counts' },
     // Productivity
-    { label: '📝 Status report',          query: 'Generate a formal status report I can share with the COE — total entries, team breakdown, overdue count' },
-    { label: '🔍 Recent activity',        query: 'Summarize the last 15 actions from the audit log' },
-    { label: '⚖️ Compare teams',          query: 'Compare UPAS vs PPAS vs UPAS/PPAS vs DPAS — which team has the best completion rate and least overdue?' },
+    { icon: FileText,      label: 'Status report',      query: 'Generate a formal status report I can share with the COE — total entries, team breakdown, overdue count' },
+    { icon: Search,        label: 'Recent activity',    query: 'Summarize the last 15 actions from the audit log' },
+    { icon: Scale,         label: 'Compare teams',      query: 'Compare UPAS vs PPAS vs UPAS/PPAS vs DPAS — which team has the best completion rate and least overdue?' },
 ];
 
 const INITIAL_MESSAGE = {
@@ -280,7 +280,7 @@ function EntryCard({ entry, onFindEntry, onAssignTeam, onMarkComplete, onReply, 
                         <Lock size={11} /> Close case
                     </button>
                 )}
-                {reminderSaved && <span className="chatbot-reminder-saved">✓ Reminder set</span>}
+                {reminderSaved && <span className="chatbot-reminder-saved"><Check size={11} /> Reminder set</span>}
             </div>
             {showReminderForm && (
                 <ReminderForm entry={entry} onSave={handleReminderSaved} onCancel={() => setShowReminderForm(false)} />
@@ -781,13 +781,14 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
                 <div className="chatbot-quick-actions-wrap">
                     <button className="chatbot-chips-arrow" onClick={() => scrollChips(-1)} title="Scroll left">‹</button>
                     <div className="chatbot-quick-actions" ref={chipsRef}>
-                        {QUICK_ACTIONS.map(({ label, query }) => (
+                        {QUICK_ACTIONS.map(({ icon: Icon, label, query }) => (
                             <button
                                 key={label}
                                 className="chatbot-qa-chip"
                                 onClick={() => sendMessage(query)}
                                 disabled={loading || streaming}
                             >
+                                <Icon size={12} />
                                 {label}
                                 <ArrowUpRight size={11} />
                             </button>

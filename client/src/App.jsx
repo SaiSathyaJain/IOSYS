@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard/Dashboard'
 import TeamSelection from './pages/TeamSelection'
 import TeamPortal from './components/TeamPortal/TeamPortal'
 import UpdateNotifier from './components/UpdateNotifier/UpdateNotifier'
+import ToastContainer from './components/Toast/Toast'
 import './index.css'
 
 function AnimatedRoutes() {
@@ -28,6 +29,7 @@ function App() {
     <BrowserRouter>
       <AnimatedRoutes />
       <UpdateNotifier />
+      <ToastContainer />
     </BrowserRouter>
   )
 }

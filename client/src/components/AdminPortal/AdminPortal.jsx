@@ -12,6 +12,7 @@ import {
     Sun, Moon, ArrowLeft, Printer, Sparkles, Trash2, RotateCcw
 } from 'lucide-react';
 import ChatBot from '../ChatBot/ChatBot';
+import { showToast } from '../Toast/toastBus';
 import './AdminPortal.css';
 
 const ADMIN_EMAIL = 'coeofficeinward@sssihl.edu.in';
@@ -516,7 +517,7 @@ function AdminPortal() {
             setInboxCount(prev => Math.max(0, prev - 1));
             loadData();
         } catch (err) {
-            alert('Failed to accept: ' + (err.response?.data?.message || err.message));
+            showToast('Failed to accept: ' + (err.response?.data?.message || err.message), 'error');
         } finally {
             setInboxAccepting(false);
         }
@@ -528,7 +529,7 @@ function AdminPortal() {
             setInboxItems(prev => prev.filter(i => i.id !== id));
             setInboxCount(prev => Math.max(0, prev - 1));
         } catch (err) {
-            alert('Failed to reject: ' + (err.response?.data?.message || err.message));
+            showToast('Failed to reject: ' + (err.response?.data?.message || err.message), 'error');
         }
     };
 
@@ -597,7 +598,7 @@ function AdminPortal() {
             loadData();
         } catch (error) {
             console.error('Error creating entry:', error);
-            alert('Error creating entry: ' + error.message);
+            showToast('Error creating entry: ' + error.message, 'error');
         }
     };
 
@@ -636,7 +637,7 @@ function AdminPortal() {
             loadData();
         } catch (error) {
             console.error('Error reassigning:', error);
-            alert('Error reassigning: ' + (error.response?.data?.message || error.message));
+            showToast('Error reassigning: ' + (error.response?.data?.message || error.message), 'error');
         }
     };
 
@@ -696,7 +697,7 @@ function AdminPortal() {
             setEmailPasteText('');
             setShowForm(true);
         } catch (err) {
-            alert('AI extraction failed: ' + (err.response?.data?.message || err.message));
+            showToast('AI extraction failed: ' + (err.response?.data?.message || err.message), 'error');
         } finally {
             setEmailAnalyzing(false);
         }
@@ -709,7 +710,7 @@ function AdminPortal() {
             setFilteredEntries(prev => prev.filter(e => e.id !== id));
             setInwardTotal(prev => Math.max(0, prev - 1));
         } catch (err) {
-            alert('Failed to delete entry: ' + err.message);
+            showToast('Failed to delete entry: ' + err.message, 'error');
         } finally {
             setDeleteConfirmId(null);
         }
@@ -735,7 +736,7 @@ function AdminPortal() {
             // Reload inward entries so restored entry appears
             await loadData();
         } catch (err) {
-            alert('Restore failed: ' + (err.response?.data?.message || err.message));
+            showToast('Restore failed: ' + (err.response?.data?.message || err.message), 'error');
         } finally {
             setRestoreLoadingId(null);
         }
@@ -746,7 +747,7 @@ function AdminPortal() {
             await recycleBinAPI.permanentDelete(id);
             setRecycleBin(prev => prev.filter(e => e.id !== id));
         } catch (err) {
-            alert('Failed to permanently delete: ' + err.message);
+            showToast('Failed to permanently delete: ' + err.message, 'error');
         } finally {
             setPermDeleteConfirmId(null);
         }
@@ -773,7 +774,7 @@ function AdminPortal() {
             setSelectedEntry(entry);
             setShowReassignModal(true);
         } catch (err) {
-            alert('Auto-assign failed: ' + (err.response?.data?.message || err.message));
+            showToast('Auto-assign failed: ' + (err.response?.data?.message || err.message), 'error');
         } finally {
             setAutoAssignLoadingId(null);
         }
@@ -866,7 +867,7 @@ function AdminPortal() {
     const handleChatAssignTeam = (inwardNo) => {
         const found = entries.find(e => e.inwardNo === inwardNo);
         if (found) openReassignModal(found);
-        else alert(`Could not find entry ${inwardNo}`);
+        else showToast(`Could not find entry ${inwardNo}`, 'warning');
     };
 
     const dismissReminderBanner = (id) => {
@@ -974,7 +975,7 @@ function AdminPortal() {
             link.click();
             URL.revokeObjectURL(link.href);
         } catch (error) {
-            alert('Error downloading report: ' + error.message);
+            showToast('Error downloading report: ' + error.message, 'error');
         }
     };
 
@@ -982,7 +983,7 @@ function AdminPortal() {
         try {
             const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
             if (!ALLOWED_EMAILS.includes(payload.email)) {
-                alert(`Access denied. This portal is restricted to authorised SSSIHL accounts.`);
+                showToast('Access denied. This portal is restricted to authorised SSSIHL accounts.', 'error');
                 return;
             }
             const user = {
@@ -994,7 +995,7 @@ function AdminPortal() {
             localStorage.setItem('adminUser', JSON.stringify(user));
             setAdminUser(user);
         } catch {
-            alert('Login failed. Please try again.');
+            showToast('Login failed. Please try again.', 'error');
         }
     };
 
@@ -1014,7 +1015,7 @@ function AdminPortal() {
                     <div className="ap-login-btn-wrap">
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
-                            onError={() => alert('Google login failed. Please try again.')}
+                            onError={() => showToast('Google login failed. Please try again.', 'error')}
                             theme={isDarkMode ? 'filled_black' : 'outline'}
                             size="large"
                             shape="rectangular"
@@ -1109,7 +1110,7 @@ function AdminPortal() {
 </html>`;
 
         const win = window.open('', '_blank');
-        if (!win) { alert('Please allow pop-ups for this site and try again.'); return; }
+        if (!win) { showToast('Please allow pop-ups for this site and try again.', 'warning'); return; }
         win.document.write(html);
         win.document.close();
         setTimeout(() => { win.focus(); win.print(); }, 500);
@@ -1141,7 +1142,7 @@ function AdminPortal() {
             setNotesFormData({ slNo: '', outwardNo: '', date: '', description: '', remarks: '' });
             await loadData();
         } catch (err) {
-            alert('Failed to save note: ' + err.message);
+            showToast('Failed to save note: ' + err.message, 'error');
         } finally {
             setNotesLoading(false);
         }
@@ -1153,7 +1154,7 @@ function AdminPortal() {
             await notesAPI.remove(id);
             await loadData();
         } catch (err) {
-            alert('Failed to delete note: ' + err.message);
+            showToast('Failed to delete note: ' + err.message, 'error');
         }
     };
 

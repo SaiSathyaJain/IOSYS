@@ -9,6 +9,7 @@ import {
     Sun, Moon, LayoutDashboard, Send, History, User, Download, Pencil
 } from 'lucide-react';
 import ChatBot from '../ChatBot/ChatBot';
+import { showToast } from '../Toast/toastBus';
 import './TeamPortal.css';
 
 const TEAM_MAP = { 'upas': 'UPAS', 'ppas': 'PPAS', 'upas-ppas': 'UPAS/PPAS', 'dpas': 'DPAS' };
@@ -221,7 +222,7 @@ function TeamPortal() {
             loadData();
             loadCompletedInward();
         } catch (error) {
-            alert('Error updating status: ' + error.message);
+            showToast('Error updating status: ' + error.message, 'error');
         }
     };
 
@@ -238,7 +239,7 @@ function TeamPortal() {
             loadData();
             loadCompletedInward();
         } catch (error) {
-            alert('Error marking complete: ' + error.message);
+            showToast('Error marking complete: ' + error.message, 'error');
         }
     };
 
@@ -255,7 +256,7 @@ function TeamPortal() {
             loadData();
             loadCompletedInward();
         } catch (error) {
-            alert('Error saving remarks: ' + error.message);
+            showToast('Error saving remarks: ' + error.message, 'error');
         }
     };
 
@@ -269,20 +270,20 @@ function TeamPortal() {
             };
             if (editingEntry) {
                 await outwardAPI.update(editingEntry.id, payload);
-                alert('Outward entry updated successfully!');
+                showToast('Outward entry updated successfully!', 'success');
             } else {
                 await outwardAPI.create({ ...payload, signReceiptDateTime: new Date().toISOString() });
                 if (formData.teamMemberEmail) {
                     localStorage.setItem('teamUser', JSON.stringify({ email: formData.teamMemberEmail.trim(), type: 'team' }));
                 }
-                alert('Outward entry created successfully!');
+                showToast('Outward entry created successfully!', 'success');
             }
             setShowForm(false);
             resetForm();
             loadData();
             loadEntries();
         } catch (error) {
-            alert(`Error ${editingEntry ? 'updating' : 'creating'} entry: ` + error.message);
+            showToast(`Error ${editingEntry ? 'updating' : 'creating'} entry: ` + error.message, 'error');
         }
     };
 
@@ -290,11 +291,11 @@ function TeamPortal() {
         if (!window.confirm('Are you sure you want to close this case?')) return;
         try {
             await outwardAPI.closeCase(id);
-            alert('Case closed successfully!');
+            showToast('Case closed successfully!', 'success');
             loadEntries();
             setShowDetailsModal(false);
         } catch (error) {
-            alert('Error closing case: ' + error.message);
+            showToast('Error closing case: ' + error.message, 'error');
         }
     };
 
@@ -305,16 +306,16 @@ function TeamPortal() {
             const res = await inwardAPI.getAll({ team: selectedTeam || undefined, search: inwardNo });
             const serverFound = (res.data.entries || []).find(e => e.inwardNo === inwardNo);
             if (serverFound) handleProcess(serverFound);
-            else alert(`Could not find entry ${inwardNo}`);
+            else showToast(`Could not find entry ${inwardNo}`, 'warning');
         } catch {
-            alert(`Could not find entry ${inwardNo}`);
+            showToast(`Could not find entry ${inwardNo}`, 'warning');
         }
     };
 
     const handleChatMarkComplete = (inwardNo) => {
         const found = pendingInward.find(e => e.inwardNo === inwardNo);
         if (found) handleMarkComplete(found.id);
-        else alert(`Could not find entry ${inwardNo}`);
+        else showToast(`Could not find entry ${inwardNo}`, 'warning');
     };
 
     const handleChatCloseCase = async (outwardNo) => {
@@ -322,9 +323,9 @@ function TeamPortal() {
             const res = await outwardAPI.getAll({ team: viewTeam, search: outwardNo });
             const found = (res.data.entries || []).find(e => e.outwardNo === outwardNo);
             if (found) handleCloseCase(found.id);
-            else alert(`Could not find entry ${outwardNo}`);
+            else showToast(`Could not find entry ${outwardNo}`, 'warning');
         } catch {
-            alert(`Could not find entry ${outwardNo}`);
+            showToast(`Could not find entry ${outwardNo}`, 'warning');
         }
     };
 
@@ -341,14 +342,14 @@ function TeamPortal() {
     const registerPush = async () => {
         try {
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                alert('Push notifications are not supported in this browser.');
+                showToast('Push notifications are not supported in this browser.', 'warning');
                 return;
             }
             const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
             if (!vapidKey) { console.error('VAPID public key not configured'); return; }
 
             const permission = await Notification.requestPermission();
-            if (permission !== 'granted') { alert('Notification permission denied.'); return; }
+            if (permission !== 'granted') { showToast('Notification permission denied.', 'warning'); return; }
 
             await navigator.serviceWorker.register('/sw.js');
             const reg = await navigator.serviceWorker.ready;
@@ -371,7 +372,7 @@ function TeamPortal() {
             setPushEnabled(true);
         } catch (err) {
             console.error('Push registration failed:', err.message);
-            alert('Could not enable notifications: ' + err.message);
+            showToast('Could not enable notifications: ' + err.message, 'error');
         }
     };
 

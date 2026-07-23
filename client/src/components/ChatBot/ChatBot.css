@@ -819,6 +819,9 @@
     border-color: #f59e0b;
 }
 .chatbot-reminder-saved {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
     font-size: 0.7rem;
     font-weight: 600;
     color: #16a34a;
