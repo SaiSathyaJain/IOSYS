@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, RotateCcw, ChevronDown, Database, Search, Cpu, Bell, ExternalLink, CheckCircle2, Users, Lock, CornerUpLeft, AlertTriangle, ClipboardList, BarChart3, Inbox, Upload, Hourglass, TrendingUp, User, Filter, Timer, FolderTree, FileText, Scale, Check, ImagePlus } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, RotateCcw, ChevronDown, Database, Search, Cpu, Bell, ExternalLink, CheckCircle2, Users, Lock, CornerUpLeft, AlertTriangle, ClipboardList, BarChart3, Inbox, Upload, Hourglass, TrendingUp, User, Filter, Timer, FolderTree, FileText, Scale, Check, ImagePlus, Trash2 } from 'lucide-react';
 import { showToast } from '../Toast/toastBus';
 
 const SEARCH_STEPS = [
@@ -256,9 +256,11 @@ const STATUS_DOT_COLOR = {
     'Pending':     '#f59e0b',
 };
 
-function EntryCard({ entry, onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase }) {
+function EntryCard({ entry, onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase, onDeleteEntry }) {
     const [showReminderForm, setShowReminderForm] = useState(false);
     const [reminderSaved, setReminderSaved] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleted, setDeleted] = useState(false);
     const type   = entry.type === 'outward' ? 'outward' : 'inward';
     const schema = type === 'outward' ? OUTWARD_FIELDS : INWARD_FIELDS;
     const allFields = schema.filter(f => entry[f.key] && entry[f.key] !== '');
@@ -342,10 +344,36 @@ function EntryCard({ entry, onFindEntry, onAssignTeam, onMarkComplete, onReply, 
                         <Lock size={11} /> Close case
                     </button>
                 )}
+                {isInward && onDeleteEntry && !deleted && !showDeleteConfirm && (
+                    <button className="chatbot-entry-action-btn chatbot-entry-action-btn--danger" onClick={() => setShowDeleteConfirm(true)} title="Delete this entry">
+                        <Trash2 size={11} /> Delete entry
+                    </button>
+                )}
                 {reminderSaved && <span className="chatbot-reminder-saved"><Check size={11} /> Reminder set</span>}
+                {deleted && <span className="chatbot-reminder-saved chatbot-reminder-saved--danger"><Check size={11} /> Entry deleted</span>}
             </div>
             {showReminderForm && (
                 <ReminderForm entry={entry} onSave={handleReminderSaved} onCancel={() => setShowReminderForm(false)} />
+            )}
+            {showDeleteConfirm && (
+                <div className="chatbot-delete-confirm">
+                    <div className="chatbot-delete-confirm-text">
+                        <AlertTriangle size={12} /> Delete {entry.no}? It moves to the Recycle Bin and can be restored later.
+                    </div>
+                    <div className="chatbot-delete-confirm-actions">
+                        <button className="chatbot-reminder-cancel" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+                        <button
+                            className="chatbot-delete-confirm-btn"
+                            onClick={() => {
+                                const ok = onDeleteEntry(entry.no);
+                                setShowDeleteConfirm(false);
+                                if (ok !== false) setDeleted(true);
+                            }}
+                        >
+                            <Trash2 size={11} /> Confirm delete
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -459,7 +487,7 @@ function MarkdownBlock({ text }) {
 }
 
 // Render assistant message: markdown text + optional entry cards + load more button
-function MessageContent({ content, onSend, onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase }) {
+function MessageContent({ content, onSend, onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase, onDeleteEntry }) {
     const { text, entries, showing, total } = parseAIReply(content);
     const hasMore = showing !== null && total !== null && showing < total;
     const nextStart = showing + 1;
@@ -481,6 +509,7 @@ function MessageContent({ content, onSend, onFindEntry, onAssignTeam, onMarkComp
                     onMarkComplete={onMarkComplete}
                     onReply={onReply}
                     onCloseCase={onCloseCase}
+                    onDeleteEntry={onDeleteEntry}
                 />
             ))}
             {hasMore && (
@@ -492,7 +521,7 @@ function MessageContent({ content, onSend, onFindEntry, onAssignTeam, onMarkComp
     );
 }
 
-function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase, storageKey = 'iosys_chat_messages', hidden = false }) {
+function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase, onDeleteEntry, storageKey = 'iosys_chat_messages', hidden = false }) {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState(() => {
         try {
@@ -853,6 +882,7 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
                                                 onMarkComplete={onMarkComplete}
                                                 onReply={onReply}
                                                 onCloseCase={onCloseCase}
+                                                onDeleteEntry={onDeleteEntry}
                                             />
                                         </div>
                                     ) : (

@@ -709,11 +709,22 @@ function AdminPortal() {
             setEntries(prev => prev.filter(e => e.id !== id));
             setFilteredEntries(prev => prev.filter(e => e.id !== id));
             setInwardTotal(prev => Math.max(0, prev - 1));
+            showToast('Entry deleted. You can restore it from the Recycle Bin.', 'success');
         } catch (err) {
             showToast('Failed to delete entry: ' + err.message, 'error');
         } finally {
             setDeleteConfirmId(null);
         }
+    };
+
+    const handleChatDeleteEntry = (inwardNo) => {
+        const found = entries.find(e => e.inwardNo === inwardNo);
+        if (found) {
+            handleDeleteEntry(found.id);
+            return true;
+        }
+        showToast(`Could not find entry ${inwardNo}`, 'warning');
+        return false;
     };
 
     const loadRecycleBin = async () => {
@@ -2544,7 +2555,7 @@ function AdminPortal() {
                 </div>
             )}
 
-            <ChatBot onFindEntry={handleFindEntry} onAssignTeam={handleChatAssignTeam} storageKey="iosys_chat_admin" />
+            <ChatBot onFindEntry={handleFindEntry} onAssignTeam={handleChatAssignTeam} onDeleteEntry={handleChatDeleteEntry} storageKey="iosys_chat_admin" />
 
             {/* Subject Tooltip */}
             {tooltip.visible && (

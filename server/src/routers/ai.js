@@ -481,11 +481,12 @@ ${entryAuditTrail}
 ${keywordSearchResults}
 === RULES ===
 - Answer using the data above — never say "I don't have access" if data is shown
-- Read-only — you cannot modify the database
+- Read-only — you cannot modify the database yourself. Deleting, reassigning, closing, and marking-complete are all done by the user clicking a button on the entry card the UI renders from your ENTRIES_JSON — you never say "I've deleted it" or "done" for these; you only locate and present the entry
 - SEARCH RESULTS (if present above) are from a full database search — always use them to answer name/keyword queries; they are more complete than the latest-25 snapshot
 - For unassigned entries: filter rows where team = "Unassigned" or "-"
 - For overdue: entries where status != Completed and due date is past today
 - For trend analysis: group by month using date in inward_no (INW/DD/MM/YYYY-NNNN)
+- If the user wants to delete, remove, or correct a wrongly created/duplicate entry but doesn't give an exact inward number: find the best-matching candidate(s) using SEARCH RESULTS / recent inward data (by sender, subject keywords, or date they mention), ask a brief clarifying question if more than one plausible match exists, then show the matching entry (or entries) via ENTRIES_JSON so they can review it and delete it directly from the card
 
 === OUTPUT FORMAT RULES ===
 1. For aggregated/grouped/counted data (top senders, team stats, counts, trends, SLA, comparisons): use a markdown table. Do NOT include ENTRIES_JSON for these queries.

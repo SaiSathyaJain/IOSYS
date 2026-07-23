@@ -978,6 +978,14 @@
     background: rgba(245,158,11,0.1);
     border-color: #f59e0b;
 }
+.chatbot-entry-action-btn--danger {
+    border-color: rgba(239,68,68,0.35);
+    color: #dc2626;
+}
+.chatbot-entry-action-btn--danger:hover {
+    background: rgba(239,68,68,0.1);
+    border-color: #ef4444;
+}
 .chatbot-reminder-saved {
     display: flex;
     align-items: center;
@@ -989,6 +997,49 @@
     font-weight: 600;
     color: #16a34a;
 }
+.chatbot-reminder-saved--danger { color: #dc2626; }
+
+/* ── Delete-entry confirm panel ── */
+.chatbot-delete-confirm {
+    margin-top: 0.5rem;
+    padding: 0.6rem;
+    background: rgba(239,68,68,0.06);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.chatbot-delete-confirm-text {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: #b91c1c;
+}
+.chatbot-delete-confirm-actions {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: flex-end;
+}
+.chatbot-delete-confirm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 50px;
+    border: 1px solid transparent;
+    background: #dc2626;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.13s;
+}
+.chatbot-delete-confirm-btn:hover { background: #b91c1c; }
+
+[data-theme="dark"] .chatbot-delete-confirm-text { color: #fca5a5; }
 
 [data-theme="dark"] .chatbot-entry-action-btn {
     border-color: rgba(255,255,255,0.18);
@@ -1005,6 +1056,14 @@
 [data-theme="dark"] .chatbot-entry-action-btn--reminder:hover {
     background: rgba(245,158,11,0.15);
     border-color: #f59e0b;
+}
+[data-theme="dark"] .chatbot-entry-action-btn--danger {
+    border-color: rgba(239,68,68,0.35);
+    color: #f87171;
+}
+[data-theme="dark"] .chatbot-entry-action-btn--danger:hover {
+    background: rgba(239,68,68,0.15);
+    border-color: #ef4444;
 }
 
 /* ── Reminder form ── */
