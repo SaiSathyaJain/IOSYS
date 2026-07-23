@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu, Bell, ExternalLink, CheckCircle2, Users, Lock, CornerUpLeft, AlertTriangle, ClipboardList, BarChart3, Inbox, Upload, Hourglass, TrendingUp, User, Filter, Timer, FolderTree, FileText, Scale, Check, ImagePlus } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, RotateCcw, ChevronDown, Database, Search, Cpu, Bell, ExternalLink, CheckCircle2, Users, Lock, CornerUpLeft, AlertTriangle, ClipboardList, BarChart3, Inbox, Upload, Hourglass, TrendingUp, User, Filter, Timer, FolderTree, FileText, Scale, Check, ImagePlus } from 'lucide-react';
 import { showToast } from '../Toast/toastBus';
 
 const SEARCH_STEPS = [
@@ -166,6 +166,11 @@ function saveReminders(reminders) {
     window.dispatchEvent(new Event(REMINDERS_EVENT));
 }
 
+function formatMsgTime(ts) {
+    if (!ts) return '';
+    return new Date(ts).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
 function todayStr() {
     return new Date().toISOString().split('T')[0];
 }
@@ -245,15 +250,24 @@ function ReminderForm({ entry, onSave, onCancel }) {
     );
 }
 
+const STATUS_DOT_COLOR = {
+    'Completed':   '#22c55e',
+    'In Progress': '#3b82f6',
+    'Pending':     '#f59e0b',
+};
+
 function EntryCard({ entry, onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCase }) {
     const [showReminderForm, setShowReminderForm] = useState(false);
     const [reminderSaved, setReminderSaved] = useState(false);
     const type   = entry.type === 'outward' ? 'outward' : 'inward';
     const schema = type === 'outward' ? OUTWARD_FIELDS : INWARD_FIELDS;
-    const fields = schema.filter(f => entry[f.key] && entry[f.key] !== '');
+    const allFields = schema.filter(f => entry[f.key] && entry[f.key] !== '');
+    const dueField  = allFields.find(f => f.key === 'due');
+    const fields    = allFields.filter(f => f.key !== 'due');
     const isInward = type === 'inward' && entry.no?.startsWith('INW/');
     const isOpenInward = isInward && !entry.closed && entry.status !== 'Completed';
     const isOpenOutward = type === 'outward' && !entry.closed;
+    const isActive = !entry.closed && entry.status !== 'Completed';
 
     const handleReminderSaved = () => {
         setShowReminderForm(false);
@@ -265,10 +279,10 @@ function EntryCard({ entry, onFindEntry, onAssignTeam, onMarkComplete, onReply, 
         <div className={`chatbot-entry-card chatbot-entry-card--${type}`}>
             <div className="chatbot-entry-header">
                 <span className="chatbot-entry-no">{entry.no}</span>
-                <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
-                    {entry.closed && (
-                        <span className="chatbot-entry-badge chatbot-entry-badge--closed">Closed</span>
-                    )}
+                <div className="chatbot-entry-badges">
+                    <span className={`chatbot-entry-status-pill${isActive ? ' chatbot-entry-status-pill--active' : ''}`}>
+                        {isActive ? 'Active' : 'Closed'}
+                    </span>
                     <span className={`chatbot-entry-badge chatbot-entry-badge--${type}`}>
                         {type === 'outward' ? 'Outward' : 'Inward'}
                     </span>
@@ -283,11 +297,20 @@ function EntryCard({ entry, onFindEntry, onAssignTeam, onMarkComplete, onReply, 
                             title={entry[key]}
                             style={key === 'subject' ? { whiteSpace: 'normal', wordBreak: 'break-word' } : {}}
                         >
+                            {key === 'status' && STATUS_DOT_COLOR[entry[key]] && (
+                                <span className="chatbot-status-dot" style={{ background: STATUS_DOT_COLOR[entry[key]] }} />
+                            )}
                             {entry[key]}
                         </span>
                     </div>
                 ))}
             </div>
+            {dueField && (
+                <div className="chatbot-entry-due-box">
+                    <span className="chatbot-field-key">{dueField.label}</span>
+                    <span className="chatbot-field-val">{entry[dueField.key]}</span>
+                </div>
+            )}
             <div className="chatbot-entry-actions">
                 {isInward && onFindEntry && (
                     <button className="chatbot-entry-action-btn" onClick={() => onFindEntry(entry.no)} title="Jump to this entry in the table">
@@ -595,6 +618,7 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
             content: image
                 ? [{ type: 'text', text: content || 'What is in this image?' }, { type: 'image_url', image_url: { url: image } }]
                 : content,
+            timestamp: Date.now(),
         };
         const updatedMessages = [...messages, userMsg];
         setMessages(updatedMessages);
@@ -626,6 +650,7 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
                     content: isRateLimit
                         ? `**Daily AI limit reached.**\n\nThe free model quota on OpenRouter has been used up for today.\n\n- The assistant will be available again **tomorrow** automatically.\n- Or add credits at **openrouter.ai** to restore access now.\n\nYou can still use all other features of IOSYS normally.`
                         : `Sorry, something went wrong: ${msg}`,
+                    timestamp: Date.now(),
                 }]);
                 return;
             }
@@ -633,7 +658,7 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
             // Streaming — hide typing indicator, start filling message
             setLoading(false);
             setStreaming(true);
-            setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: '', timestamp: Date.now() }]);
 
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
@@ -692,6 +717,7 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: 'Connection error. Make sure the server is running.',
+                timestamp: Date.now(),
             }]);
         } finally {
             setLoading(false);
@@ -816,30 +842,35 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
                                         <Sparkles size={10} />
                                     </div>
                                 )}
-                                {msg.role === 'assistant' ? (
-                                    <div className="chatbot-bubble chatbot-bubble--assistant">
-                                        <MessageContent
-                                            content={msg.content}
-                                            onSend={sendMessage}
-                                            onFindEntry={onFindEntry}
-                                            onAssignTeam={onAssignTeam}
-                                            onMarkComplete={onMarkComplete}
-                                            onReply={onReply}
-                                            onCloseCase={onCloseCase}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="chatbot-bubble chatbot-bubble--user">
-                                        {Array.isArray(msg.content) ? (
-                                            <>
-                                                {msg.content.filter(p => p.type === 'image_url').map((p, i) => (
-                                                    <img key={i} src={p.image_url.url} alt="Attached" className="chatbot-msg-image" />
-                                                ))}
-                                                {msg.content.find(p => p.type === 'text')?.text}
-                                            </>
-                                        ) : msg.content}
-                                    </div>
-                                )}
+                                <div className="chatbot-msg-col">
+                                    {msg.role === 'assistant' ? (
+                                        <div className="chatbot-bubble chatbot-bubble--assistant">
+                                            <MessageContent
+                                                content={msg.content}
+                                                onSend={sendMessage}
+                                                onFindEntry={onFindEntry}
+                                                onAssignTeam={onAssignTeam}
+                                                onMarkComplete={onMarkComplete}
+                                                onReply={onReply}
+                                                onCloseCase={onCloseCase}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="chatbot-bubble chatbot-bubble--user">
+                                            {Array.isArray(msg.content) ? (
+                                                <>
+                                                    {msg.content.filter(p => p.type === 'image_url').map((p, i) => (
+                                                        <img key={i} src={p.image_url.url} alt="Attached" className="chatbot-msg-image" />
+                                                    ))}
+                                                    {msg.content.find(p => p.type === 'text')?.text}
+                                                </>
+                                            ) : msg.content}
+                                        </div>
+                                    )}
+                                    {msg.timestamp && (
+                                        <span className="chatbot-msg-time">{formatMsgTime(msg.timestamp)}</span>
+                                    )}
+                                </div>
                             </div>
                         );
                     })}
@@ -871,7 +902,6 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
                             >
                                 <Icon size={12} />
                                 {label}
-                                <ArrowUpRight size={11} />
                             </button>
                         ))}
                     </div>
