@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu, Bell, ExternalLink, CheckCircle2, Users, Lock, CornerUpLeft, AlertTriangle, ClipboardList, BarChart3, Inbox, Upload, Hourglass, TrendingUp, User, Filter, Timer, FolderTree, FileText, Scale, Check } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, RotateCcw, ArrowUpRight, ChevronDown, Database, Search, Cpu, Bell, ExternalLink, CheckCircle2, Users, Lock, CornerUpLeft, AlertTriangle, ClipboardList, BarChart3, Inbox, Upload, Hourglass, TrendingUp, User, Filter, Timer, FolderTree, FileText, Scale, Check, ImagePlus } from 'lucide-react';
+import { showToast } from '../Toast/toastBus';
 
 const SEARCH_STEPS = [
     { icon: Database, label: 'Fetching live data…'      },
@@ -36,8 +37,46 @@ const MODELS = [
     { id: 'openai/gpt-oss-20b:free',                label: 'GPT OSS 20B',       badge: 'Fast'     },
     { id: 'openai/gpt-oss-120b:free',               label: 'GPT OSS 120B',      badge: 'Powerful' },
     { id: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'Nemotron Super',    badge: 'Powerful' },
+    { id: 'qwen/qwen2.5-vl-32b-instruct:free',      label: 'Qwen VL 32B',       badge: 'Vision'   },
 ];
 const DEFAULT_MODEL = MODELS[0].id;
+const VISION_MODEL = 'qwen/qwen2.5-vl-32b-instruct:free';
+const MAX_IMAGE_DIM = 1024;
+
+// Downscale + JPEG-encode an image file client-side so base64 payloads stay small
+function fileToImageDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Could not read the file'));
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onerror = () => reject(new Error('Could not decode the image'));
+            img.onload = () => {
+                let { width, height } = img;
+                if (width > MAX_IMAGE_DIM || height > MAX_IMAGE_DIM) {
+                    const scale = MAX_IMAGE_DIM / Math.max(width, height);
+                    width = Math.round(width * scale);
+                    height = Math.round(height * scale);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.78));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Strip image parts from older messages before resending — keeps only the newest
+// image in the request so we don't re-upload base64 data on every turn
+function stripImageContent(content) {
+    if (!Array.isArray(content)) return content;
+    const text = content.find(p => p.type === 'text')?.text || '';
+    return text || '[Image attached]';
+}
 
 const QUICK_ACTIONS = [
     // Overview
@@ -446,11 +485,14 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
     const [showModelPicker, setShowModelPicker] = useState(false);
     const [showReminders, setShowReminders] = useState(false);
     const [reminders, setReminders] = useState(() => loadReminders());
+    const [attachedImage, setAttachedImage] = useState(null);
+    const [imageProcessing, setImageProcessing] = useState(false);
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
     const chipsRef = useRef(null);
     const modelPickerRef = useRef(null);
     const notifiedRef = useRef(new Set());
+    const fileInputRef = useRef(null);
 
     const activeReminders = reminders.filter(r => !r.dismissed);
     const dueCount = activeReminders.filter(r => r.dueDate <= todayStr()).length;
@@ -543,23 +585,35 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
 
     const sendMessage = async (text) => {
         const content = (text || input).trim();
-        if (!content || loading || streaming) return;
+        const image = attachedImage;
+        if ((!content && !image) || loading || streaming) return;
         setInput('');
+        setAttachedImage(null);
 
-        const userMsg = { role: 'user', content };
+        const userMsg = {
+            role: 'user',
+            content: image
+                ? [{ type: 'text', text: content || 'What is in this image?' }, { type: 'image_url', image_url: { url: image } }]
+                : content,
+        };
         const updatedMessages = [...messages, userMsg];
         setMessages(updatedMessages);
         setLoading(true);
 
         try {
+            // Only the newest message keeps its image — older ones are stripped to text
+            // so we don't re-upload base64 image data on every follow-up turn
             const apiMessages = updatedMessages
                 .filter((_, i) => i > 0)
-                .map(({ role, content }) => ({ role, content }));
+                .map(({ role, content }, i, arr) => ({
+                    role,
+                    content: i === arr.length - 1 ? content : stripImageContent(content),
+                }));
 
             const res = await fetch(`${API_URL}/ai/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: apiMessages, model: selectedModel }),
+                body: JSON.stringify({ messages: apiMessages, model: image ? VISION_MODEL : selectedModel }),
             });
 
             // Non-streaming error response
@@ -645,9 +699,29 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
         }
     };
 
+    const handleImageSelect = async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            showToast('Please select an image file.', 'warning');
+            return;
+        }
+        setImageProcessing(true);
+        try {
+            const dataUrl = await fileToImageDataUrl(file);
+            setAttachedImage(dataUrl);
+        } catch (err) {
+            showToast(err.message || 'Could not process the image.', 'error');
+        } finally {
+            setImageProcessing(false);
+        }
+    };
+
     const resetChat = () => {
         setMessages([INITIAL_MESSAGE]);
         setInput('');
+        setAttachedImage(null);
         localStorage.removeItem(storageKey);
     };
 
@@ -756,7 +830,14 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
                                     </div>
                                 ) : (
                                     <div className="chatbot-bubble chatbot-bubble--user">
-                                        {msg.content}
+                                        {Array.isArray(msg.content) ? (
+                                            <>
+                                                {msg.content.filter(p => p.type === 'image_url').map((p, i) => (
+                                                    <img key={i} src={p.image_url.url} alt="Attached" className="chatbot-msg-image" />
+                                                ))}
+                                                {msg.content.find(p => p.type === 'text')?.text}
+                                            </>
+                                        ) : msg.content}
                                     </div>
                                 )}
                             </div>
@@ -797,8 +878,43 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
                     <button className="chatbot-chips-arrow" onClick={() => scrollChips(1)} title="Scroll right">›</button>
                 </div>
 
+                {/* Attached image preview */}
+                {attachedImage && (
+                    <div className="chatbot-image-preview-row">
+                        <div className="chatbot-image-preview">
+                            <img src={attachedImage} alt="Attached" />
+                            <button
+                                className="chatbot-image-preview-remove"
+                                onClick={() => setAttachedImage(null)}
+                                title="Remove image"
+                            >
+                                <X size={11} />
+                            </button>
+                        </div>
+                        <span className="chatbot-image-preview-hint">Image attached — will use vision model</span>
+                    </div>
+                )}
+
                 {/* Input row */}
                 <div className="chatbot-input-row">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleImageSelect}
+                    />
+                    <button
+                        className="chatbot-attach-btn"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={loading || streaming || imageProcessing}
+                        title="Attach an image"
+                    >
+                        {imageProcessing
+                            ? <Loader2 size={15} className="chatbot-spin" />
+                            : <ImagePlus size={15} />
+                        }
+                    </button>
                     <textarea
                         ref={inputRef}
                         className="chatbot-input"
@@ -817,7 +933,7 @@ function ChatBot({ onFindEntry, onAssignTeam, onMarkComplete, onReply, onCloseCa
                     <button
                         className="chatbot-send"
                         onClick={() => sendMessage()}
-                        disabled={!input.trim() || loading || streaming}
+                        disabled={(!input.trim() && !attachedImage) || loading || streaming}
                     >
                         {loading
                             ? <Loader2 size={15} className="chatbot-spin" />

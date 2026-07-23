@@ -258,14 +258,28 @@ aiRouter.post('/chat', async (c) => {
             return c.json({ success: false, message: 'messages array required' }, 400);
         }
 
+        const VISION_MODELS = [
+            'qwen/qwen2.5-vl-32b-instruct:free',
+            'meta-llama/llama-3.2-11b-vision-instruct:free',
+        ];
         const ALLOWED_MODELS = new Set([
             'nvidia/nemotron-3-nano-30b-a3b:free',
             'openai/gpt-oss-20b:free',
             'openai/gpt-oss-120b:free',
             'nvidia/nemotron-3-super-120b-a12b:free',
+            ...VISION_MODELS,
         ]);
         const DEFAULT_MODEL = 'nvidia/nemotron-3-nano-30b-a3b:free';
-        const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
+
+        // Any image_url part in the conversation means we must use a vision-capable model
+        const hasImage = messages.some(m =>
+            Array.isArray(m.content) && m.content.some(part => part?.type === 'image_url')
+        );
+
+        let model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
+        if (hasImage && !VISION_MODELS.includes(model)) {
+            model = VISION_MODELS[0];
+        }
 
         if (!c.env.OPENROUTER_API_KEY) {
             return c.json({ success: false, message: 'OPENROUTER_API_KEY not configured' }, 500);
@@ -488,12 +502,11 @@ END_ENTRIES_JSON
 Rules: valid JSON array, double quotes, no trailing commas, "" for missing values, boolean for "closed", ONE block per reply max.
 Never include ENTRIES_JSON for summary tables, counts, statistics, or grouped data — use a markdown table instead.`;
 
-        const FALLBACK_MODELS = [
-            model,
-            'openai/gpt-oss-20b:free',
-            'nvidia/nemotron-3-nano-30b-a3b:free',
-            'openai/gpt-oss-120b:free',
-        ];
+        // Image messages can only fall back to other vision-capable models — a text-only
+        // model would reject the image_url content part outright.
+        const FALLBACK_MODELS = hasImage
+            ? [model, ...VISION_MODELS]
+            : [model, 'openai/gpt-oss-20b:free', 'nvidia/nemotron-3-nano-30b-a3b:free', 'openai/gpt-oss-120b:free'];
         // Deduplicate while preserving order
         const tryModels = [...new Set(FALLBACK_MODELS)];
 
