@@ -21,8 +21,6 @@ function buildReportHtml({ generatedDate, inwardRows, outwardRows }) {
 
     const notesToRegistrar = outwardRows.filter(r => isRegistrar(r.to_whom));
     const notesToVC = outwardRows.filter(r => isVC(r.to_whom));
-    // General outward ignores notes to Registrar and VC
-    const generalOutward = outwardRows.filter(r => !isRegistrar(r.to_whom) && !isVC(r.to_whom));
 
     // Helper to generate a table
     const tableStyle = 'width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;margin-bottom:24px"';
@@ -56,35 +54,7 @@ function buildReportHtml({ generatedDate, inwardRows, outwardRows }) {
     }
     inwardHtml += `</tbody></table>`;
 
-    // 2. Outward Register
-    let outwardHtml = `<table ${tableStyle}>
-      <thead><tr>
-        <th style="${thStyle}">Sl No</th>
-        <th style="${thStyle}">Outward No.</th>
-        <th style="${thStyle}">Date</th>
-        <th style="${thStyle}">Description</th>
-        <th style="${thStyle}">Due-Date</th>
-        <th style="${thStyle}">Remarks</th>
-      </tr></thead>
-      <tbody>`;
-    if (generalOutward.length === 0) {
-        outwardHtml += `<tr><td colspan="6" style="${tdStyle};text-align:center;color:#94a3b8">No general outward entries</td></tr>`;
-    } else {
-        generalOutward.forEach((r, i) => {
-            const closedBadge = r.case_closed ? ' <span style="font-size:10px;background:#dcfce7;color:#16a34a;padding:1px 6px;border-radius:4px;font-family:sans-serif">✓ Closed</span>' : '';
-            outwardHtml += `<tr>
-              <td style="${tdStyle}">${i + 1}${closedBadge}</td>
-              <td style="${tdStyle};font-family:monospace;color:#10b981;font-weight:600">${r.outward_no}</td>
-              <td style="${tdStyle};white-space:nowrap">${formatDate(r.sign_receipt_datetime)}</td>
-              <td style="${tdStyle}">${r.subject || '—'}</td>
-              <td style="${tdStyle};white-space:nowrap">${formatDate(r.due_date)}</td>
-              <td style="${tdStyle}">${r.remarks || ''}</td>
-            </tr>`;
-        });
-    }
-    outwardHtml += `</tbody></table>`;
-
-    // 3. Notes sent to Registrar
+    // 2. Notes sent to Registrar
     let registrarHtml = `<table ${tableStyle}>
       <thead><tr>
         <th style="${thStyle}">Sl. No.</th>
@@ -110,7 +80,7 @@ function buildReportHtml({ generatedDate, inwardRows, outwardRows }) {
     }
     registrarHtml += `</tbody></table>`;
 
-    // 4. Notes sent to Vice-Chancellor
+    // 3. Notes sent to Vice-Chancellor
     let vcHtml = `<table ${tableStyle}>
       <thead><tr>
         <th style="${thStyle}">Sl. No.</th>
@@ -144,17 +114,14 @@ function buildReportHtml({ generatedDate, inwardRows, outwardRows }) {
 <div style="max-width:800px;margin:24px auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
   <div style="background:#1e293b;padding:28px 32px">
     <div style="font-size:22px;font-weight:700;color:#fff;margin:0;line-height:1.4">
-      Review of Pending cases with reference to Inward register, Outward register, Notes sent to Registrar, Notes Sent to Vice-Chancellor
+      Review of Pending cases with reference to Inward register, Notes sent to Registrar, Notes Sent to Vice-Chancellor
     </div>
     <div style="margin:16px 0 0;color:rgba(255,255,255,0.7);font-size:13px">Generated: ${generatedDate}</div>
   </div>
   <div style="padding:28px 32px">
-    
+
     <h3 style="font-size:15px;color:#1e293b;border-bottom:2px solid #e8edf5;padding-bottom:8px;margin-bottom:16px">Inward Register</h3>
     ${inwardHtml}
-
-    <h3 style="font-size:15px;color:#1e293b;border-bottom:2px solid #e8edf5;padding-bottom:8px;margin-bottom:16px">Outward Register</h3>
-    ${outwardHtml}
 
     <h3 style="font-size:15px;color:#1e293b;border-bottom:2px solid #e8edf5;padding-bottom:8px;margin-bottom:16px">Notes sent to Registrar</h3>
     ${registrarHtml}
