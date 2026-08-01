@@ -120,6 +120,22 @@ CREATE TABLE IF NOT EXISTS inbox_queue (
     created_at       TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- In-App Notifications Table
+-- A row is addressed to a person (recipient_email), a team (recipient_team), or both.
+CREATE TABLE IF NOT EXISTS notifications (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    type            TEXT NOT NULL,           -- ASSIGNMENT | STATUS | REMARKS | INBOX | SYSTEM
+    title           TEXT NOT NULL,
+    body            TEXT,
+    recipient_email TEXT,
+    recipient_team  TEXT,
+    inward_no       TEXT,
+    entry_id        INTEGER,
+    link            TEXT,
+    is_read         INTEGER DEFAULT 0,
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_inward_status ON inward(assignment_status);
 CREATE INDEX IF NOT EXISTS idx_inward_assigned_team ON inward(assigned_team);
@@ -131,3 +147,6 @@ CREATE INDEX IF NOT EXISTS idx_inward_subject ON inward(subject);
 CREATE INDEX IF NOT EXISTS idx_inward_particulars ON inward(particulars_from_whom);
 CREATE INDEX IF NOT EXISTS idx_outward_to_whom ON outward(to_whom);
 CREATE INDEX IF NOT EXISTS idx_outward_subject ON outward(subject);
+CREATE INDEX IF NOT EXISTS idx_notifications_email ON notifications(recipient_email, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_team ON notifications(recipient_team, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at);

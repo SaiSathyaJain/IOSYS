@@ -9,6 +9,7 @@ import {
     Sun, Moon, LayoutDashboard, Send, History, User, Download, Pencil
 } from 'lucide-react';
 import ChatBot from '../ChatBot/ChatBot';
+import NotificationBell from '../NotificationBell/NotificationBell';
 import { showToast } from '../Toast/toastBus';
 import './TeamPortal.css';
 
@@ -18,6 +19,12 @@ function TeamPortal() {
     const { teamSlug } = useParams();
     const navigate = useNavigate();
     const selectedTeam = TEAM_MAP[teamSlug] || '';
+
+    // Set when a member submits an outward entry — lets notifications addressed
+    // to them personally show up alongside the team-wide feed
+    const [teamMemberIdentity] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('teamUser'))?.email || null; } catch { return null; }
+    });
 
     const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
     const [activePage, setActivePage] = useState('dashboard');
@@ -536,6 +543,7 @@ function TeamPortal() {
                         <button className="tp-new-outward-btn" onClick={() => openForm()}>
                             <Plus size={15} /> + New Outward
                         </button>
+                        <NotificationBell email={teamMemberIdentity} team={selectedTeam} />
 <button className="tp-theme-btn" onClick={() => { document.body.classList.add('theme-transitioning'); setIsDarkMode(v => !v); setTimeout(() => document.body.classList.remove('theme-transitioning'), 350); }} title="Toggle theme">
                             {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                         </button>

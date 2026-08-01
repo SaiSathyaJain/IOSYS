@@ -8,6 +8,7 @@ import { auditRouter } from './routers/auditLog.js';
 import { pushRouter } from './routers/push.js';
 import { aiRouter } from './routers/ai.js';
 import { inboxQueueRouter } from './routers/inboxQueue.js';
+import { notificationsRouter } from './routers/notifications.js';
 import { sendWeeklyReport } from './services/weeklyReport.js';
 import { pollInbox } from './services/inboxPoller.js';
 import { backupToSheets } from './services/backupToSheets.js';
@@ -57,6 +58,7 @@ app.route('/api/audit', auditRouter);
 app.route('/api/push', pushRouter);
 app.route('/api/ai', aiRouter);
 app.route('/api/inbox-queue', inboxQueueRouter);
+app.route('/api/notifications', notificationsRouter);
 
 // One-time migration endpoint — run once, then ignore
 app.get('/api/run-migration', async (c) => {
@@ -84,6 +86,39 @@ app.get('/api/run-migration', async (c) => {
             `CREATE INDEX IF NOT EXISTS idx_inbox_queue_status ON inbox_queue(status)`
         ).run();
         return c.json({ success: true, message: 'inbox_queue table created' });
+    } catch (e) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
+// One-time migration — creates the in-app notifications table. Safe to re-run.
+app.get('/api/migrate-notifications', async (c) => {
+    try {
+        await c.env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS notifications (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                type            TEXT NOT NULL,
+                title           TEXT NOT NULL,
+                body            TEXT,
+                recipient_email TEXT,
+                recipient_team  TEXT,
+                inward_no       TEXT,
+                entry_id        INTEGER,
+                link            TEXT,
+                is_read         INTEGER DEFAULT 0,
+                created_at      TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        `).run();
+        await c.env.DB.prepare(
+            'CREATE INDEX IF NOT EXISTS idx_notifications_email ON notifications(recipient_email, is_read)'
+        ).run();
+        await c.env.DB.prepare(
+            'CREATE INDEX IF NOT EXISTS idx_notifications_team ON notifications(recipient_team, is_read)'
+        ).run();
+        await c.env.DB.prepare(
+            'CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at)'
+        ).run();
+        return c.json({ success: true, message: 'notifications table created' });
     } catch (e) {
         return c.json({ success: false, error: e.message }, 500);
     }

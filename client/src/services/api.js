@@ -72,13 +72,14 @@ export const inboxQueueAPI = {
     getByInwardId: (inwardId)           => api.get(`/inbox-queue/by-inward/${inwardId}`),
 };
 
-// Notifications API
+// Notifications API — a caller is identified by email, by team, or both
 export const notificationsAPI = {
-    getAll: (email) => api.get(`/notifications?email=${encodeURIComponent(email)}`),
-    getUnreadCount: (email) => api.get(`/notifications/unread/count?email=${encodeURIComponent(email)}`),
+    getAll: ({ email, team, limit } = {}) => api.get('/notifications', { params: { email, team, limit } }),
+    getUnreadCount: ({ email, team } = {}) => api.get('/notifications/unread/count', { params: { email, team } }),
     markAsRead: (id) => api.put(`/notifications/${id}/read`),
-    markAllAsRead: (email) => api.put('/notifications/read-all', { userEmail: email }),
-    create: (data) => api.post('/notifications', data)
+    markAllAsRead: ({ email, team } = {}) => api.put('/notifications/read-all', { userEmail: email, team }),
+    create: (data) => api.post('/notifications', data),
+    remove: (id) => api.delete(`/notifications/${id}`)
 };
 
 export default api;

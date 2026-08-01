@@ -12,6 +12,7 @@ import {
     Sun, Moon, ArrowLeft, Printer, Sparkles, Trash2, RotateCcw
 } from 'lucide-react';
 import ChatBot from '../ChatBot/ChatBot';
+import NotificationBell from '../NotificationBell/NotificationBell';
 import { showToast } from '../Toast/toastBus';
 import './AdminPortal.css';
 
@@ -1228,6 +1229,7 @@ function AdminPortal() {
                         </button>
                     </>)}
                     <div className="ap-nav-divider" />
+                    <NotificationBell email={adminUser.email} />
                     <button className="ap-theme-btn" onClick={() => { document.body.classList.add('theme-transitioning'); setIsDarkMode(v => !v); setTimeout(() => document.body.classList.remove('theme-transitioning'), 350); }} title="Toggle theme">
                         {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
                     </button>

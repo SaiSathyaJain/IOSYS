@@ -64,20 +64,29 @@ function UpdateNotifier() {
     };
 
     return (
-        <div className="update-notifier">
-            <div className="update-notifier-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 12a9 9 0 1 1-3-6.7" />
-                    <polyline points="21 3 21 9 15 9" />
-                </svg>
-            </div>
-            <div className="update-notifier-text">
-                <h3>Update has been made</h3>
-                <p>This app has been updated to a new version. Refresh to get the latest version.</p>
-            </div>
-            <div className="update-notifier-actions">
-                <button className="update-notifier-btn secondary" onClick={handleDismiss}>Later</button>
-                <button className="update-notifier-btn primary" onClick={() => window.location.reload()}>Refresh Now</button>
+        <div
+            className="update-notifier-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="update-notifier-title"
+            onClick={handleDismiss}
+            onKeyDown={e => { if (e.key === 'Escape') handleDismiss(); }}
+        >
+            <div className="update-notifier" onClick={e => e.stopPropagation()}>
+                <div className="update-notifier-icon">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 12a9 9 0 1 1-3-6.7" />
+                        <polyline points="21 3 21 9 15 9" />
+                    </svg>
+                </div>
+                <div className="update-notifier-text">
+                    <h3 id="update-notifier-title">Update has been made</h3>
+                    <p>This app has been updated to a new version. Refresh to get the latest version.</p>
+                </div>
+                <div className="update-notifier-actions">
+                    <button className="update-notifier-btn secondary" onClick={handleDismiss}>Later</button>
+                    <button className="update-notifier-btn primary" onClick={() => window.location.reload()} autoFocus>Refresh Now</button>
+                </div>
             </div>
         </div>
     );

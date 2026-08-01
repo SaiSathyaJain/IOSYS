@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { toCamelCase } from '../utils/caseConverter.js';
 import { sendAssignmentNotification } from '../services/notification.js';
 import { sendTeamPushNotifications } from '../services/webPush.js';
+import { notify, notifyMany, teamLink, adminEmail } from '../services/inAppNotify.js';
 
 const TEAM_SLUG = { 'UPAS': 'upas', 'PPAS': 'ppas', 'UPAS/PPAS': 'upas-ppas', 'DPAS': 'dpas' };
 
@@ -277,6 +278,26 @@ inwardRouter.post('/', async (c) => {
             ).bind(id, subject).run();
         }
 
+        // In-app notification — only when the entry lands on a team at creation
+        if (assignedTeam) {
+            await notifyMany(c.env.DB, [
+                {
+                    type: 'ASSIGNMENT',
+                    title: `New assignment — ${inwardNo}`,
+                    body: subject || particularsFromWhom || 'A new entry has been assigned to your team.',
+                    recipientTeam: assignedTeam,
+                    inwardNo, entryId: id, link: teamLink(assignedTeam),
+                },
+                ...(assignedToEmail ? [{
+                    type: 'ASSIGNMENT',
+                    title: `Assigned to you — ${inwardNo}`,
+                    body: subject || particularsFromWhom || 'A new entry has been assigned to you.',
+                    recipientEmail: assignedToEmail,
+                    inwardNo, entryId: id, link: teamLink(assignedTeam),
+                }] : []),
+            ]);
+        }
+
         return c.json({
             success: true,
             message: 'Inward entry created successfully',
@@ -336,6 +357,24 @@ inwardRouter.put('/:id/assign', async (c) => {
             'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
         ).bind('ENTRY_ASSIGNED', 'Admin', `Admin assigned ${finalInwardNo} to ${assignedTeam} Team${inwardNoChangeNote}`, finalInwardNo).run();
 
+        // In-app notification — team feed plus the named assignee
+        await notifyMany(c.env.DB, [
+            {
+                type: 'ASSIGNMENT',
+                title: `New assignment — ${finalInwardNo}`,
+                body: existing.subject || existing.particulars_from_whom || 'An entry has been assigned to your team.',
+                recipientTeam: assignedTeam,
+                inwardNo: finalInwardNo, entryId: Number(id), link: teamLink(assignedTeam),
+            },
+            ...(assignedToEmail ? [{
+                type: 'ASSIGNMENT',
+                title: `Assigned to you — ${finalInwardNo}`,
+                body: existing.subject || existing.particulars_from_whom || 'An entry has been assigned to you.',
+                recipientEmail: assignedToEmail,
+                inwardNo: finalInwardNo, entryId: Number(id), link: teamLink(assignedTeam),
+            }] : []),
+        ]);
+
         // Send email + push notifications (non-blocking)
         c.executionCtx.waitUntil((async () => {
             await Promise.allSettled([
@@ -373,7 +412,9 @@ inwardRouter.put('/:id/remarks', async (c) => {
         const { remarks, actor } = await c.req.json();
         const updatedAt = new Date().toISOString();
 
-        const entry = await c.env.DB.prepare('SELECT inward_no FROM inward WHERE id = ?').bind(id).first();
+        const entry = await c.env.DB.prepare(
+            'SELECT inward_no, assigned_team FROM inward WHERE id = ?'
+        ).bind(id).first();
 
         await c.env.DB.prepare('UPDATE inward SET remarks = ?, updated_at = ? WHERE id = ?')
             .bind(remarks, updatedAt, id).run();
@@ -384,6 +425,33 @@ inwardRouter.put('/:id/remarks', async (c) => {
             await c.env.DB.prepare(
                 'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
             ).bind('REMARKS_UPDATED', auditActor, `${auditActor} updated remarks on ${entry.inward_no}`, entry.inward_no).run();
+
+            // Notify the opposite side of whoever wrote the remark
+            const admin = adminEmail(c.env);
+            const byAdmin = auditActor === 'Admin' || auditActor === admin;
+            const preview = (remarks || '').slice(0, 120);
+
+            if (byAdmin && entry.assigned_team) {
+                await notify(c.env.DB, {
+                    type: 'REMARKS',
+                    title: `Admin left a remark on ${entry.inward_no}`,
+                    body: preview,
+                    recipientTeam: entry.assigned_team,
+                    inwardNo: entry.inward_no,
+                    entryId: Number(id),
+                    link: teamLink(entry.assigned_team),
+                });
+            } else if (!byAdmin) {
+                await notify(c.env.DB, {
+                    type: 'REMARKS',
+                    title: `Remark added on ${entry.inward_no}`,
+                    body: `${auditActor}: ${preview}`,
+                    recipientEmail: admin,
+                    inwardNo: entry.inward_no,
+                    entryId: Number(id),
+                    link: '/admin',
+                });
+            }
         }
 
         return c.json({ success: true, message: 'Remarks updated successfully' });
@@ -399,7 +467,9 @@ inwardRouter.put('/:id/status', async (c) => {
         const { assignmentStatus, fileReference, actor } = await c.req.json();
         const updatedAt = new Date().toISOString();
 
-        const entry = await c.env.DB.prepare('SELECT inward_no FROM inward WHERE id = ?').bind(id).first();
+        const entry = await c.env.DB.prepare(
+            'SELECT inward_no, subject, assigned_team FROM inward WHERE id = ?'
+        ).bind(id).first();
 
         if (assignmentStatus === 'Completed') {
             const completionDate = new Date().toISOString();
@@ -421,6 +491,17 @@ inwardRouter.put('/:id/status', async (c) => {
             await c.env.DB.prepare(
                 'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
             ).bind('STATUS_CHANGED', auditActor, `${auditActor} marked ${entry.inward_no} as ${assignmentStatus}`, entry.inward_no).run();
+
+            // Keep the admin desk informed of team-side progress
+            await notify(c.env.DB, {
+                type: 'STATUS',
+                title: `${entry.inward_no} marked ${assignmentStatus}`,
+                body: `${entry.assigned_team || 'A team'} updated: ${entry.subject || 'no subject'}`,
+                recipientEmail: adminEmail(c.env),
+                inwardNo: entry.inward_no,
+                entryId: Number(id),
+                link: '/admin',
+            });
         }
 
         return c.json({ success: true, message: 'Status updated successfully' });

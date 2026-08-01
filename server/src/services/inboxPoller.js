@@ -4,6 +4,8 @@
  * Triggered by cron every 30 minutes.
  */
 
+import { notify, adminEmail } from './inAppNotify.js';
+
 async function getAccessToken(env) {
     if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) {
         throw new Error('Gmail OAuth secrets not configured (GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN missing)');
@@ -234,6 +236,19 @@ export async function pollInbox(env) {
         } catch (err) {
             result.errors.push({ messageId: msg.id, error: err.message });
         }
+    }
+
+    // One summary notification per poll — not one per email
+    if (result.processed > 0) {
+        await notify(env.DB, {
+            type: 'INBOX',
+            title: result.processed === 1
+                ? '1 new email awaiting review'
+                : `${result.processed} new emails awaiting review`,
+            body: 'Open the Inbox tab to accept or reject them.',
+            recipientEmail: adminEmail(env),
+            link: '/admin',
+        });
     }
 
     return result;
