@@ -116,7 +116,8 @@ outwardRouter.post('/', async (c) => {
         const {
             means, toWhom, subject, sentBy,
             signReceiptDateTime, caseClosed, fileReference, postalTariff,
-            dueDate, linkedInwardId, createdByTeam, teamMemberEmail, remarks, cc, outwardNo: providedOutwardNo
+            dueDate, linkedInwardId, createdByTeam, teamMemberEmail, remarks, cc, outwardNo: providedOutwardNo,
+            ackRec, crossNo, receiptNo
         } = body;
 
         const now = new Date();
@@ -139,13 +140,15 @@ outwardRouter.post('/', async (c) => {
                 outward_no, means, to_whom, subject, sent_by,
                 sign_receipt_datetime, case_closed, file_reference,
                 postal_tariff, due_date, linked_inward_id,
-                created_by_team, team_member_email, remarks, cc
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
+                created_by_team, team_member_email, remarks, cc,
+                ack_rec, cross_no, receipt_no
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *
         `).bind(
             outwardNo, means, toWhom, subject, sentBy,
             dateTime, isCaseClosed, fileReference || '',
             tariff, dueDate || null, linkedInwardId || null,
-            createdByTeam, teamMemberEmail, remarks || '', cc || null
+            createdByTeam, teamMemberEmail, remarks || '', cc || null,
+            ackRec || '', crossNo || '', receiptNo || ''
         ).first();
 
         const insertedEntry = toCamelCase(result);
@@ -223,7 +226,10 @@ const OUTWARD_FIELD_LABELS = {
     team_member_email: 'Team Email',
     remarks: 'Remarks',
     cc: 'CC',
-    case_closed: 'Case Closed'
+    case_closed: 'Case Closed',
+    ack_rec: 'Ack Rec',
+    cross_no: 'Cross No',
+    receipt_no: 'Receipt No'
 };
 
 function formatFieldValue(field, value) {
@@ -239,7 +245,8 @@ outwardRouter.put('/:id', async (c) => {
         const {
             means, toWhom, subject, sentBy, fileReference,
             postalTariff, dueDate, linkedInwardId, createdByTeam,
-            teamMemberEmail, remarks, cc, caseClosed
+            teamMemberEmail, remarks, cc, caseClosed,
+            ackRec, crossNo, receiptNo
         } = await c.req.json();
 
         const existing = await c.env.DB.prepare('SELECT * FROM outward WHERE id = ?').bind(id).first();
@@ -254,7 +261,8 @@ outwardRouter.put('/:id', async (c) => {
             means, to_whom: toWhom, subject, sent_by: sentBy,
             file_reference: fileReference || '', postal_tariff: tariff, due_date: dueDate || null,
             linked_inward_id: linkedInwardId || null, created_by_team: createdByTeam, team_member_email: teamMemberEmail,
-            remarks: remarks || '', cc: cc || null, case_closed: isCaseClosed
+            remarks: remarks || '', cc: cc || null, case_closed: isCaseClosed,
+            ack_rec: ackRec || '', cross_no: crossNo || '', receipt_no: receiptNo || ''
         };
 
         const changes = [];
@@ -272,14 +280,16 @@ outwardRouter.put('/:id', async (c) => {
                 means = ?, to_whom = ?, subject = ?, sent_by = ?,
                 file_reference = ?, postal_tariff = ?, due_date = ?,
                 linked_inward_id = ?, created_by_team = ?, team_member_email = ?,
-                remarks = ?, cc = ?, case_closed = ?, updated_at = ?
+                remarks = ?, cc = ?, case_closed = ?, updated_at = ?,
+                ack_rec = ?, cross_no = ?, receipt_no = ?
             WHERE id = ?
         `).bind(
             means, toWhom, subject, sentBy,
             fileReference || '', tariff, dueDate || null,
             linkedInwardId || null, createdByTeam, teamMemberEmail,
             remarks || '', cc || null, isCaseClosed,
-            new Date().toISOString(), id
+            new Date().toISOString(),
+            ackRec || '', crossNo || '', receiptNo || '', id
         ).run();
 
         if (changes.length > 0) {
