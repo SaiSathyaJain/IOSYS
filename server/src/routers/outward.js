@@ -253,6 +253,9 @@ outwardRouter.put('/:id', async (c) => {
         if (!existing) {
             return c.json({ success: false, message: 'Outward entry not found' }, 404);
         }
+        if (existing.case_closed) {
+            return c.json({ success: false, message: 'This case is closed and can no longer be edited' }, 409);
+        }
 
         const isCaseClosed = caseClosed ? 1 : 0;
         const tariff = postalTariff || 0;

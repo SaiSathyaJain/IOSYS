@@ -758,7 +758,7 @@ function TeamPortal() {
                                                 <td>
                                                     <div className="tp-row-btns">
                                                         <button onClick={() => { setSelectedEntry(entry); setShowDetailsModal(true); }} title="View"><Eye size={13}/></button>
-                                                        {viewTeam === selectedTeam && (
+                                                        {!entry.caseClosed && viewTeam === selectedTeam && (
                                                             <button onClick={() => openEditForm(entry)} title="Edit" className="edit-btn"><Pencil size={13}/></button>
                                                         )}
                                                         {!entry.caseClosed && viewTeam === selectedTeam && (
@@ -972,7 +972,7 @@ function TeamPortal() {
                                                 <td>
                                                     <div className="tp-row-btns">
                                                         <button onClick={() => { setSelectedEntry(entry); setShowDetailsModal(true); }} title="View"><Eye size={13}/></button>
-                                                        {viewTeam === selectedTeam && (
+                                                        {!entry.caseClosed && viewTeam === selectedTeam && (
                                                             <button onClick={() => openEditForm(entry)} title="Edit" className="edit-btn"><Pencil size={13}/></button>
                                                         )}
                                                         {!entry.caseClosed && viewTeam === selectedTeam && (
@@ -1220,7 +1220,7 @@ function TeamPortal() {
                             </div>
                         </div>
                         <div className="modal-footer">
-                            {viewTeam === selectedTeam && (
+                            {!selectedEntry.caseClosed && viewTeam === selectedTeam && (
                                 <button className="btn btn-secondary" onClick={() => openEditForm(selectedEntry)}><Pencil size={16}/> Edit</button>
                             )}
                             {!selectedEntry.caseClosed && viewTeam === selectedTeam && (
