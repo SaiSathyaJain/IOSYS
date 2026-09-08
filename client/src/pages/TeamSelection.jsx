@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { BookOpen, Users, Building, ArrowLeft, Sun, Moon } from 'lucide-react';
+import { Users, Building, ArrowLeft, Sun, Moon } from 'lucide-react';
 import './TeamSelection.css';
 
 const TiltCard = ({ team, idx, onClick }) => {
@@ -62,9 +62,7 @@ const TeamSelection = () => {
     }, [isDarkMode]);
 
     const teams = [
-        { id: 'upas', name: 'UPAS Team', desc: 'Handle undergraduate correspondence', icon: <Users size={32} />, color: '#2196f3' },
-        { id: 'ppas', name: 'PPAS Team', desc: 'Postgraduate & Professional communications', icon: <BookOpen size={32} />, color: '#ff9800' },
-        { id: 'upas-ppas', name: 'UPAS/PPAS Team', desc: 'Combined undergraduate & postgraduate correspondence', icon: <Users size={32} />, color: '#e91e63' },
+        { id: 'upas', name: 'UPAS Team', desc: 'Undergraduate, postgraduate & professional correspondence', icon: <Users size={32} />, color: '#2196f3' },
         { id: 'dpas', name: 'DPAS Team', desc: 'Doctoral research correspondence', icon: <Building size={32} />, color: '#4caf50' },
     ];
 

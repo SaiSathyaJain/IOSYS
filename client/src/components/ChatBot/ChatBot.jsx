@@ -81,7 +81,7 @@ function stripImageContent(content) {
 const QUICK_ACTIONS = [
     // Overview
     { icon: ClipboardList, label: 'Daily briefing',    query: 'Give me today\'s briefing — new entries today, overdue items, and team with most load' },
-    { icon: BarChart3,     label: 'Team workload',      query: 'Show team workload breakdown and compare UPAS, PPAS, UPAS/PPAS and DPAS performance' },
+    { icon: BarChart3,     label: 'Team workload',      query: 'Show team workload breakdown and compare UPAS and DPAS performance' },
     { icon: AlertTriangle, label: 'Overdue entries',    query: 'Show all overdue entries sorted by how long they have been pending' },
     { icon: Inbox,         label: 'Unassigned entries', query: 'List all inward entries that have not been assigned to any team yet' },
     // Entry lists
@@ -96,7 +96,7 @@ const QUICK_ACTIONS = [
     // Productivity
     { icon: FileText,      label: 'Status report',      query: 'Generate a formal status report I can share with the COE — total entries, team breakdown, overdue count' },
     { icon: Search,        label: 'Recent activity',    query: 'Summarize the last 15 actions from the audit log' },
-    { icon: Scale,         label: 'Compare teams',      query: 'Compare UPAS vs PPAS vs UPAS/PPAS vs DPAS — which team has the best completion rate and least overdue?' },
+    { icon: Scale,         label: 'Compare teams',      query: 'Compare UPAS vs DPAS — which team has the best completion rate and least overdue?' },
 ];
 
 const INITIAL_MESSAGE = {

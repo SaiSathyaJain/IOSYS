@@ -6,7 +6,7 @@
  * a failed notification must never break the action that triggered it.
  */
 
-const TEAM_SLUG = { 'UPAS': 'upas', 'PPAS': 'ppas', 'UPAS/PPAS': 'upas-ppas', 'DPAS': 'dpas' };
+const TEAM_SLUG = { 'UPAS': 'upas', 'DPAS': 'dpas' };
 
 export const teamLink = (team) => `/team/${TEAM_SLUG[team] || 'upas'}`;
 

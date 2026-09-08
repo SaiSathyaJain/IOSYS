@@ -4,7 +4,7 @@ import { sendAssignmentNotification } from '../services/notification.js';
 import { sendTeamPushNotifications } from '../services/webPush.js';
 import { notify, notifyMany, teamLink, adminEmail } from '../services/inAppNotify.js';
 
-const TEAM_SLUG = { 'UPAS': 'upas', 'PPAS': 'ppas', 'UPAS/PPAS': 'upas-ppas', 'DPAS': 'dpas' };
+const TEAM_SLUG = { 'UPAS': 'upas', 'DPAS': 'dpas' };
 
 export const inwardRouter = new Hono();
 

@@ -5,6 +5,7 @@
  */
 
 import { notify, adminEmail } from './inAppNotify.js';
+import { normalizeTeam } from '../utils/teams.js';
 
 async function getAccessToken(env) {
     if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) {
@@ -88,7 +89,7 @@ Body preview: ${bodyText.slice(0, 500)}
 
 Fields to extract:
 - "particularsFromWhom": sender name or organization (string)
-- "assignedTeam": which team should handle it — "UPAS" (undergraduate matters), "PPAS" (postgraduate/professional), "DPAS" (doctoral research), or "" if unclear (string)
+- "assignedTeam": which team should handle it — "UPAS" (undergraduate, postgraduate and professional matters), "DPAS" (doctoral research), or "" if unclear (string)
 - "dueDate": YYYY-MM-DD — 7 days from ${today} if urgent/exam-related, 14 days if normal, "" if not applicable (string)
 - "remarks": one short sentence about the key action needed, or "" (string)
 
@@ -227,7 +228,7 @@ export async function pollInbox(env) {
                 receivedAt,
                 aiFields.particularsFromWhom || fromName || fromEmail,
                 'Email',
-                aiFields.assignedTeam  || '',
+                normalizeTeam(aiFields.assignedTeam) || '',
                 aiFields.dueDate       || '',
                 aiFields.remarks       || ''
             ).run();

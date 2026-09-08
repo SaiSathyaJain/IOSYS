@@ -1,23 +1,15 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, GraduationCap, BookOpen, FlaskConical } from 'lucide-react';
+import { ArrowRight, GraduationCap, FlaskConical } from 'lucide-react';
 import './TeamSelector.css';
 
 const TEAMS = [
     {
         slug: 'upas',
         name: 'UPAS Team',
-        label: 'Undergraduate',
-        description: 'Handle undergraduate student correspondence, assignments and outward entries.',
+        label: 'Undergraduate, Postgraduate & Professional',
+        description: 'Handle undergraduate, postgraduate and professional correspondence, assignments and outward entries.',
         icon: GraduationCap,
         accent: 'blue',
-    },
-    {
-        slug: 'ppas',
-        name: 'PPAS Team',
-        label: 'Postgraduate & Professional',
-        description: 'Manage postgraduate and professional programme-related communications.',
-        icon: BookOpen,
-        accent: 'amber',
     },
     {
         slug: 'dpas',

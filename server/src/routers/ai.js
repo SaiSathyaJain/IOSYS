@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { normalizeTeam } from '../utils/teams.js';
 
 export const aiRouter = new Hono();
 
@@ -21,7 +22,7 @@ Fields to extract:
 - "particularsFromWhom": sender name or organization (string)
 - "subject": concise subject line, max 120 chars (string)
 - "means": delivery mode — one of "Post" | "Email" | "Hand Delivery" | "Courier" | "" (string)
-- "assignedTeam": which team should handle it — "UPAS" (undergraduate), "PPAS" (postgraduate/professional), "DPAS" (doctoral), or "" if unclear (string)
+- "assignedTeam": which team should handle it — "UPAS" (undergraduate, postgraduate and professional), "DPAS" (doctoral), or "" if unclear (string)
 - "dueDate": suggested deadline as YYYY-MM-DD — use 7 days from ${today} if urgent, 14 days if normal, "" if not applicable (string)
 - "remarks": one short sentence capturing the key ask or action needed, or "" (string)
 
@@ -75,6 +76,7 @@ Return ONLY the JSON object:`;
             const jsonStr2 = raw2.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
             try {
                 const fields = JSON.parse(jsonStr2);
+                fields.assignedTeam = normalizeTeam(fields.assignedTeam);
                 return c.json({ success: true, fields });
             } catch {
                 return c.json({ success: false, message: 'AI returned invalid JSON. Try with clearer text.' }, 500);
@@ -93,6 +95,8 @@ Return ONLY the JSON object:`;
             console.error('Failed to parse AI extract response:', raw);
             return c.json({ success: false, message: 'AI returned invalid JSON. Try with clearer text.' }, 500);
         }
+
+        fields.assignedTeam = normalizeTeam(fields.assignedTeam);
 
         return c.json({ success: true, fields });
     } catch (error) {
@@ -128,8 +132,7 @@ Subject: ${subject}
 Remarks: ${remarks || ''}
 
 Teams:
-UPAS = undergraduate (exams, hall tickets, bonafide, attendance, fee, admission, certificates for UG students)
-PPAS = postgraduate / professional (M.Tech, MBA, M.Sc, PGDM, professional courses)
+UPAS = undergraduate, postgraduate and professional (exams, hall tickets, bonafide, attendance, fee, admission, certificates; M.Tech, MBA, M.Sc, PGDM and professional courses)
 DPAS = doctoral (research scholars, thesis, synopsis, fellowship, research grants)
 
 Respond with ONLY this JSON (no explanation, no markdown, no extra text):
@@ -242,6 +245,8 @@ Respond with ONLY this JSON (no explanation, no markdown, no extra text):
                 return c.json({ success: false, message: 'AI could not determine the team. Try again.' }, 500);
             }
         }
+
+        suggestion.assignedTeam = normalizeTeam(suggestion.assignedTeam);
 
         return c.json({ success: true, suggestion });
     } catch (error) {

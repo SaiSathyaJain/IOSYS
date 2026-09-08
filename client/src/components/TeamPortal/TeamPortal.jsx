@@ -13,12 +13,19 @@ import NotificationBell from '../NotificationBell/NotificationBell';
 import { showToast } from '../Toast/toastBus';
 import './TeamPortal.css';
 
-const TEAM_MAP = { 'upas': 'UPAS', 'ppas': 'PPAS', 'upas-ppas': 'UPAS/PPAS', 'dpas': 'DPAS' };
+const TEAM_MAP = { 'upas': 'UPAS', 'dpas': 'DPAS' };
+// PPAS and UPAS/PPAS were merged into UPAS — keep old bookmarks working
+const LEGACY_TEAM_SLUGS = { 'ppas': 'upas', 'upas-ppas': 'upas' };
 
 function TeamPortal() {
     const { teamSlug } = useParams();
     const navigate = useNavigate();
     const selectedTeam = TEAM_MAP[teamSlug] || '';
+
+    useEffect(() => {
+        const target = LEGACY_TEAM_SLUGS[teamSlug];
+        if (target) navigate(`/team/${target}`, { replace: true });
+    }, [teamSlug, navigate]);
 
     // Set when a member submits an outward entry — lets notifications addressed
     // to them personally show up alongside the team-wide feed

@@ -282,8 +282,6 @@ function Dashboard() {
                                     <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} className="filter-select">
                                         <option value="all">All Teams</option>
                                         <option value="UPAS">UPAS Team</option>
-                                        <option value="PPAS">PPAS Team</option>
-                                        <option value="UPAS/PPAS">UPAS/PPAS Team</option>
                                         <option value="DPAS">DPAS Team</option>
                                     </select>
                                     {isFiltering && (

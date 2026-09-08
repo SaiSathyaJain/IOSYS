@@ -351,8 +351,6 @@ function AdminPortal() {
 
     const TEAM_EMAILS = {
         'UPAS': 'coeoffice@sssihl.edu.in',
-        'PPAS': 'coeoffice@sssihl.edu.in',
-        'UPAS/PPAS': 'coeoffice@sssihl.edu.in',
         'DPAS': 'coeoffice@sssihl.edu.in'
     };
 
@@ -1503,8 +1501,6 @@ function AdminPortal() {
                                             <select name="assignedTeam" className="form-select" value={formData.assignedTeam} onChange={handleChange}>
                                                 <option value="">Leave Unassigned</option>
                                                 <option value="UPAS">UPAS Team</option>
-                                                <option value="PPAS">PPAS Team</option>
-                                                <option value="UPAS/PPAS">UPAS/PPAS Team</option>
                                                 <option value="DPAS">DPAS Team</option>
                                             </select>
                                         </div>
@@ -1997,8 +1993,6 @@ function AdminPortal() {
                                         value={reassignData.assignedTeam} onChange={handleReassignChange} required>
                                         <option value="">Select Team...</option>
                                         <option value="UPAS">UPAS Team</option>
-                                        <option value="PPAS">PPAS Team</option>
-                                        <option value="UPAS/PPAS">UPAS/PPAS Team</option>
                                         <option value="DPAS">DPAS Team</option>
                                     </select>
                                 </div>
@@ -2527,7 +2521,7 @@ function AdminPortal() {
                                     <select className="form-select" value={inboxAcceptData.assignedTeam || ''}
                                         onChange={e => setInboxAcceptData(p => ({ ...p, assignedTeam: e.target.value, assignedToEmail: TEAM_EMAILS[e.target.value] || '' }))}>
                                         <option value="">— No Assignment —</option>
-                                        <option>UPAS</option><option>PPAS</option><option>UPAS/PPAS</option><option>DPAS</option>
+                                        <option>UPAS</option><option>DPAS</option>
                                     </select>
                                 </div>
                                 <div className="form-group">
