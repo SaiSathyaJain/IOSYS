@@ -153,10 +153,10 @@ export async function sendWeeklyReport(env) {
          FROM inward WHERE assignment_status != 'Completed' ORDER BY id ASC`
     ).all();
 
-    // Fetch all outward entries (open and closed)
+    // Fetch only open outward entries — closed cases are done and not "pending"
     const { results: outwardRows } = await db.prepare(
         `SELECT outward_no, subject, to_whom, sign_receipt_datetime, due_date, remarks, case_closed
-         FROM outward ORDER BY id ASC`
+         FROM outward WHERE case_closed = 0 ORDER BY id ASC`
     ).all();
 
     const generatedDate = new Date().toLocaleDateString('en-IN', {

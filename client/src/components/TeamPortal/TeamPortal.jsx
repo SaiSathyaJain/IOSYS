@@ -67,6 +67,9 @@ function TeamPortal() {
     const COMPLETED_PAGE_SIZE = 10;
     const [nextOutwardNo, setNextOutwardNo] = useState('');
     const [editingEntry, setEditingEntry] = useState(null);
+    // Entries are closed as soon as they are submitted. A closed entry's dispatch
+    // details are final — only the tracking numbers that arrive later stay editable.
+    const lockedToTracking = !!editingEntry?.caseClosed;
     const [ccInput, setCcInput] = useState('');
     const [ccEntries, setCcEntries] = useState([]);
     const [formData, setFormData] = useState({
@@ -765,8 +768,8 @@ function TeamPortal() {
                                                 <td>
                                                     <div className="tp-row-btns">
                                                         <button onClick={() => { setSelectedEntry(entry); setShowDetailsModal(true); }} title="View"><Eye size={13}/></button>
-                                                        {!entry.caseClosed && viewTeam === selectedTeam && (
-                                                            <button onClick={() => openEditForm(entry)} title="Edit" className="edit-btn"><Pencil size={13}/></button>
+                                                        {viewTeam === selectedTeam && (
+                                                            <button onClick={() => openEditForm(entry)} title={entry.caseClosed ? 'Update tracking details' : 'Edit'} className="edit-btn"><Pencil size={13}/></button>
                                                         )}
                                                         {!entry.caseClosed && viewTeam === selectedTeam && (
                                                             <button onClick={() => handleCloseCase(entry.id)} title="Close" className="close-btn"><Lock size={13}/></button>
@@ -979,8 +982,8 @@ function TeamPortal() {
                                                 <td>
                                                     <div className="tp-row-btns">
                                                         <button onClick={() => { setSelectedEntry(entry); setShowDetailsModal(true); }} title="View"><Eye size={13}/></button>
-                                                        {!entry.caseClosed && viewTeam === selectedTeam && (
-                                                            <button onClick={() => openEditForm(entry)} title="Edit" className="edit-btn"><Pencil size={13}/></button>
+                                                        {viewTeam === selectedTeam && (
+                                                            <button onClick={() => openEditForm(entry)} title={entry.caseClosed ? 'Update tracking details' : 'Edit'} className="edit-btn"><Pencil size={13}/></button>
                                                         )}
                                                         {!entry.caseClosed && viewTeam === selectedTeam && (
                                                             <button onClick={() => handleCloseCase(entry.id)} title="Close" className="close-btn"><Lock size={13}/></button>
@@ -1083,6 +1086,12 @@ function TeamPortal() {
                             </div>
                             <div className="modal-body">
                                 <form id="outward-form" onSubmit={handleSubmit}>
+                                    {lockedToTracking && (
+                                        <div className="tp-locked-notice">
+                                            <Lock size={14}/>
+                                            This case is closed — only Ack Rec, Cross No. and Receipt No. can still be updated.
+                                        </div>
+                                    )}
                                     <div className="grid-2">
                                         <div className="form-group">
                                             <label className="form-label">Your Team</label>
@@ -1090,13 +1099,13 @@ function TeamPortal() {
                                         </div>
                                         <div className="form-group">
                                             <label className="form-label">Outward No.</label>
-                                            <input type="text" name="outwardNo" className="form-input tp-outward-no-preview" value={nextOutwardNo} onChange={e => setNextOutwardNo(e.target.value)} placeholder="Generating…"/>
+                                            <input type="text" name="outwardNo" className="form-input tp-outward-no-preview" value={nextOutwardNo} onChange={e => setNextOutwardNo(e.target.value)} disabled={lockedToTracking} placeholder="Generating…"/>
                                         </div>
                                     </div>
                                     <div className="grid-2">
                                         <div className="form-group">
                                             <label className="form-label">Means *</label>
-                                            <select name="means" className="form-select" value={formData.means} onChange={handleChange} required>
+                                            <select name="means" className="form-select" value={formData.means} onChange={handleChange} required disabled={lockedToTracking}>
                                                 <option value="">Select...</option>
                                                 <option value="Post">Post</option>
                                                 <option value="Email">Email</option>
@@ -1113,9 +1122,10 @@ function TeamPortal() {
                                                     value={ccInput}
                                                     onChange={e => setCcInput(e.target.value)}
                                                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddCC(); } }}
+                                                    disabled={lockedToTracking}
                                                     placeholder="Enter name..."
                                                 />
-                                                <button type="button" className="cc-arrow-btn" onClick={handleAddCC} title="Add CC">
+                                                <button type="button" className="cc-arrow-btn" onClick={handleAddCC} disabled={lockedToTracking} title="Add CC">
                                                     <ArrowRight size={15}/>
                                                 </button>
                                             </div>
@@ -1127,7 +1137,7 @@ function TeamPortal() {
                                                 <div key={i} className="cc-entry-row">
                                                     <input type="text" className="form-input cc-entry-name" value={entry.name} readOnly/>
                                                     <input type="text" className="form-input cc-entry-no" value={entry.outwardNo} readOnly/>
-                                                    <button type="button" className="cc-remove-btn" onClick={() => handleRemoveCC(i)} title="Remove">
+                                                    <button type="button" className="cc-remove-btn" onClick={() => handleRemoveCC(i)} disabled={lockedToTracking} title="Remove">
                                                         <X size={13}/>
                                                     </button>
                                                 </div>
@@ -1136,39 +1146,33 @@ function TeamPortal() {
                                     )}
                                     <div className="form-group">
                                         <label className="form-label">Link to Inward</label>
-                                        <select name="linkedInwardId" className="form-select" value={formData.linkedInwardId} onChange={handleChange}>
+                                        <select name="linkedInwardId" className="form-select" value={formData.linkedInwardId} onChange={handleChange} disabled={lockedToTracking}>
                                             <option value="">None (independent)</option>
                                             {pendingInward.map(e => <option key={e.id} value={e.id}>{e.inwardNo} – {e.subject?.slice(0, 40)}</option>)}
                                         </select>
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">To Whom</label>
-                                        <input type="text" name="toWhom" className="form-input" value={formData.toWhom} onChange={handleChange} placeholder="Recipient name or organization"/>
+                                        <input type="text" name="toWhom" className="form-input" value={formData.toWhom} onChange={handleChange} disabled={lockedToTracking} placeholder="Recipient name or organization"/>
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Subject</label>
-                                        <input type="text" name="subject" className="form-input" value={formData.subject} onChange={handleChange} placeholder="Subject"/>
+                                        <input type="text" name="subject" className="form-input" value={formData.subject} onChange={handleChange} disabled={lockedToTracking} placeholder="Subject"/>
                                     </div>
                                     <div className="grid-2">
                                         <div className="form-group">
                                             <label className="form-label">Sent By *</label>
-                                            <input type="text" name="sentBy" className="form-input" value={formData.sentBy} onChange={handleChange} required placeholder="Your name"/>
+                                            <input type="text" name="sentBy" className="form-input" value={formData.sentBy} onChange={handleChange} required disabled={lockedToTracking} placeholder="Your name"/>
                                         </div>
                                         <div className="form-group">
                                             <label className="form-label">File Reference *</label>
-                                            <input type="text" name="fileReference" className="form-input" value={formData.fileReference} onChange={handleChange} required placeholder="e.g. F/2024/001"/>
+                                            <input type="text" name="fileReference" className="form-input" value={formData.fileReference} onChange={handleChange} required disabled={lockedToTracking} placeholder="e.g. F/2024/001"/>
                                         </div>
                                     </div>
                                     <div className="grid-2">
                                         <div className="form-group">
                                             <label className="form-label">Postal Tariff (Rs.)</label>
-                                            <input type="number" name="postalTariff" className="form-input" value={formData.postalTariff} onChange={handleChange} placeholder="0" min="0"/>
-                                        </div>
-                                        <div className="form-group checkbox-wrapper">
-                                            <label className="checkbox-label">
-                                                <input type="checkbox" name="caseClosed" checked={formData.caseClosed} onChange={handleChange}/>
-                                                Mark Case as Closed
-                                            </label>
+                                            <input type="number" name="postalTariff" className="form-input" value={formData.postalTariff} onChange={handleChange} disabled={lockedToTracking} placeholder="0" min="0"/>
                                         </div>
                                     </div>
                                     <div className="grid-2">
@@ -1190,7 +1194,7 @@ function TeamPortal() {
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Remarks</label>
-                                        <textarea name="remarks" className="form-input" value={formData.remarks} onChange={handleChange} placeholder="Enter remarks..." rows="2"/>
+                                        <textarea name="remarks" className="form-input" value={formData.remarks} onChange={handleChange} disabled={lockedToTracking} placeholder="Enter remarks..." rows="2"/>
                                     </div>
                                 </form>
                             </div>
@@ -1227,8 +1231,10 @@ function TeamPortal() {
                             </div>
                         </div>
                         <div className="modal-footer">
-                            {!selectedEntry.caseClosed && viewTeam === selectedTeam && (
-                                <button className="btn btn-secondary" onClick={() => openEditForm(selectedEntry)}><Pencil size={16}/> Edit</button>
+                            {viewTeam === selectedTeam && (
+                                <button className="btn btn-secondary" onClick={() => openEditForm(selectedEntry)}>
+                                    <Pencil size={16}/> {selectedEntry.caseClosed ? 'Update Tracking' : 'Edit'}
+                                </button>
                             )}
                             {!selectedEntry.caseClosed && viewTeam === selectedTeam && (
                                 <button className="btn btn-primary" onClick={() => handleCloseCase(selectedEntry.id)}><Lock size={16}/> Close Case</button>

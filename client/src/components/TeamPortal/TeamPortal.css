@@ -614,6 +614,16 @@
 .tp-badge-closed { font-size: 0.67rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; background: rgba(16,185,129,0.1); color: #10B981; letter-spacing: 0.04em; }
 .tp-badge-linked { font-size: 0.67rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; background: rgba(47,129,247,0.1); color: #2f81f7; letter-spacing: 0.04em; }
 
+.tp-locked-notice {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.78rem; font-weight: 600;
+    padding: 0.55rem 0.75rem; margin-bottom: 0.9rem;
+    border-radius: 6px;
+    background: rgba(16,185,129,0.08);
+    color: #10B981;
+    border: 1px solid rgba(16,185,129,0.22);
+}
+
 .tp-row-btns { display: flex; gap: 0.35rem; }
 
 .tp-row-btns button {

@@ -6,6 +6,8 @@
 
 import { notify, adminEmail } from './inAppNotify.js';
 import { normalizeTeam } from '../utils/teams.js';
+import { GROQ_DEFAULT_MODEL, OPENROUTER_DEFAULT_MODEL } from '../utils/aiModels.js';
+import { extractJsonObject } from '../utils/aiJson.js';
 
 async function getAccessToken(env) {
     if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) {
@@ -101,8 +103,8 @@ Return ONLY the JSON object:`;
         ? 'https://api.groq.com/openai/v1/chat/completions'
         : 'https://openrouter.ai/api/v1/chat/completions';
     const apiKey  = useGroq ? env.GROQ_API_KEY : env.OPENROUTER_API_KEY;
-    const model   = useGroq ? 'llama3-8b-8192' : 'nvidia/nemotron-3-nano-30b-a3b:free';
-    console.log(`[InboxPoller] AI provider: ${useGroq ? 'Groq (llama3-8b-8192)' : 'OpenRouter'}`);
+    const model   = useGroq ? GROQ_DEFAULT_MODEL : OPENROUTER_DEFAULT_MODEL;
+    console.log(`[InboxPoller] AI provider: ${useGroq ? 'Groq' : 'OpenRouter'} (${model})`);
 
     if (!apiKey) return {};
 
@@ -121,14 +123,13 @@ Return ONLY the JSON object:`;
             body: JSON.stringify({
                 model,
                 messages: [{ role: 'user', content: prompt }],
-                max_tokens: 200,
+                max_tokens: 2000,
                 temperature: 0.1,
             }),
         });
         const data = await res.json();
         const raw = data.choices?.[0]?.message?.content || '{}';
-        const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        return JSON.parse(jsonStr);
+        return JSON.parse(extractJsonObject(raw));
     } catch {
         return {};
     }

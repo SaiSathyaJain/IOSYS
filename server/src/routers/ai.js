@@ -1,7 +1,124 @@
 import { Hono } from 'hono';
 import { normalizeTeam } from '../utils/teams.js';
+import {
+    OPENROUTER_TEXT_MODELS, OPENROUTER_VISION_MODELS, OPENROUTER_DEFAULT_MODEL,
+    ALLOWED_CHAT_MODELS, GROQ_MODELS,
+} from '../utils/aiModels.js';
+import { extractJsonObject } from '../utils/aiJson.js';
 
 export const aiRouter = new Hono();
+
+/**
+ * Start reading an SSE response and decide whether the model is actually
+ * answering. OpenRouter returns HTTP 200 and then reports provider failures as
+ * an `error` object inside the stream, so checking the status alone would proxy
+ * an empty reply to the user instead of failing over to the next model.
+ *
+ * Reads until the model produces real output (content or reasoning), then
+ * returns a stream that replays what was consumed and continues from there.
+ * Returns { error } instead if the stream carried a failure.
+ */
+async function openStream(res) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    const seen = [];
+    let text = '';
+
+    try {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+                reader.releaseLock();
+                return { error: 'model returned an empty response' };
+            }
+            seen.push(value);
+            text += decoder.decode(value, { stream: true });
+
+            const errMatch = text.match(/"error"\s*:\s*\{[^}]*"message"\s*:\s*"([^"]+)"/);
+            if (errMatch) {
+                await reader.cancel();
+                return { error: errMatch[1] };
+            }
+
+            // Any delta carrying content or reasoning means the model is running.
+            if (/"(content|reasoning)"\s*:\s*"[^"]/.test(text)) {
+                const stream = new ReadableStream({
+                    start(controller) {
+                        for (const chunk of seen) controller.enqueue(chunk);
+                    },
+                    async pull(controller) {
+                        const { value, done } = await reader.read();
+                        if (done) { controller.close(); return; }
+                        controller.enqueue(value);
+                    },
+                    cancel(reason) { reader.cancel(reason); },
+                });
+                return { stream };
+            }
+        }
+    } catch (err) {
+        try { await reader.cancel(); } catch { /* already gone */ }
+        return { error: err.message };
+    }
+}
+
+/**
+ * Ask a model for a JSON object, trying Groq first (higher free limits) and then
+ * the OpenRouter models in order. Free models drop out or rate-limit often, and
+ * a reasoning model sometimes answers with prose instead of JSON, so a model is
+ * only accepted once its reply actually parses. Returns null if none succeed.
+ */
+async function completeJson(env, prompt, maxTokens = 2000) {
+    const attempts = [];
+    if (env.GROQ_API_KEY) {
+        for (const model of GROQ_MODELS) {
+            attempts.push({
+                url: 'https://api.groq.com/openai/v1/chat/completions',
+                headers: { 'Authorization': `Bearer ${env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+                model,
+            });
+        }
+    }
+    if (env.OPENROUTER_API_KEY) {
+        for (const model of OPENROUTER_TEXT_MODELS) {
+            attempts.push({
+                url: 'https://openrouter.ai/api/v1/chat/completions',
+                headers: {
+                    'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
+                    'X-Title': 'IOSYS Assistant',
+                },
+                model,
+            });
+        }
+    }
+
+    for (const attempt of attempts) {
+        try {
+            const res = await fetch(attempt.url, {
+                method: 'POST',
+                headers: attempt.headers,
+                body: JSON.stringify({
+                    model: attempt.model,
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: maxTokens,
+                    temperature: 0.1,
+                }),
+            });
+            if (!res.ok) {
+                console.error(`Model ${attempt.model} failed:`, res.status, (await res.text()).slice(0, 200));
+                continue;
+            }
+            const data = await res.json();
+            const raw = data.choices?.[0]?.message?.content || '';
+            return JSON.parse(extractJsonObject(raw));
+        } catch (err) {
+            console.error(`Model ${attempt.model} returned unusable output:`, err.message);
+        }
+    }
+    return null;
+}
 
 // POST /api/ai/extract  — Smart Form Fill: extract fields from raw letter text
 aiRouter.post('/extract', async (c) => {
@@ -10,8 +127,8 @@ aiRouter.post('/extract', async (c) => {
         if (!text || typeof text !== 'string' || text.trim().length < 5) {
             return c.json({ success: false, message: 'text is required' }, 400);
         }
-        if (!c.env.OPENROUTER_API_KEY) {
-            return c.json({ success: false, message: 'OPENROUTER_API_KEY not configured' }, 500);
+        if (!c.env.OPENROUTER_API_KEY && !c.env.GROQ_API_KEY) {
+            return c.json({ success: false, message: 'No AI API key configured (GROQ_API_KEY or OPENROUTER_API_KEY)' }, 500);
         }
 
         const today = new Date().toISOString().split('T')[0];
@@ -33,67 +150,12 @@ ${text.slice(0, 2000)}
 
 Return ONLY the JSON object:`;
 
-        const groqRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
-                'X-Title': 'IOSYS Assistant',
-            },
-            body: JSON.stringify({
-                model: 'nvidia/nemotron-3-nano-30b-a3b:free',
-                messages: [{ role: 'user', content: prompt }],
-                max_tokens: 300,
-                temperature: 0.1,
-            }),
-        });
-
-        if (!groqRes.ok) {
-            const errText = await groqRes.text();
-            console.error('OpenRouter extract error:', groqRes.status, errText);
-            // Try a fallback model
-            const fallbackRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://iosys.coeofficeinward.workers.dev',
-                    'X-Title': 'IOSYS Assistant',
-                },
-                body: JSON.stringify({
-                    model: 'openai/gpt-oss-20b:free',
-                    messages: [{ role: 'user', content: prompt }],
-                    max_tokens: 300,
-                    temperature: 0.1,
-                }),
-            });
-            if (!fallbackRes.ok) {
-                return c.json({ success: false, message: 'AI service unavailable. Please try again later.' }, 500);
-            }
-            const fallbackData = await fallbackRes.json();
-            const raw2 = fallbackData.choices?.[0]?.message?.content || '';
-            const jsonStr2 = raw2.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            try {
-                const fields = JSON.parse(jsonStr2);
-                fields.assignedTeam = normalizeTeam(fields.assignedTeam);
-                return c.json({ success: true, fields });
-            } catch {
-                return c.json({ success: false, message: 'AI returned invalid JSON. Try with clearer text.' }, 500);
-            }
-        }
-
-        const groqData = await groqRes.json();
-        const raw = groqData.choices?.[0]?.message?.content || '';
-
-        // Parse the JSON — strip any markdown fences if model added them
-        const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        let fields;
-        try {
-            fields = JSON.parse(jsonStr);
-        } catch {
-            console.error('Failed to parse AI extract response:', raw);
-            return c.json({ success: false, message: 'AI returned invalid JSON. Try with clearer text.' }, 500);
+        // Try each provider/model in turn. A free model can be rate-limited or
+        // answer with reasoning prose instead of JSON, so keep going until one
+        // returns something parseable.
+        const fields = await completeJson(c.env, prompt);
+        if (!fields) {
+            return c.json({ success: false, message: 'AI service unavailable. Please try again later.' }, 500);
         }
 
         fields.assignedTeam = normalizeTeam(fields.assignedTeam);
@@ -143,7 +205,6 @@ Respond with ONLY this JSON (no explanation, no markdown, no extra text):
         let succeeded = false;
 
         if (useGroq) {
-            const GROQ_MODELS = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'gemma2-9b-it'];
             for (const groqModel of GROQ_MODELS) {
                 const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
@@ -151,7 +212,7 @@ Respond with ONLY this JSON (no explanation, no markdown, no extra text):
                     body: JSON.stringify({
                         model: groqModel,
                         messages: [{ role: 'user', content: prompt }],
-                        max_tokens: 250,
+                        max_tokens: 2000,
                         temperature: 0.1,
                     }),
                 });
@@ -173,12 +234,7 @@ Respond with ONLY this JSON (no explanation, no markdown, no extra text):
 
         // OpenRouter fallback (always tried if Groq failed or not configured)
         if (!succeeded && c.env.OPENROUTER_API_KEY) {
-            const FALLBACK_MODELS = [
-                'nvidia/nemotron-3-nano-30b-a3b:free',
-                'openai/gpt-oss-20b:free',
-                'nvidia/nemotron-3-super-120b-a12b:free',
-                'openai/gpt-oss-120b:free',
-            ];
+            const FALLBACK_MODELS = OPENROUTER_TEXT_MODELS;
             const orHeaders = {
                 'Authorization': `Bearer ${c.env.OPENROUTER_API_KEY}`,
                 'Content-Type': 'application/json',
@@ -192,7 +248,7 @@ Respond with ONLY this JSON (no explanation, no markdown, no extra text):
                     body: JSON.stringify({
                         model: tryModel,
                         messages: [{ role: 'user', content: prompt }],
-                        max_tokens: 250,
+                        max_tokens: 2000,
                         temperature: 0.1,
                     }),
                 });
@@ -263,18 +319,9 @@ aiRouter.post('/chat', async (c) => {
             return c.json({ success: false, message: 'messages array required' }, 400);
         }
 
-        const VISION_MODELS = [
-            'qwen/qwen2.5-vl-32b-instruct:free',
-            'meta-llama/llama-3.2-11b-vision-instruct:free',
-        ];
-        const ALLOWED_MODELS = new Set([
-            'nvidia/nemotron-3-nano-30b-a3b:free',
-            'openai/gpt-oss-20b:free',
-            'openai/gpt-oss-120b:free',
-            'nvidia/nemotron-3-super-120b-a12b:free',
-            ...VISION_MODELS,
-        ]);
-        const DEFAULT_MODEL = 'nvidia/nemotron-3-nano-30b-a3b:free';
+        const VISION_MODELS = OPENROUTER_VISION_MODELS;
+        const ALLOWED_MODELS = ALLOWED_CHAT_MODELS;
+        const DEFAULT_MODEL = OPENROUTER_DEFAULT_MODEL;
 
         // Any image_url part in the conversation means we must use a vision-capable model
         const hasImage = messages.some(m =>
@@ -512,7 +559,7 @@ Never include ENTRIES_JSON for summary tables, counts, statistics, or grouped da
         // model would reject the image_url content part outright.
         const FALLBACK_MODELS = hasImage
             ? [model, ...VISION_MODELS]
-            : [model, 'openai/gpt-oss-20b:free', 'nvidia/nemotron-3-nano-30b-a3b:free', 'openai/gpt-oss-120b:free'];
+            : [model, ...OPENROUTER_TEXT_MODELS];
         // Deduplicate while preserving order
         const tryModels = [...new Set(FALLBACK_MODELS)];
 
@@ -544,8 +591,21 @@ Never include ENTRIES_JSON for summary tables, counts, statistics, or grouped da
             });
 
             if (res.ok) {
-                aiRes = res;
-                break;
+                // A provider can still fail *inside* a 200 stream ("Service
+                // temporarily overloaded"), which would proxy through as an empty
+                // reply. Read far enough to tell a real answer from an error
+                // before committing to this model.
+                const opened = await openStream(res);
+                if (opened.stream) {
+                    aiRes = { body: opened.stream };
+                    break;
+                }
+                console.error(`Model ${tryModel} failed mid-stream:`, opened.error);
+                lastErr = opened.error || lastErr;
+                if (lastErr.toLowerCase().includes('rate limit') || lastErr.toLowerCase().includes('per-day')) {
+                    isRateLimit = true;
+                }
+                continue;
             }
 
             // Parse error for logging/message

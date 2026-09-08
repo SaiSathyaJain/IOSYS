@@ -115,7 +115,7 @@ outwardRouter.post('/', async (c) => {
         const body = await c.req.json();
         const {
             means, toWhom, subject, sentBy,
-            signReceiptDateTime, caseClosed, fileReference, postalTariff,
+            signReceiptDateTime, fileReference, postalTariff,
             dueDate, linkedInwardId, createdByTeam, teamMemberEmail, remarks, cc, outwardNo: providedOutwardNo,
             ackRec, crossNo, receiptNo
         } = body;
@@ -131,7 +131,9 @@ outwardRouter.post('/', async (c) => {
             outwardNo = `OTW/${dd}/${mm}/${yyyy}-${nextCount.toString().padStart(3, '0')}`;
         }
 
-        const isCaseClosed = caseClosed ? 1 : 0;
+        // Submitting an outward entry means the item has gone out, so the case is
+        // closed on creation. Only the tracking details stay editable afterwards.
+        const isCaseClosed = 1;
         const tariff = postalTariff || 0;
         const dateTime = signReceiptDateTime || new Date().toISOString();
 
@@ -253,8 +255,41 @@ outwardRouter.put('/:id', async (c) => {
         if (!existing) {
             return c.json({ success: false, message: 'Outward entry not found' }, 404);
         }
+        // A closed case is locked, except for the post-dispatch tracking details —
+        // the receipt / acknowledgement numbers only arrive after the item has gone out.
         if (existing.case_closed) {
-            return c.json({ success: false, message: 'This case is closed and can no longer be edited' }, 409);
+            const trackingValues = {
+                ack_rec: ackRec ?? existing.ack_rec ?? '',
+                cross_no: crossNo ?? existing.cross_no ?? '',
+                receipt_no: receiptNo ?? existing.receipt_no ?? '',
+            };
+
+            const trackingChanges = Object.entries(trackingValues)
+                .filter(([field, newVal]) => String(existing[field] ?? '') !== String(newVal))
+                .map(([field, newVal]) =>
+                    `${OUTWARD_FIELD_LABELS[field]}: "${formatFieldValue(field, existing[field])}" → "${formatFieldValue(field, newVal)}"`);
+
+            if (trackingChanges.length === 0) {
+                return c.json({ success: false, message: 'This case is closed — only Receipt No., Ack Rec and Cross No. can still be updated' }, 409);
+            }
+
+            await c.env.DB.prepare(
+                'UPDATE outward SET ack_rec = ?, cross_no = ?, receipt_no = ?, updated_at = ? WHERE id = ?'
+            ).bind(
+                trackingValues.ack_rec, trackingValues.cross_no, trackingValues.receipt_no,
+                new Date().toISOString(), id
+            ).run();
+
+            const closedActor = existing.created_by_team ? `${existing.created_by_team} Team` : 'Team';
+            await c.env.DB.prepare(
+                'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
+            ).bind(
+                'OUTWARD_UPDATED', closedActor,
+                `${closedActor} updated closed outward entry ${existing.outward_no} — ${trackingChanges.join('; ')}`,
+                null
+            ).run();
+
+            return c.json({ success: true, message: 'Outward entry updated successfully' });
         }
 
         const isCaseClosed = caseClosed ? 1 : 0;
