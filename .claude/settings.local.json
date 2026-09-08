@@ -22,7 +22,10 @@
       "Bash(npm list *)",
       "Bash(npm install *)",
       "Bash(node gen_guide.js)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(curl -s -N -X POST http://localhost:8787/api/ai/chat -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly one word: HELLO\"}]}' --max-time 120)",
+      "Bash(wc -c)",
+      "Bash(wc -l)"
     ]
   }
 }
