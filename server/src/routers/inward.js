@@ -3,6 +3,7 @@ import { toCamelCase } from '../utils/caseConverter.js';
 import { sendAssignmentNotification } from '../services/notification.js';
 import { sendTeamPushNotifications } from '../services/webPush.js';
 import { notify, notifyMany, teamLink, adminEmail } from '../services/inAppNotify.js';
+import { ALL_TEAM, TEAM_MATCH_SQL, teamsFor, teamLabel } from '../utils/teams.js';
 
 const TEAM_SLUG = { 'UPAS': 'upas', 'DPAS': 'dpas' };
 
@@ -28,7 +29,7 @@ inwardRouter.get('/', async (c) => {
             params.push(status);
         }
         if (team && team !== 'all') {
-            where += ' AND assigned_team = ?';
+            where += ` AND ${TEAM_MATCH_SQL}`;
             params.push(team);
         }
         if (dateFrom) {
@@ -281,13 +282,13 @@ inwardRouter.post('/', async (c) => {
         // In-app notification — only when the entry lands on a team at creation
         if (assignedTeam) {
             await notifyMany(c.env.DB, [
-                {
+                ...teamsFor(assignedTeam).map(team => ({
                     type: 'ASSIGNMENT',
                     title: `New assignment — ${inwardNo}`,
                     body: subject || particularsFromWhom || 'A new entry has been assigned to your team.',
-                    recipientTeam: assignedTeam,
-                    inwardNo, entryId: id, link: teamLink(assignedTeam),
-                },
+                    recipientTeam: team,
+                    inwardNo, entryId: id, link: teamLink(team),
+                })),
                 ...(assignedToEmail ? [{
                     type: 'ASSIGNMENT',
                     title: `Assigned to you — ${inwardNo}`,
@@ -355,17 +356,17 @@ inwardRouter.put('/:id/assign', async (c) => {
             : '';
         await c.env.DB.prepare(
             'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
-        ).bind('ENTRY_ASSIGNED', 'Admin', `Admin assigned ${finalInwardNo} to ${assignedTeam} Team${inwardNoChangeNote}`, finalInwardNo).run();
+        ).bind('ENTRY_ASSIGNED', 'Admin', `Admin assigned ${finalInwardNo} to ${teamLabel(assignedTeam)}${inwardNoChangeNote}`, finalInwardNo).run();
 
         // In-app notification — team feed plus the named assignee
         await notifyMany(c.env.DB, [
-            {
+            ...teamsFor(assignedTeam).map(team => ({
                 type: 'ASSIGNMENT',
                 title: `New assignment — ${finalInwardNo}`,
                 body: existing.subject || existing.particulars_from_whom || 'An entry has been assigned to your team.',
-                recipientTeam: assignedTeam,
-                inwardNo: finalInwardNo, entryId: Number(id), link: teamLink(assignedTeam),
-            },
+                recipientTeam: team,
+                inwardNo: finalInwardNo, entryId: Number(id), link: teamLink(team),
+            })),
             ...(assignedToEmail ? [{
                 type: 'ASSIGNMENT',
                 title: `Assigned to you — ${finalInwardNo}`,
@@ -388,17 +389,19 @@ inwardRouter.put('/:id/assign', async (c) => {
                     dueDate
                 }, c.env).catch(err => console.error('Email notification failed:', err)),
 
-                sendTeamPushNotifications(c.env, c.env.DB, assignedTeam, {
-                    title: `New Assignment — ${assignedTeam} Team`,
-                    body: `${finalInwardNo}: ${(existing.subject || '').slice(0, 60)}`,
-                    url: `https://iosys.pages.dev/team/${TEAM_SLUG[assignedTeam] || 'upas'}`
-                }).catch(err => console.error('Push notification failed:', err))
+                ...teamsFor(assignedTeam).map(team =>
+                    sendTeamPushNotifications(c.env, c.env.DB, team, {
+                        title: `New Assignment — ${team} Team`,
+                        body: `${finalInwardNo}: ${(existing.subject || '').slice(0, 60)}`,
+                        url: `https://iosys.pages.dev/team/${TEAM_SLUG[team] || 'upas'}`
+                    }).catch(err => console.error('Push notification failed:', err))
+                )
             ]);
         })());
 
         return c.json({
             success: true,
-            message: `Entry assigned to ${assignedTeam} team.`
+            message: `Entry assigned to ${teamLabel(assignedTeam)}.`
         });
     } catch (error) {
         return c.json({ success: false, message: error.message }, 500);
@@ -432,15 +435,15 @@ inwardRouter.put('/:id/remarks', async (c) => {
             const preview = (remarks || '').slice(0, 120);
 
             if (byAdmin && entry.assigned_team) {
-                await notify(c.env.DB, {
+                await notifyMany(c.env.DB, teamsFor(entry.assigned_team).map(team => ({
                     type: 'REMARKS',
                     title: `Admin left a remark on ${entry.inward_no}`,
                     body: preview,
-                    recipientTeam: entry.assigned_team,
+                    recipientTeam: team,
                     inwardNo: entry.inward_no,
                     entryId: Number(id),
-                    link: teamLink(entry.assigned_team),
-                });
+                    link: teamLink(team),
+                })));
             } else if (!byAdmin) {
                 await notify(c.env.DB, {
                     type: 'REMARKS',
@@ -492,11 +495,13 @@ inwardRouter.put('/:id/status', async (c) => {
                 'INSERT INTO audit_log (action, actor, description, inward_no) VALUES (?, ?, ?, ?)'
             ).bind('STATUS_CHANGED', auditActor, `${auditActor} marked ${entry.inward_no} as ${assignmentStatus}`, entry.inward_no).run();
 
-            // Keep the admin desk informed of team-side progress
+            // Keep the admin desk informed of team-side progress. On a shared
+            // entry the assigned team doesn't say who acted, so name the actor.
+            const updatedBy = entry.assigned_team === ALL_TEAM ? auditActor : (entry.assigned_team || 'A team');
             await notify(c.env.DB, {
                 type: 'STATUS',
                 title: `${entry.inward_no} marked ${assignmentStatus}`,
-                body: `${entry.assigned_team || 'A team'} updated: ${entry.subject || 'no subject'}`,
+                body: `${updatedBy} updated: ${entry.subject || 'no subject'}`,
                 recipientEmail: adminEmail(c.env),
                 inwardNo: entry.inward_no,
                 entryId: Number(id),

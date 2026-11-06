@@ -518,7 +518,7 @@ Current time: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', d
 
 STATS: inward=${stats.total_inward || 0} | pending=${stats.pending || 0} | in_progress=${stats.in_progress || 0} | completed=${stats.completed || 0} | unassigned=${stats.unassigned || 0} | overdue=${stats.total_overdue || 0} | outward=${outward.length}
 
-TEAMS (assigned_team|total|pending|in_progress|completed|overdue):
+TEAMS (assigned_team|total|pending|in_progress|completed|overdue; "All Team" = one shared entry that belongs to both UPAS and DPAS):
 ${teamSummary}
 
 INWARD (latest 25, format: no|date|from|subject|mode|team|status|due[|remarks]):

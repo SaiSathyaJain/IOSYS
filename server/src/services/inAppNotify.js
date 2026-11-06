@@ -6,9 +6,11 @@
  * a failed notification must never break the action that triggered it.
  */
 
+import { ALL_TEAM } from '../utils/teams.js';
+
 const TEAM_SLUG = { 'UPAS': 'upas', 'DPAS': 'dpas' };
 
-export const teamLink = (team) => `/team/${TEAM_SLUG[team] || 'upas'}`;
+export const teamLink = (team) => (team === ALL_TEAM ? '/team' : `/team/${TEAM_SLUG[team] || 'upas'}`);
 
 export const adminEmail = (env) => env.ADMIN_EMAIL || 'coeofficeinward@sssihl.edu.in';
 

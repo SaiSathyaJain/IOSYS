@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { TEAM_MATCH_SQL, TEAMS } from '../utils/teams.js';
 
 export const dashboardRouter = new Hono();
 
@@ -40,9 +41,9 @@ dashboardRouter.get('/team/:team', async (c) => {
         const team = c.req.param('team');
 
         const [pending, inProgress, completed, totalOutward] = await Promise.all([
-            getCount(db, 'inward', ['assigned_team = ?', "assignment_status = 'Pending'"], [team]),
-            getCount(db, 'inward', ['assigned_team = ?', "assignment_status = 'In Progress'"], [team]),
-            getCount(db, 'inward', ['assigned_team = ?', "assignment_status = 'Completed'"], [team]),
+            getCount(db, 'inward', [TEAM_MATCH_SQL, "assignment_status = 'Pending'"], [team]),
+            getCount(db, 'inward', [TEAM_MATCH_SQL, "assignment_status = 'In Progress'"], [team]),
+            getCount(db, 'inward', [TEAM_MATCH_SQL, "assignment_status = 'Completed'"], [team]),
             getCount(db, 'outward', ['created_by_team = ?'], [team])
         ]);
 
@@ -66,13 +67,12 @@ dashboardRouter.get('/team/:team', async (c) => {
 dashboardRouter.get('/teams', async (c) => {
     try {
         const db = c.env.DB;
-        const teams = ['UPAS', 'DPAS'];
 
-        const teamStats = await Promise.all(teams.map(async (team) => {
+        const teamStats = await Promise.all(TEAMS.map(async (team) => {
             const [total, pending, completed] = await Promise.all([
-                getCount(db, 'inward', ['assigned_team = ?'], [team]),
-                getCount(db, 'inward', ['assigned_team = ?', "assignment_status = 'Pending'"], [team]),
-                getCount(db, 'inward', ['assigned_team = ?', "assignment_status = 'Completed'"], [team])
+                getCount(db, 'inward', [TEAM_MATCH_SQL], [team]),
+                getCount(db, 'inward', [TEAM_MATCH_SQL, "assignment_status = 'Pending'"], [team]),
+                getCount(db, 'inward', [TEAM_MATCH_SQL, "assignment_status = 'Completed'"], [team])
             ]);
 
             return { team, total, pending, completed };

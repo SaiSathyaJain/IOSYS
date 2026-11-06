@@ -253,7 +253,7 @@ function Dashboard() {
                             e.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             e.particularsFromWhom?.toLowerCase().includes(searchTerm.toLowerCase());
                         const matchStatus = statusFilter === 'all' || e.assignmentStatus === statusFilter;
-                        const matchTeam = teamFilter === 'all' || e.assignedTeam === teamFilter;
+                        const matchTeam = teamFilter === 'all' || e.assignedTeam === teamFilter || e.assignedTeam === 'All Team';
                         return matchSearch && matchStatus && matchTeam;
                     });
                     const isFiltering = searchTerm || statusFilter !== 'all' || teamFilter !== 'all';

@@ -351,7 +351,8 @@ function AdminPortal() {
 
     const TEAM_EMAILS = {
         'UPAS': 'coeoffice@sssihl.edu.in',
-        'DPAS': 'coeoffice@sssihl.edu.in'
+        'DPAS': 'coeoffice@sssihl.edu.in',
+        'All Team': 'coeoffice@sssihl.edu.in'
     };
 
     useEffect(() => {
@@ -1502,6 +1503,7 @@ function AdminPortal() {
                                                 <option value="">Leave Unassigned</option>
                                                 <option value="UPAS">UPAS Team</option>
                                                 <option value="DPAS">DPAS Team</option>
+                                                <option value="All Team">All Team</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1994,6 +1996,7 @@ function AdminPortal() {
                                         <option value="">Select Team...</option>
                                         <option value="UPAS">UPAS Team</option>
                                         <option value="DPAS">DPAS Team</option>
+                                        <option value="All Team">All Team</option>
                                     </select>
                                 </div>
 
@@ -2521,7 +2524,7 @@ function AdminPortal() {
                                     <select className="form-select" value={inboxAcceptData.assignedTeam || ''}
                                         onChange={e => setInboxAcceptData(p => ({ ...p, assignedTeam: e.target.value, assignedToEmail: TEAM_EMAILS[e.target.value] || '' }))}>
                                         <option value="">— No Assignment —</option>
-                                        <option>UPAS</option><option>DPAS</option>
+                                        <option>UPAS</option><option>DPAS</option><option>All Team</option>
                                     </select>
                                 </div>
                                 <div className="form-group">

@@ -1,5 +1,7 @@
 // ── Gmail REST API email sender (CF Workers compatible — no SMTP/TCP) ──────────
 
+import { ALL_TEAM } from '../utils/teams.js';
+
 /**
  * Exchange refresh token for a short-lived access token.
  */
@@ -100,7 +102,9 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
 
     const teamColor = assignedTeam === 'UPAS' ? '#2563eb' : assignedTeam === 'DPAS' ? '#7c3aed' : '#0891b2';
     const teamUrlMap = { 'UPAS': 'upas', 'DPAS': 'dpas' };
-    const portalUrl = `https://iosys.pages.dev/team/${teamUrlMap[assignedTeam] || 'upas'}`;
+    const isAllTeam = assignedTeam === ALL_TEAM;
+    const portalUrl = isAllTeam ? 'https://iosys.pages.dev/team' : `https://iosys.pages.dev/team/${teamUrlMap[assignedTeam] || 'upas'}`;
+    const portalLabel = isAllTeam ? 'Team' : assignedTeam;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -163,7 +167,7 @@ function buildAssignmentHtml({ inwardNo, subject, particularsFromWhom, assignedT
 
       <!-- CTA Button -->
       <div style="text-align:center;margin:28px 0 8px">
-        <a href="${portalUrl}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;padding:13px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.02em">Open ${assignedTeam} Portal &rarr;</a>
+        <a href="${portalUrl}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;padding:13px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.02em">Open ${portalLabel} Portal &rarr;</a>
       </div>
     </div>
 
